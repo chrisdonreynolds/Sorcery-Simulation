@@ -67,6 +67,7 @@ try:
         Wizard,
         get_registry,
         get_spell_class,
+        MULTI_CONDITION_REQUIREMENTS,
     )
 except ImportError as e:
     raise ImportError(f"Could not import Project Sorcery modules: {e}")
@@ -92,6 +93,9 @@ LOCATIONS = [
 BUFFS = [
     "Charged", "Shielded", "Honed", "Quickened", "Invisible", "Blessed"
 ]
+
+# Hard-coded floor for b for all ultimate spells
+ULTIMATE_B_FLOOR: float = 20.0
 
 # Bounds for special spells to preserve specific design intent
 SPECIAL_BOUNDS: Dict[str, Tuple[float, float, float, float]] = {
@@ -898,25 +902,69 @@ class SpellBalancingEngine:
             # Trigger to INCREASE SPREAD: Under-triggered condition (incentivize setup)
             elif trig_rate < target_min:
                 deficit = max(0.0, min(1.0, (target_min - trig_rate) / target_min))
-                if casts < min_casts and num_cond == 1:
-                    pick_penalty = max(0.0, (min_casts - casts) / min_casts)
-                    deficit = max(deficit, 0.40 + 0.60 * pick_penalty)
+                category = sp.get("category", "")
 
-                b_reduction = 0.06 + 0.12 * deficit
-                b_spread_mult = 1.0 - b_reduction
+                if category == "Ultimate":
+                    # Hard-coded floor protection: DO NOT cut ultimate base floor
+                    b_spread_mult = 1.0
+                    n_increase = 0.10 + 0.20 * deficit
+                    n_spread_mult = 1.0 + n_increase
 
-                n_increase = 0.12 + 0.25 * deficit
-                n_spread_mult = 1.0 + n_increase
+                    # Shift tuner focus: Buff the appliers / setups for this ultimate
+                    reqs = MULTI_CONDITION_REQUIREMENTS.get(r, [])
+                    buffed_setups = []
+                    for req_type, req_val in reqs:
+                        for setup_r, setup_data in self.telemetry["per_spell"].items():
+                            if setup_r == r:
+                                continue
+                            s_tags = tag_spell_synergies(setup_r, self.original_spell_data.get(setup_r, {}))
+                            applies = False
+                            if req_type == "weather" and getattr(req_val, "value", str(req_val)) in s_tags.get("applies_weather", []):
+                                applies = True
+                            elif req_type == "location" and getattr(req_val, "value", str(req_val)) in s_tags.get("applies_location", []):
+                                applies = True
+                            elif req_type == "caster_buff" and req_val in s_tags.get("applies_buff", []):
+                                applies = True
+                            elif req_type == "target_debuff" and req_val in s_tags.get("applies_status", []):
+                                applies = True
+                            if applies:
+                                setup_adj = adjustments.setdefault(setup_r, {"b_spread_mult": 1.0, "n_spread_mult": 1.0, "reasons": []})
+                                setup_adj["b_spread_mult"] = max(setup_adj.get("b_spread_mult", 1.0), 1.15)
+                                setup_reason = f"Buffed setup spell [{setup_r}] (+15.0% b tempo) to facilitate under-triggered Ultimate [{r}]"
+                                if setup_reason not in setup_adj["reasons"]:
+                                    setup_adj["reasons"].append(setup_reason)
+                                buffed_setups.append(setup_r)
 
-                reason = (
-                    f"Conditional payoff under-triggered (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% vs "
-                    f"{target_min*100:.0f}% floor, Casts: {casts}). "
-                    f"Increasing spread: b -{b_reduction*100:.1f}%, n +{n_increase*100:.1f}%"
-                )
-                print(f"  * [{r}] {reason}")
-                adjustments[r]["b_spread_mult"] = b_spread_mult
-                adjustments[r]["n_spread_mult"] = n_spread_mult
-                adjustments[r]["reasons"].append(reason)
+                    reason = (
+                        f"Ultimate payoff under-triggered (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% vs "
+                        f"{target_min*100:.0f}% floor, Casts: {casts}). Shifted tuner focus: protected ultimate base floor at {sp['b']} "
+                        f"(hard-coded floor >= {ULTIMATE_B_FLOOR}) and buffed appliers/setups ({', '.join(buffed_setups)}) with +15% b tempo."
+                    )
+                    print(f"  * [{r}] {reason}")
+                    adjustments[r]["b_spread_mult"] = b_spread_mult
+                    adjustments[r]["n_spread_mult"] = n_spread_mult
+                    adjustments[r]["reasons"].append(reason)
+
+                else:
+                    if casts < min_casts and num_cond == 1:
+                        pick_penalty = max(0.0, (min_casts - casts) / min_casts)
+                        deficit = max(deficit, 0.40 + 0.60 * pick_penalty)
+
+                    b_reduction = 0.06 + 0.12 * deficit
+                    b_spread_mult = 1.0 - b_reduction
+
+                    n_increase = 0.12 + 0.25 * deficit
+                    n_spread_mult = 1.0 + n_increase
+
+                    reason = (
+                        f"Conditional payoff under-triggered (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% vs "
+                        f"{target_min*100:.0f}% floor, Casts: {casts}). "
+                        f"Increasing spread: b -{b_reduction*100:.1f}%, n +{n_increase*100:.1f}%"
+                    )
+                    print(f"  * [{r}] {reason}")
+                    adjustments[r]["b_spread_mult"] = b_spread_mult
+                    adjustments[r]["n_spread_mult"] = n_spread_mult
+                    adjustments[r]["reasons"].append(reason)
 
             # Trigger to DECREASE SPREAD: Scenario B (Over-triggered / Trivialized condition)
             elif trig_rate > target_max:
@@ -1035,7 +1083,7 @@ class SpellBalancingEngine:
                     min_b = min(b_orig * 0.6, 10.0)
                     max_b = max(b_orig * 1.4, 35.0)
                 elif category == "Ultimate":
-                    min_b = min(b_orig * 0.6, 18.0)
+                    min_b = max(ULTIMATE_B_FLOOR, 20.0)
                     max_b = max(b_orig * 1.4, 45.0)
                 elif category == "Conditional Strike":
                     min_b = min(b_orig * 0.6, 14.0)
@@ -1062,6 +1110,8 @@ class SpellBalancingEngine:
                     min_n, max_n = 0.0, 0.0
 
             b_new = max(min_b, min(max_b, b_orig * total_b_factor))
+            if category == "Ultimate":
+                b_new = max(ULTIMATE_B_FLOOR, b_new)
             b_new = round(b_new, 1)
 
             if n_orig > 0:
