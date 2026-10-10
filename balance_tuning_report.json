@@ -1,0 +1,2995 @@
+{
+  "meta": {
+    "simulation_mode": "games",
+    "total_games": 10000,
+    "eval_games": 5000,
+    "total_iterations": 200,
+    "elapsed_seconds": 70.68,
+    "timestamp": "2026-10-10T07:05:51Z"
+  },
+  "modifications_count": 87,
+  "modifications": [
+    {
+      "recipe": "FFF",
+      "class": "Fire",
+      "category": "Direct Damage",
+      "b_old": 60.0,
+      "b_new": 59.3,
+      "b_delta_pct": -1.2,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 60.0,
+      "max_potential_new": 59.3,
+      "reasons": [
+        "Individual spell overtuned (WR: 53.6%, Casts: 2370, mult: 0.988)"
+      ]
+    },
+    {
+      "recipe": "FFW",
+      "class": "Fire",
+      "category": "Debuff / Control",
+      "b_old": 45.0,
+      "b_new": 44.4,
+      "b_delta_pct": -1.3,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 45.0,
+      "max_potential_new": 44.4,
+      "reasons": [
+        "Status 'Burning' appliers overtuned on own (WR: 54.0%)"
+      ]
+    },
+    {
+      "recipe": "FFL",
+      "class": "Fire",
+      "category": "Debuff / Control",
+      "b_old": 8.0,
+      "b_new": 7.8,
+      "b_delta_pct": -2.5,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 8.0,
+      "max_potential_new": 7.8,
+      "reasons": [
+        "Status 'Burning' appliers overtuned on own (WR: 54.0%)",
+        "Individual spell overtuned (WR: 54.0%, Casts: 2028, mult: 0.987)"
+      ]
+    },
+    {
+      "recipe": "FFD",
+      "class": "Fire",
+      "category": "Conditional Strike",
+      "b_old": 22.6,
+      "b_new": 19.1,
+      "b_delta_pct": -15.5,
+      "n_old": 2.7,
+      "n_new": 3.6,
+      "n_delta_pct": 33.3,
+      "max_potential_old": 83.6,
+      "max_potential_new": 87.9,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 6.5% vs 30% floor, Casts: 1934). Increasing spread: b -15.4%, n +31.6%"
+      ]
+    },
+    {
+      "recipe": "WWF",
+      "class": "Water",
+      "category": "Conditional Strike",
+      "b_old": 35.8,
+      "b_new": 29.3,
+      "b_delta_pct": -18.2,
+      "n_old": 2.7,
+      "n_new": 3.5,
+      "n_delta_pct": 29.6,
+      "max_potential_old": 132.5,
+      "max_potential_new": 131.8,
+      "reasons": [
+        "Class Water overtuned (WR: 55.1%, factor: 0.980)",
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 9.5% vs 30% floor, Casts: 2391). Increasing spread: b -14.2%, n +29.0%",
+        "Individual spell overtuned (WR: 58.0%, Casts: 2391, mult: 0.972)"
+      ]
+    },
+    {
+      "recipe": "WWE",
+      "class": "Water",
+      "category": "Setup - Weather",
+      "b_old": 20.0,
+      "b_new": 19.1,
+      "b_delta_pct": -4.5,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 20.0,
+      "max_potential_new": 19.1,
+      "reasons": [
+        "Class Water overtuned (WR: 55.1%, factor: 0.980)",
+        "Weather 'Raining' appliers overtuned on own (WR: 53.6%)",
+        "Individual spell overtuned (WR: 53.6%, Casts: 1776, mult: 0.988)"
+      ]
+    },
+    {
+      "recipe": "WWL",
+      "class": "Water",
+      "category": "Buff / Sustain",
+      "b_old": 60.0,
+      "b_new": 58.8,
+      "b_delta_pct": -2.0,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 60.0,
+      "max_potential_new": 58.8,
+      "reasons": [
+        "Class Water overtuned (WR: 55.1%, factor: 0.980)"
+      ]
+    },
+    {
+      "recipe": "WWD",
+      "class": "Water",
+      "category": "Buff / Sustain",
+      "b_old": 45.0,
+      "b_new": 43.5,
+      "b_delta_pct": -3.3,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 45.0,
+      "max_potential_new": 43.5,
+      "reasons": [
+        "Class Water overtuned (WR: 55.1%, factor: 0.980)",
+        "Individual spell overtuned (WR: 53.9%, Casts: 1801, mult: 0.987)"
+      ]
+    },
+    {
+      "recipe": "EEF",
+      "class": "Earth",
+      "category": "Conditional Strike",
+      "b_old": 25.0,
+      "b_new": 22.9,
+      "b_delta_pct": -8.4,
+      "n_old": 2.8,
+      "n_new": 3.5,
+      "n_delta_pct": 25.0,
+      "max_potential_old": 95.0,
+      "max_potential_new": 103.0,
+      "reasons": [
+        "Status 'Frosty' beneficiaries undertuned (WR: 46.2%)",
+        "Status 'Stunned' appliers undertuned (WR: 45.5%, casts: 15448)",
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 15.1% vs 30% floor, Casts: 3364). Increasing spread: b -11.9%, n +24.4%",
+        "Individual spell undertuned (WR: 43.0%, Casts: 3364, mult: 1.024)"
+      ]
+    },
+    {
+      "recipe": "EEE",
+      "class": "Earth",
+      "category": "Conditional Strike",
+      "b_old": 4.0,
+      "b_new": 4.6,
+      "b_delta_pct": 15.0,
+      "n_old": 2.0,
+      "n_new": 1.6,
+      "n_delta_pct": -20.0,
+      "max_potential_old": 12.0,
+      "max_potential_new": 12.0,
+      "reasons": [
+        "Condition triggers excessively (N=1 conditions, Trigger Rate: 95.0% vs 55% ceiling, WR: 47.2%). Compressing spread: b +13.9%, n -22.2%"
+      ]
+    },
+    {
+      "recipe": "LLF",
+      "class": "Light",
+      "category": "Conditional Strike",
+      "b_old": 4.0,
+      "b_new": 3.3,
+      "b_delta_pct": -17.5,
+      "n_old": 2.8,
+      "n_new": 3.8,
+      "n_delta_pct": 35.7,
+      "max_potential_old": 15.2,
+      "max_potential_new": 15.8,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 3.3% vs 30% floor, Casts: 1986). Increasing spread: b -16.7%, n +34.2%"
+      ]
+    },
+    {
+      "recipe": "LLE",
+      "class": "Light",
+      "category": "Setup - Weather",
+      "b_old": 20.0,
+      "b_new": 21.6,
+      "b_delta_pct": 8.0,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 20.0,
+      "max_potential_new": 21.6,
+      "reasons": [
+        "Weather 'Sunny' appliers undertuned (WR: 39.2%, casts: 2632)",
+        "Individual spell undertuned (WR: 39.1%, Casts: 2632, mult: 1.039)"
+      ]
+    },
+    {
+      "recipe": "LLL",
+      "class": "Light",
+      "category": "Buff / Sustain",
+      "b_old": 33.8,
+      "b_new": 32.7,
+      "b_delta_pct": -3.3,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 33.8,
+      "max_potential_new": 32.7,
+      "reasons": [
+        "Individual spell overtuned (WR: 58.9%, Casts: 2031, mult: 0.969)"
+      ]
+    },
+    {
+      "recipe": "LLD",
+      "class": "Light",
+      "category": "Ultimate",
+      "b_old": 23.4,
+      "b_new": 19.2,
+      "b_delta_pct": -17.9,
+      "n_old": 7.2,
+      "n_new": 9.9,
+      "n_delta_pct": 37.5,
+      "max_potential_old": 191.9,
+      "max_potential_new": 209.3,
+      "reasons": [
+        "Conditional payoff under-triggered (N=2 conditions, Trigger Rate: 0.1% vs 16% floor, Casts: 1842). Increasing spread: b -18.0%, n +36.9%"
+      ]
+    },
+    {
+      "recipe": "DDF",
+      "class": "Dark",
+      "category": "Conditional Strike",
+      "b_old": 21.8,
+      "b_new": 17.9,
+      "b_delta_pct": -17.9,
+      "n_old": 2.9,
+      "n_new": 4.0,
+      "n_delta_pct": 37.9,
+      "max_potential_old": 85.0,
+      "max_potential_new": 89.5,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 1762). Increasing spread: b -18.0%, n +37.0%"
+      ]
+    },
+    {
+      "recipe": "DDD",
+      "class": "Dark",
+      "category": "Debuff / Control",
+      "b_old": 33.8,
+      "b_new": 32.8,
+      "b_delta_pct": -3.0,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 33.8,
+      "max_potential_new": 32.8,
+      "reasons": [
+        "Individual spell overtuned (WR: 58.1%, Casts: 1746, mult: 0.972)"
+      ]
+    },
+    {
+      "recipe": "FWF",
+      "class": "Ghostfire",
+      "category": "Debuff / Control",
+      "b_old": 44.2,
+      "b_new": 42.9,
+      "b_delta_pct": -2.9,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 44.2,
+      "max_potential_new": 42.9,
+      "reasons": [
+        "Status 'Burning' appliers overtuned on own (WR: 54.0%)",
+        "Individual spell overtuned (WR: 54.7%, Casts: 2208, mult: 0.984)"
+      ]
+    },
+    {
+      "recipe": "FWD",
+      "class": "Ghostfire",
+      "category": "Ultimate",
+      "b_old": 23.4,
+      "b_new": 19.2,
+      "b_delta_pct": -17.9,
+      "n_old": 7.2,
+      "n_new": 9.9,
+      "n_delta_pct": 37.5,
+      "max_potential_old": 191.9,
+      "max_potential_new": 209.3,
+      "reasons": [
+        "Conditional payoff under-triggered (N=3 conditions, Trigger Rate: 0.1% vs 8% floor, Casts: 2194). Increasing spread: b -17.9%, n +36.8%"
+      ]
+    },
+    {
+      "recipe": "WFF",
+      "class": "Ghostfire",
+      "category": "Conditional Strike",
+      "b_old": 22.2,
+      "b_new": 18.6,
+      "b_delta_pct": -16.2,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 84.4,
+      "max_potential_new": 87.4,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 4.1% vs 30% floor, Casts: 1585). Increasing spread: b -16.4%, n +33.6%"
+      ]
+    },
+    {
+      "recipe": "WFE",
+      "class": "Ghostfire",
+      "category": "Debuff / Control",
+      "b_old": 42.7,
+      "b_new": 40.2,
+      "b_delta_pct": -5.9,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 42.7,
+      "max_potential_new": 40.2,
+      "reasons": [
+        "Status 'Bleeding' appliers overtuned on own (WR: 57.2%)",
+        "Individual spell overtuned (WR: 59.9%, Casts: 1874, mult: 0.965)"
+      ]
+    },
+    {
+      "recipe": "WFL",
+      "class": "Ghostfire",
+      "category": "Buff / Sustain",
+      "b_old": 35.0,
+      "b_new": 36.6,
+      "b_delta_pct": 4.6,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 35.0,
+      "max_potential_new": 36.6,
+      "reasons": [
+        "Individual spell undertuned (WR: 37.5%, Casts: 2860, mult: 1.046)"
+      ]
+    },
+    {
+      "recipe": "WFD",
+      "class": "Ghostfire",
+      "category": "Conditional Strike",
+      "b_old": 22.7,
+      "b_new": 19.0,
+      "b_delta_pct": -16.3,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 86.3,
+      "max_potential_new": 89.3,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 7.5% vs 30% floor, Casts: 2199). Increasing spread: b -15.0%, n +30.8%",
+        "Individual spell overtuned (WR: 54.0%, Casts: 2199, mult: 0.987)"
+      ]
+    },
+    {
+      "recipe": "FEF",
+      "class": "Beasts",
+      "category": "Debuff / Control",
+      "b_old": 25.0,
+      "b_new": 24.6,
+      "b_delta_pct": -1.6,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 25.0,
+      "max_potential_new": 24.6,
+      "reasons": [
+        "Class Beasts overtuned (WR: 54.3%, factor: 0.983)"
+      ]
+    },
+    {
+      "recipe": "FEW",
+      "class": "Beasts",
+      "category": "Conditional Strike",
+      "b_old": 22.1,
+      "b_new": 17.9,
+      "b_delta_pct": -19.0,
+      "n_old": 2.9,
+      "n_new": 4.0,
+      "n_delta_pct": 37.9,
+      "max_potential_old": 86.2,
+      "max_potential_new": 89.5,
+      "reasons": [
+        "Class Beasts overtuned (WR: 54.3%, factor: 0.983)",
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.6% vs 30% floor, Casts: 2275). Increasing spread: b -17.8%, n +36.5%"
+      ]
+    },
+    {
+      "recipe": "FEE",
+      "class": "Beasts",
+      "category": "Buff / Sustain",
+      "b_old": 25.0,
+      "b_new": 24.6,
+      "b_delta_pct": -1.6,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 25.0,
+      "max_potential_new": 24.6,
+      "reasons": [
+        "Class Beasts overtuned (WR: 54.3%, factor: 0.983)"
+      ]
+    },
+    {
+      "recipe": "FEL",
+      "class": "Beasts",
+      "category": "Buff / Sustain",
+      "b_old": 25.0,
+      "b_new": 24.6,
+      "b_delta_pct": -1.6,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 25.0,
+      "max_potential_new": 24.6,
+      "reasons": [
+        "Class Beasts overtuned (WR: 54.3%, factor: 0.983)"
+      ]
+    },
+    {
+      "recipe": "EFF",
+      "class": "Beasts",
+      "category": "Debuff / Control",
+      "b_old": 27.5,
+      "b_new": 22.3,
+      "b_delta_pct": -18.9,
+      "n_old": 2.9,
+      "n_new": 3.9,
+      "n_delta_pct": 34.5,
+      "max_potential_old": 107.2,
+      "max_potential_new": 109.3,
+      "reasons": [
+        "Class Beasts overtuned (WR: 54.3%, factor: 0.983)",
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 1.3% vs 30% floor, Casts: 1937). Increasing spread: b -17.5%, n +35.9%"
+      ]
+    },
+    {
+      "recipe": "EFW",
+      "class": "Beasts",
+      "category": "Buff / Sustain",
+      "b_old": 24.5,
+      "b_new": 24.1,
+      "b_delta_pct": -1.6,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 24.5,
+      "max_potential_new": 24.1,
+      "reasons": [
+        "Class Beasts overtuned (WR: 54.3%, factor: 0.983)"
+      ]
+    },
+    {
+      "recipe": "EFE",
+      "class": "Beasts",
+      "category": "Buff / Sustain",
+      "b_old": 35.0,
+      "b_new": 34.4,
+      "b_delta_pct": -1.7,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 35.0,
+      "max_potential_new": 34.4,
+      "reasons": [
+        "Class Beasts overtuned (WR: 54.3%, factor: 0.983)"
+      ]
+    },
+    {
+      "recipe": "EFL",
+      "class": "Beasts",
+      "category": "Buff / Sustain",
+      "b_old": 30.4,
+      "b_new": 25.8,
+      "b_delta_pct": -15.1,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 30.4,
+      "max_potential_new": 25.8,
+      "reasons": [
+        "Class Beasts overtuned (WR: 54.3%, factor: 0.983)",
+        "Individual spell overtuned (WR: 83.9%, Casts: 2151, mult: 0.863)"
+      ]
+    },
+    {
+      "recipe": "EFD",
+      "class": "Beasts",
+      "category": "Ultimate",
+      "b_old": 23.4,
+      "b_new": 18.9,
+      "b_delta_pct": -19.2,
+      "n_old": 7.2,
+      "n_new": 9.9,
+      "n_delta_pct": 37.5,
+      "max_potential_old": 191.9,
+      "max_potential_new": 206.0,
+      "reasons": [
+        "Class Beasts overtuned (WR: 54.3%, factor: 0.983)",
+        "Conditional payoff under-triggered (N=2 conditions, Trigger Rate: 0.1% vs 16% floor, Casts: 1991). Increasing spread: b -17.9%, n +36.8%"
+      ]
+    },
+    {
+      "recipe": "FLF",
+      "class": "Lightning",
+      "category": "Conditional Strike",
+      "b_old": 21.9,
+      "b_new": 18.0,
+      "b_delta_pct": -17.8,
+      "n_old": 2.9,
+      "n_new": 4.0,
+      "n_delta_pct": 37.9,
+      "max_potential_old": 85.4,
+      "max_potential_new": 90.0,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.3% vs 30% floor, Casts: 1895). Increasing spread: b -17.9%, n +36.8%"
+      ]
+    },
+    {
+      "recipe": "FLW",
+      "class": "Lightning",
+      "category": "Debuff / Control",
+      "b_old": 45.6,
+      "b_new": 46.3,
+      "b_delta_pct": 1.5,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 45.6,
+      "max_potential_new": 46.3,
+      "reasons": [
+        "Status 'Stunned' appliers undertuned (WR: 45.5%, casts: 15448)"
+      ]
+    },
+    {
+      "recipe": "FLD",
+      "class": "Lightning",
+      "category": "Ultimate",
+      "b_old": 23.7,
+      "b_new": 25.6,
+      "b_delta_pct": 8.0,
+      "n_old": 7.4,
+      "n_new": 7.0,
+      "n_delta_pct": -5.4,
+      "max_potential_old": 199.1,
+      "max_potential_new": 204.8,
+      "reasons": [
+        "Multi-condition setup trap (N=3 conditions, Trigger Rate: 0.0% vs 8% floor, Casts: 2071, WR: 46.7%). Compressing spread to rescue baseline floor: b +8.0%, n -6.0%"
+      ]
+    },
+    {
+      "recipe": "LFF",
+      "class": "Lightning",
+      "category": "Conditional Strike",
+      "b_old": 22.0,
+      "b_new": 18.2,
+      "b_delta_pct": -17.3,
+      "n_old": 2.9,
+      "n_new": 3.9,
+      "n_delta_pct": 34.5,
+      "max_potential_old": 85.8,
+      "max_potential_new": 89.2,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 1.9% vs 30% floor, Casts: 1723). Increasing spread: b -17.2%, n +35.4%"
+      ]
+    },
+    {
+      "recipe": "LFW",
+      "class": "Lightning",
+      "category": "Buff / Sustain",
+      "b_old": 34.4,
+      "b_new": 33.5,
+      "b_delta_pct": -2.6,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 34.4,
+      "max_potential_new": 33.5,
+      "reasons": [
+        "Individual spell overtuned (WR: 57.8%, Casts: 2735, mult: 0.973)"
+      ]
+    },
+    {
+      "recipe": "LFE",
+      "class": "Lightning",
+      "category": "Debuff / Control",
+      "b_old": 45.6,
+      "b_new": 47.2,
+      "b_delta_pct": 3.5,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 45.6,
+      "max_potential_new": 47.2,
+      "reasons": [
+        "Status 'Stunned' appliers undertuned (WR: 45.5%, casts: 15448)",
+        "Individual spell undertuned (WR: 44.4%, Casts: 3294, mult: 1.019)"
+      ]
+    },
+    {
+      "recipe": "LFL",
+      "class": "Lightning",
+      "category": "Debuff / Control",
+      "b_old": 36.6,
+      "b_new": 31.8,
+      "b_delta_pct": -13.1,
+      "n_old": 2.8,
+      "n_new": 3.6,
+      "n_delta_pct": 28.6,
+      "max_potential_old": 139.1,
+      "max_potential_new": 146.3,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 12.2% vs 30% floor, Casts: 2311). Increasing spread: b -13.1%, n +26.9%"
+      ]
+    },
+    {
+      "recipe": "LFD",
+      "class": "Lightning",
+      "category": "Conditional Strike",
+      "b_old": 23.1,
+      "b_new": 19.8,
+      "b_delta_pct": -14.3,
+      "n_old": 4.3,
+      "n_new": 5.7,
+      "n_delta_pct": 32.6,
+      "max_potential_old": 122.4,
+      "max_potential_new": 132.7,
+      "reasons": [
+        "Status 'Stunned' appliers undertuned (WR: 45.5%, casts: 15448)",
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 5.9% vs 30% floor, Casts: 1418). Increasing spread: b -15.6%, n +32.1%"
+      ]
+    },
+    {
+      "recipe": "FDF",
+      "class": "Blood",
+      "category": "Conditional Strike",
+      "b_old": 21.8,
+      "b_new": 17.9,
+      "b_delta_pct": -17.9,
+      "n_old": 2.9,
+      "n_new": 4.0,
+      "n_delta_pct": 37.9,
+      "max_potential_old": 85.0,
+      "max_potential_new": 89.5,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 1498). Increasing spread: b -18.0%, n +37.0%"
+      ]
+    },
+    {
+      "recipe": "FDW",
+      "class": "Blood",
+      "category": "Direct Damage",
+      "b_old": 61.0,
+      "b_new": 62.2,
+      "b_delta_pct": 2.0,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 61.0,
+      "max_potential_new": 62.2,
+      "reasons": [
+        "Individual spell undertuned (WR: 44.3%, Casts: 2035, mult: 1.019)"
+      ]
+    },
+    {
+      "recipe": "FDL",
+      "class": "Blood",
+      "category": "Debuff / Control",
+      "b_old": 41.4,
+      "b_new": 38.7,
+      "b_delta_pct": -6.5,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 41.4,
+      "max_potential_new": 38.7,
+      "reasons": [
+        "Status 'Bleeding' appliers overtuned on own (WR: 57.2%)",
+        "Individual spell overtuned (WR: 61.5%, Casts: 1839, mult: 0.958)"
+      ]
+    },
+    {
+      "recipe": "FDD",
+      "class": "Blood",
+      "category": "Ultimate",
+      "b_old": 23.5,
+      "b_new": 25.4,
+      "b_delta_pct": 8.1,
+      "n_old": 7.2,
+      "n_new": 6.8,
+      "n_delta_pct": -5.6,
+      "max_potential_old": 192.7,
+      "max_potential_new": 198.1,
+      "reasons": [
+        "Multi-condition setup trap (N=2 conditions, Trigger Rate: 0.1% vs 16% floor, Casts: 2178, WR: 46.8%). Compressing spread to rescue baseline floor: b +8.0%, n -6.0%"
+      ]
+    },
+    {
+      "recipe": "DFF",
+      "class": "Blood",
+      "category": "Conditional Strike",
+      "b_old": 22.4,
+      "b_new": 18.7,
+      "b_delta_pct": -16.5,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 85.1,
+      "max_potential_new": 87.9,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 3.8% vs 30% floor, Casts: 1757). Increasing spread: b -16.5%, n +33.9%"
+      ]
+    },
+    {
+      "recipe": "DFW",
+      "class": "Blood",
+      "category": "Debuff / Control",
+      "b_old": 32.4,
+      "b_new": 30.4,
+      "b_delta_pct": -6.2,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 32.4,
+      "max_potential_new": 30.4,
+      "reasons": [
+        "Status 'Bleeding' appliers overtuned on own (WR: 57.2%)",
+        "Individual spell overtuned (WR: 60.5%, Casts: 2153, mult: 0.962)"
+      ]
+    },
+    {
+      "recipe": "DFE",
+      "class": "Blood",
+      "category": "Buff / Sustain",
+      "b_old": 35.5,
+      "b_new": 37.1,
+      "b_delta_pct": 4.5,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 35.5,
+      "max_potential_new": 37.1,
+      "reasons": [
+        "Individual spell undertuned (WR: 37.7%, Casts: 2409, mult: 1.045)"
+      ]
+    },
+    {
+      "recipe": "DFD",
+      "class": "Blood",
+      "category": "Conditional Strike",
+      "b_old": 28.6,
+      "b_new": 32.6,
+      "b_delta_pct": 14.0,
+      "n_old": 1.8,
+      "n_new": 1.4,
+      "n_delta_pct": -22.2,
+      "max_potential_old": 80.1,
+      "max_potential_new": 78.2,
+      "reasons": [
+        "Condition triggers excessively (N=1 conditions, Trigger Rate: 95.6% vs 55% ceiling, WR: 50.2%). Compressing spread: b +14.0%, n -22.4%"
+      ]
+    },
+    {
+      "recipe": "WEF",
+      "class": "Plants",
+      "category": "Conditional Strike",
+      "b_old": 23.1,
+      "b_new": 19.6,
+      "b_delta_pct": -15.2,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 87.8,
+      "max_potential_new": 92.1,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 7.2% vs 30% floor, Casts: 2015). Increasing spread: b -15.1%, n +31.0%"
+      ]
+    },
+    {
+      "recipe": "WED",
+      "class": "Plants",
+      "category": "Conditional Strike",
+      "b_old": 21.9,
+      "b_new": 24.0,
+      "b_delta_pct": 9.6,
+      "n_old": 4.3,
+      "n_new": 4.0,
+      "n_delta_pct": -7.0,
+      "max_potential_old": 116.1,
+      "max_potential_new": 120.0,
+      "reasons": [
+        "Multi-condition setup trap (N=3 conditions, Trigger Rate: 0.2% vs 8% floor, Casts: 2592, WR: 45.7%). Compressing spread to rescue baseline floor: b +8.0%, n -6.0%",
+        "Individual spell undertuned (WR: 45.7%, Casts: 2592, mult: 1.014)"
+      ]
+    },
+    {
+      "recipe": "EWF",
+      "class": "Plants",
+      "category": "Buff / Sustain",
+      "b_old": 27.5,
+      "b_new": 23.5,
+      "b_delta_pct": -14.5,
+      "n_old": 2.8,
+      "n_new": 3.6,
+      "n_delta_pct": 28.6,
+      "max_potential_old": 104.5,
+      "max_potential_new": 108.1,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 8.7% vs 30% floor, Casts: 2273). Increasing spread: b -14.5%, n +29.7%"
+      ]
+    },
+    {
+      "recipe": "EWW",
+      "class": "Plants",
+      "category": "Debuff / Control",
+      "b_old": 38.5,
+      "b_new": 33.6,
+      "b_delta_pct": -12.7,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 38.5,
+      "max_potential_new": 33.6,
+      "reasons": [
+        "Individual spell overtuned (WR: 81.5%, Casts: 2269, mult: 0.874)"
+      ]
+    },
+    {
+      "recipe": "EWD",
+      "class": "Plants",
+      "category": "Conditional Strike",
+      "b_old": 21.3,
+      "b_new": 17.4,
+      "b_delta_pct": -18.3,
+      "n_old": 2.9,
+      "n_new": 3.9,
+      "n_delta_pct": 34.5,
+      "max_potential_old": 83.1,
+      "max_potential_new": 85.3,
+      "reasons": [
+        "Status 'Bleeding' appliers overtuned on own (WR: 57.2%)",
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 1.6% vs 30% floor, Casts: 1726). Increasing spread: b -17.4%, n +35.7%",
+        "Individual spell undertuned (WR: 45.6%, Casts: 1726, mult: 1.014)"
+      ]
+    },
+    {
+      "recipe": "WLF",
+      "class": "Fey",
+      "category": "Conditional Strike",
+      "b_old": 22.3,
+      "b_new": 18.4,
+      "b_delta_pct": -17.5,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 84.7,
+      "max_potential_new": 86.5,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 3.9% vs 30% floor, Casts: 2292). Increasing spread: b -16.4%, n +33.8%",
+        "Individual spell overtuned (WR: 53.7%, Casts: 2292, mult: 0.988)"
+      ]
+    },
+    {
+      "recipe": "WLE",
+      "class": "Fey",
+      "category": "Setup - Location",
+      "b_old": 20.0,
+      "b_new": 20.7,
+      "b_delta_pct": 3.5,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 20.0,
+      "max_potential_new": 20.7,
+      "reasons": [
+        "Location 'Enchanted Forest' appliers undertuned (WR: 44.9%, casts: 1828)",
+        "Individual spell undertuned (WR: 44.9%, Casts: 1828, mult: 1.017)"
+      ]
+    },
+    {
+      "recipe": "WLL",
+      "class": "Fey",
+      "category": "Direct Damage",
+      "b_old": 60.0,
+      "b_new": 60.9,
+      "b_delta_pct": 1.5,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 60.0,
+      "max_potential_new": 60.9,
+      "reasons": [
+        "Individual spell undertuned (WR: 45.5%, Casts: 2104, mult: 1.015)"
+      ]
+    },
+    {
+      "recipe": "WLD",
+      "class": "Fey",
+      "category": "Ultimate",
+      "b_old": 23.4,
+      "b_new": 25.3,
+      "b_delta_pct": 8.1,
+      "n_old": 7.2,
+      "n_new": 6.8,
+      "n_delta_pct": -5.6,
+      "max_potential_old": 191.9,
+      "max_potential_new": 197.3,
+      "reasons": [
+        "Multi-condition setup trap (N=3 conditions, Trigger Rate: 0.0% vs 8% floor, Casts: 1837, WR: 47.8%). Compressing spread to rescue baseline floor: b +8.0%, n -6.0%"
+      ]
+    },
+    {
+      "recipe": "LWF",
+      "class": "Fey",
+      "category": "Debuff / Control",
+      "b_old": 36.9,
+      "b_new": 31.6,
+      "b_delta_pct": -14.4,
+      "n_old": 2.7,
+      "n_new": 3.5,
+      "n_delta_pct": 29.6,
+      "max_potential_old": 136.5,
+      "max_potential_new": 142.2,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 9.2% vs 30% floor, Casts: 1781). Increasing spread: b -14.3%, n +29.3%"
+      ]
+    },
+    {
+      "recipe": "LWD",
+      "class": "Fey",
+      "category": "Conditional Strike",
+      "b_old": 21.8,
+      "b_new": 18.2,
+      "b_delta_pct": -16.5,
+      "n_old": 2.9,
+      "n_new": 4.0,
+      "n_delta_pct": 37.9,
+      "max_potential_old": 85.0,
+      "max_potential_new": 91.0,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 2245). Increasing spread: b -18.0%, n +37.0%",
+        "Individual spell undertuned (WR: 45.0%, Casts: 2245, mult: 1.017)"
+      ]
+    },
+    {
+      "recipe": "WDF",
+      "class": "Ice",
+      "category": "Conditional Strike",
+      "b_old": 22.8,
+      "b_new": 20.2,
+      "b_delta_pct": -11.4,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 86.6,
+      "max_potential_new": 94.9,
+      "reasons": [
+        "Class Ice undertuned (WR: 45.6%, factor: 1.018)",
+        "Status 'Stunned' appliers undertuned (WR: 45.5%, casts: 15448)",
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 5.0% vs 30% floor, Casts: 3036). Increasing spread: b -16.0%, n +32.8%",
+        "Individual spell undertuned (WR: 44.0%, Casts: 3036, mult: 1.020)"
+      ]
+    },
+    {
+      "recipe": "WDW",
+      "class": "Ice",
+      "category": "Buff / Sustain",
+      "b_old": 14.7,
+      "b_new": 15.2,
+      "b_delta_pct": 3.4,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 14.7,
+      "max_potential_new": 15.2,
+      "reasons": [
+        "Class Ice undertuned (WR: 45.6%, factor: 1.018)",
+        "Status 'Frosty' appliers undertuned (WR: 45.3%, casts: 10275)"
+      ]
+    },
+    {
+      "recipe": "WDE",
+      "class": "Ice",
+      "category": "Setup - Weather",
+      "b_old": 20.0,
+      "b_new": 20.4,
+      "b_delta_pct": 2.0,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 20.0,
+      "max_potential_new": 20.4,
+      "reasons": [
+        "Class Ice undertuned (WR: 45.6%, factor: 1.018)"
+      ]
+    },
+    {
+      "recipe": "WDL",
+      "class": "Ice",
+      "category": "Debuff / Control",
+      "b_old": 45.0,
+      "b_new": 46.5,
+      "b_delta_pct": 3.3,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 45.0,
+      "max_potential_new": 46.5,
+      "reasons": [
+        "Class Ice undertuned (WR: 45.6%, factor: 1.018)",
+        "Status 'Frosty' appliers undertuned (WR: 45.3%, casts: 10275)"
+      ]
+    },
+    {
+      "recipe": "WDD",
+      "class": "Ice",
+      "category": "Ultimate",
+      "b_old": 23.7,
+      "b_new": 26.6,
+      "b_delta_pct": 12.2,
+      "n_old": 7.1,
+      "n_new": 7.0,
+      "n_delta_pct": -1.4,
+      "max_potential_old": 192.0,
+      "max_potential_new": 212.8,
+      "reasons": [
+        "Class Ice undertuned (WR: 45.6%, factor: 1.018)",
+        "Weather 'Blizzard' beneficiaries undertuned (WR: 44.1%)",
+        "Location 'Tundra' beneficiaries undertuned (WR: 44.1%)",
+        "Multi-condition setup trap (N=2 conditions, Trigger Rate: 0.9% vs 16% floor, Casts: 2452, WR: 44.1%). Compressing spread to rescue baseline floor: b +8.0%, n -6.0%",
+        "Individual spell undertuned (WR: 44.1%, Casts: 2452, mult: 1.020)"
+      ]
+    },
+    {
+      "recipe": "DWF",
+      "class": "Ice",
+      "category": "Debuff / Control",
+      "b_old": 45.0,
+      "b_new": 47.7,
+      "b_delta_pct": 6.0,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 45.0,
+      "max_potential_new": 47.7,
+      "reasons": [
+        "Class Ice undertuned (WR: 45.6%, factor: 1.018)",
+        "Status 'Frosty' appliers undertuned (WR: 45.3%, casts: 10275)",
+        "Individual spell undertuned (WR: 43.0%, Casts: 3321, mult: 1.024)"
+      ]
+    },
+    {
+      "recipe": "DWW",
+      "class": "Ice",
+      "category": "Debuff / Control",
+      "b_old": 35.0,
+      "b_new": 36.6,
+      "b_delta_pct": 4.6,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 35.0,
+      "max_potential_new": 36.6,
+      "reasons": [
+        "Class Ice undertuned (WR: 45.6%, factor: 1.018)",
+        "Individual spell undertuned (WR: 42.4%, Casts: 2808, mult: 1.027)"
+      ]
+    },
+    {
+      "recipe": "DWE",
+      "class": "Ice",
+      "category": "Setup - Location",
+      "b_old": 20.0,
+      "b_new": 20.4,
+      "b_delta_pct": 2.0,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 20.0,
+      "max_potential_new": 20.4,
+      "reasons": [
+        "Class Ice undertuned (WR: 45.6%, factor: 1.018)"
+      ]
+    },
+    {
+      "recipe": "DWL",
+      "class": "Ice",
+      "category": "Debuff / Control",
+      "b_old": 45.0,
+      "b_new": 48.0,
+      "b_delta_pct": 6.7,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 45.0,
+      "max_potential_new": 48.0,
+      "reasons": [
+        "Class Ice undertuned (WR: 45.6%, factor: 1.018)",
+        "Status 'Frosty' appliers undertuned (WR: 45.3%, casts: 10275)",
+        "Individual spell undertuned (WR: 41.0%, Casts: 2933, mult: 1.032)"
+      ]
+    },
+    {
+      "recipe": "DWD",
+      "class": "Ice",
+      "category": "Conditional Strike",
+      "b_old": 24.1,
+      "b_new": 21.5,
+      "b_delta_pct": -10.8,
+      "n_old": 2.7,
+      "n_new": 3.4,
+      "n_delta_pct": 25.9,
+      "max_potential_old": 89.2,
+      "max_potential_new": 94.6,
+      "reasons": [
+        "Class Ice undertuned (WR: 45.6%, factor: 1.018)",
+        "Status 'Frosty' beneficiaries undertuned (WR: 46.2%)",
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 14.6% vs 30% floor, Casts: 1858). Increasing spread: b -12.2%, n +24.8%"
+      ]
+    },
+    {
+      "recipe": "ELF",
+      "class": "Wind",
+      "category": "Conditional Strike",
+      "b_old": 47.8,
+      "b_new": 39.4,
+      "b_delta_pct": -17.6,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 181.6,
+      "max_potential_new": 185.2,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 3.7% vs 30% floor, Casts: 1422). Increasing spread: b -16.5%, n +33.9%",
+        "Individual spell overtuned (WR: 53.8%, Casts: 1422, mult: 0.988)"
+      ]
+    },
+    {
+      "recipe": "ELD",
+      "class": "Wind",
+      "category": "Conditional Strike",
+      "b_old": 23.1,
+      "b_new": 19.5,
+      "b_delta_pct": -15.6,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 87.8,
+      "max_potential_new": 91.7,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 5.8% vs 30% floor, Casts: 2115). Increasing spread: b -15.7%, n +32.1%"
+      ]
+    },
+    {
+      "recipe": "LEF",
+      "class": "Wind",
+      "category": "Conditional Strike",
+      "b_old": 22.1,
+      "b_new": 18.6,
+      "b_delta_pct": -15.8,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 84.0,
+      "max_potential_new": 87.4,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 5.0% vs 30% floor, Casts: 1905). Increasing spread: b -16.0%, n +32.8%"
+      ]
+    },
+    {
+      "recipe": "LEW",
+      "class": "Wind",
+      "category": "Debuff / Control",
+      "b_old": 60.0,
+      "b_new": 59.2,
+      "b_delta_pct": -1.3,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 60.0,
+      "max_potential_new": 59.2,
+      "reasons": [
+        "Individual spell overtuned (WR: 54.1%, Casts: 1990, mult: 0.987)"
+      ]
+    },
+    {
+      "recipe": "LEL",
+      "class": "Wind",
+      "category": "Buff / Sustain",
+      "b_old": 35.0,
+      "b_new": 35.4,
+      "b_delta_pct": 1.1,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 35.0,
+      "max_potential_new": 35.4,
+      "reasons": [
+        "Individual spell undertuned (WR: 46.2%, Casts: 2067, mult: 1.012)"
+      ]
+    },
+    {
+      "recipe": "EDF",
+      "class": "Poison",
+      "category": "Conditional Strike",
+      "b_old": 22.5,
+      "b_new": 19.2,
+      "b_delta_pct": -14.7,
+      "n_old": 2.8,
+      "n_new": 3.8,
+      "n_delta_pct": 35.7,
+      "max_potential_old": 85.5,
+      "max_potential_new": 92.2,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 3.6% vs 30% floor, Casts: 2898). Increasing spread: b -16.6%, n +34.0%",
+        "Individual spell undertuned (WR: 43.0%, Casts: 2898, mult: 1.024)"
+      ]
+    },
+    {
+      "recipe": "EDW",
+      "class": "Poison",
+      "category": "Debuff / Control",
+      "b_old": 34.0,
+      "b_new": 33.0,
+      "b_delta_pct": -2.9,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 34.0,
+      "max_potential_new": 33.0,
+      "reasons": [
+        "Individual spell overtuned (WR: 58.4%, Casts: 1607, mult: 0.970)"
+      ]
+    },
+    {
+      "recipe": "EDL",
+      "class": "Poison",
+      "category": "Debuff / Control",
+      "b_old": 21.6,
+      "b_new": 18.9,
+      "b_delta_pct": -12.5,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 21.6,
+      "max_potential_new": 18.9,
+      "reasons": [
+        "Individual spell overtuned (WR: 81.7%, Casts: 1810, mult: 0.873)"
+      ]
+    },
+    {
+      "recipe": "EDD",
+      "class": "Poison",
+      "category": "Ultimate",
+      "b_old": 24.3,
+      "b_new": 26.6,
+      "b_delta_pct": 9.5,
+      "n_old": 7.5,
+      "n_new": 7.2,
+      "n_delta_pct": -4.0,
+      "max_potential_old": 206.6,
+      "max_potential_new": 218.1,
+      "reasons": [
+        "Location 'Swamp' beneficiaries undertuned (WR: 46.0%)",
+        "Multi-condition setup trap (N=2 conditions, Trigger Rate: 0.4% vs 16% floor, Casts: 2197, WR: 46.0%). Compressing spread to rescue baseline floor: b +8.0%, n -6.0%",
+        "Individual spell undertuned (WR: 46.0%, Casts: 2197, mult: 1.013)"
+      ]
+    },
+    {
+      "recipe": "DEW",
+      "class": "Poison",
+      "category": "Debuff / Control",
+      "b_old": 33.9,
+      "b_new": 33.3,
+      "b_delta_pct": -1.8,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 33.9,
+      "max_potential_new": 33.3,
+      "reasons": [
+        "Individual spell overtuned (WR: 55.3%, Casts: 2049, mult: 0.982)"
+      ]
+    },
+    {
+      "recipe": "DEL",
+      "class": "Poison",
+      "category": "Conditional Strike",
+      "b_old": 2.4,
+      "b_new": 2.0,
+      "b_delta_pct": -16.7,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 9.1,
+      "max_potential_new": 9.4,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 3.7% vs 30% floor, Casts: 2631). Increasing spread: b -16.5%, n +33.9%"
+      ]
+    },
+    {
+      "recipe": "DED",
+      "class": "Poison",
+      "category": "Debuff / Control",
+      "b_old": 28.8,
+      "b_new": 29.4,
+      "b_delta_pct": 2.1,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 28.8,
+      "max_potential_new": 29.4,
+      "reasons": [
+        "Individual spell undertuned (WR: 43.9%, Casts: 1991, mult: 1.021)"
+      ]
+    },
+    {
+      "recipe": "LDW",
+      "class": "Cosmic",
+      "category": "Debuff / Control",
+      "b_old": 45.6,
+      "b_new": 47.2,
+      "b_delta_pct": 3.5,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 45.6,
+      "max_potential_new": 47.2,
+      "reasons": [
+        "Status 'Stunned' appliers undertuned (WR: 45.5%, casts: 15448)",
+        "Individual spell undertuned (WR: 44.4%, Casts: 2194, mult: 1.019)"
+      ]
+    },
+    {
+      "recipe": "LDL",
+      "class": "Cosmic",
+      "category": "Conditional Strike",
+      "b_old": 22.2,
+      "b_new": 18.4,
+      "b_delta_pct": -17.1,
+      "n_old": 2.9,
+      "n_new": 3.9,
+      "n_delta_pct": 34.5,
+      "max_potential_old": 86.6,
+      "max_potential_new": 90.2,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 2.8% vs 30% floor, Casts: 1983). Increasing spread: b -16.9%, n +34.7%"
+      ]
+    },
+    {
+      "recipe": "LDD",
+      "class": "Cosmic",
+      "category": "Ultimate",
+      "b_old": 24.2,
+      "b_new": 19.8,
+      "b_delta_pct": -18.2,
+      "n_old": 7.2,
+      "n_new": 9.9,
+      "n_delta_pct": 37.5,
+      "max_potential_old": 198.4,
+      "max_potential_new": 215.8,
+      "reasons": [
+        "Conditional payoff under-triggered (N=4 conditions, Trigger Rate: 0.0% vs 3% floor, Casts: 2136). Increasing spread: b -18.0%, n +37.0%"
+      ]
+    },
+    {
+      "recipe": "DLF",
+      "class": "Cosmic",
+      "category": "Conditional Strike",
+      "b_old": 28.1,
+      "b_new": 23.6,
+      "b_delta_pct": -16.0,
+      "n_old": 2.8,
+      "n_new": 3.7,
+      "n_delta_pct": 32.1,
+      "max_potential_old": 106.8,
+      "max_potential_new": 110.9,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 5.1% vs 30% floor, Casts: 1959). Increasing spread: b -16.0%, n +32.8%"
+      ]
+    },
+    {
+      "recipe": "DLE",
+      "class": "Cosmic",
+      "category": "Direct Damage",
+      "b_old": 35.0,
+      "b_new": 37.0,
+      "b_delta_pct": 5.7,
+      "n_old": 0.0,
+      "n_new": 0.0,
+      "n_delta_pct": 0.0,
+      "max_potential_old": 35.0,
+      "max_potential_new": 37.0,
+      "reasons": [
+        "Individual spell undertuned (WR: 35.0%, Casts: 3232, mult: 1.056)"
+      ]
+    },
+    {
+      "recipe": "DLL",
+      "class": "Cosmic",
+      "category": "Conditional Strike",
+      "b_old": 36.6,
+      "b_new": 31.5,
+      "b_delta_pct": -13.9,
+      "n_old": 2.8,
+      "n_new": 3.6,
+      "n_delta_pct": 28.6,
+      "max_potential_old": 139.1,
+      "max_potential_new": 144.9,
+      "reasons": [
+        "Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 10.5% vs 30% floor, Casts: 1616). Increasing spread: b -13.8%, n +28.3%"
+      ]
+    },
+    {
+      "recipe": "DLD",
+      "class": "Cosmic",
+      "category": "Conditional Strike",
+      "b_old": 35.0,
+      "b_new": 39.8,
+      "b_delta_pct": 13.7,
+      "n_old": 2.0,
+      "n_new": 1.6,
+      "n_delta_pct": -20.0,
+      "max_potential_old": 105.0,
+      "max_potential_new": 103.5,
+      "reasons": [
+        "Condition triggers excessively (N=1 conditions, Trigger Rate: 93.6% vs 55% ceiling, WR: 48.5%). Compressing spread: b +13.6%, n -21.7%"
+      ]
+    }
+  ],
+  "classes": {
+    "Fire": {
+      "class": "Fire",
+      "total_casts": 11122,
+      "total_wins": 5778,
+      "total_losses": 5344,
+      "total_damage": 200239.51,
+      "spells": [
+        "FFF",
+        "FFW",
+        "FFE",
+        "FFL",
+        "FFD"
+      ],
+      "win_rate": 0.5195,
+      "bayesian_win_rate": 0.5195,
+      "avg_damage_per_cast": 18.0
+    },
+    "Water": {
+      "class": "Water",
+      "total_casts": 9527,
+      "total_wins": 5251,
+      "total_losses": 4276,
+      "total_damage": 99276.09,
+      "spells": [
+        "WWF",
+        "WWW",
+        "WWE",
+        "WWL",
+        "WWD"
+      ],
+      "win_rate": 0.5512,
+      "bayesian_win_rate": 0.551,
+      "avg_damage_per_cast": 10.42
+    },
+    "Earth": {
+      "class": "Earth",
+      "total_casts": 11299,
+      "total_wins": 5419,
+      "total_losses": 5880,
+      "total_damage": 147322.09999999998,
+      "spells": [
+        "EEF",
+        "EEW",
+        "EEE",
+        "EEL",
+        "EED"
+      ],
+      "win_rate": 0.4796,
+      "bayesian_win_rate": 0.4796,
+      "avg_damage_per_cast": 13.04
+    },
+    "Light": {
+      "class": "Light",
+      "total_casts": 10263,
+      "total_wins": 5102,
+      "total_losses": 5161,
+      "total_damage": 42274.100000000006,
+      "spells": [
+        "LLF",
+        "LLW",
+        "LLE",
+        "LLL",
+        "LLD"
+      ],
+      "win_rate": 0.4971,
+      "bayesian_win_rate": 0.4971,
+      "avg_damage_per_cast": 4.12
+    },
+    "Dark": {
+      "class": "Dark",
+      "total_casts": 10543,
+      "total_wins": 5346,
+      "total_losses": 5197,
+      "total_damage": 131808.93,
+      "spells": [
+        "DDF",
+        "DDW",
+        "DDE",
+        "DDL",
+        "DDD"
+      ],
+      "win_rate": 0.5071,
+      "bayesian_win_rate": 0.507,
+      "avg_damage_per_cast": 12.5
+    },
+    "Ghostfire": {
+      "class": "Ghostfire",
+      "total_casts": 20711,
+      "total_wins": 10423,
+      "total_losses": 10288,
+      "total_damage": 251571.83000000002,
+      "spells": [
+        "FWF",
+        "FWW",
+        "FWE",
+        "FWL",
+        "FWD",
+        "WFF",
+        "WFW",
+        "WFE",
+        "WFL",
+        "WFD"
+      ],
+      "win_rate": 0.5033,
+      "bayesian_win_rate": 0.5033,
+      "avg_damage_per_cast": 12.15
+    },
+    "Beasts": {
+      "class": "Beasts",
+      "total_casts": 19320,
+      "total_wins": 10498,
+      "total_losses": 8822,
+      "total_damage": 115251.12,
+      "spells": [
+        "FEF",
+        "FEW",
+        "FEE",
+        "FEL",
+        "FED",
+        "EFF",
+        "EFW",
+        "EFE",
+        "EFL",
+        "EFD"
+      ],
+      "win_rate": 0.5434,
+      "bayesian_win_rate": 0.5433,
+      "avg_damage_per_cast": 5.97
+    },
+    "Lightning": {
+      "class": "Lightning",
+      "total_casts": 21433,
+      "total_wins": 10752,
+      "total_losses": 10681,
+      "total_damage": 235206.19,
+      "spells": [
+        "FLF",
+        "FLW",
+        "FLE",
+        "FLL",
+        "FLD",
+        "LFF",
+        "LFW",
+        "LFE",
+        "LFL",
+        "LFD"
+      ],
+      "win_rate": 0.5017,
+      "bayesian_win_rate": 0.5017,
+      "avg_damage_per_cast": 10.97
+    },
+    "Blood": {
+      "class": "Blood",
+      "total_casts": 19820,
+      "total_wins": 9805,
+      "total_losses": 10015,
+      "total_damage": 264932.13,
+      "spells": [
+        "FDF",
+        "FDW",
+        "FDE",
+        "FDL",
+        "FDD",
+        "DFF",
+        "DFW",
+        "DFE",
+        "DFL",
+        "DFD"
+      ],
+      "win_rate": 0.4947,
+      "bayesian_win_rate": 0.4947,
+      "avg_damage_per_cast": 13.37
+    },
+    "Plants": {
+      "class": "Plants",
+      "total_casts": 20020,
+      "total_wins": 10642,
+      "total_losses": 9378,
+      "total_damage": 201303.04,
+      "spells": [
+        "WEF",
+        "WEW",
+        "WEE",
+        "WEL",
+        "WED",
+        "EWF",
+        "EWW",
+        "EWE",
+        "EWL",
+        "EWD"
+      ],
+      "win_rate": 0.5316,
+      "bayesian_win_rate": 0.5315,
+      "avg_damage_per_cast": 10.06
+    },
+    "Fey": {
+      "class": "Fey",
+      "total_casts": 20567,
+      "total_wins": 9786,
+      "total_losses": 10781,
+      "total_damage": 197692.37,
+      "spells": [
+        "WLF",
+        "WLW",
+        "WLE",
+        "WLL",
+        "WLD",
+        "LWF",
+        "LWW",
+        "LWE",
+        "LWL",
+        "LWD"
+      ],
+      "win_rate": 0.4758,
+      "bayesian_win_rate": 0.4758,
+      "avg_damage_per_cast": 9.61
+    },
+    "Ice": {
+      "class": "Ice",
+      "total_casts": 24476,
+      "total_wins": 11156,
+      "total_losses": 13320,
+      "total_damage": 297821.98000000004,
+      "spells": [
+        "WDF",
+        "WDW",
+        "WDE",
+        "WDL",
+        "WDD",
+        "DWF",
+        "DWW",
+        "DWE",
+        "DWL",
+        "DWD"
+      ],
+      "win_rate": 0.4558,
+      "bayesian_win_rate": 0.4558,
+      "avg_damage_per_cast": 12.17
+    },
+    "Wind": {
+      "class": "Wind",
+      "total_casts": 19187,
+      "total_wins": 9675,
+      "total_losses": 9512,
+      "total_damage": 163382.45,
+      "spells": [
+        "ELF",
+        "ELW",
+        "ELE",
+        "ELL",
+        "ELD",
+        "LEF",
+        "LEW",
+        "LEE",
+        "LEL",
+        "LED"
+      ],
+      "win_rate": 0.5042,
+      "bayesian_win_rate": 0.5042,
+      "avg_damage_per_cast": 8.52
+    },
+    "Poison": {
+      "class": "Poison",
+      "total_casts": 21129,
+      "total_wins": 11094,
+      "total_losses": 10035,
+      "total_damage": 233740.93,
+      "spells": [
+        "EDF",
+        "EDW",
+        "EDE",
+        "EDL",
+        "EDD",
+        "DEF",
+        "DEW",
+        "DEE",
+        "DEL",
+        "DED"
+      ],
+      "win_rate": 0.5251,
+      "bayesian_win_rate": 0.525,
+      "avg_damage_per_cast": 11.06
+    },
+    "Cosmic": {
+      "class": "Cosmic",
+      "total_casts": 20967,
+      "total_wins": 9828,
+      "total_losses": 11139,
+      "total_damage": 293762.07,
+      "spells": [
+        "LDF",
+        "LDW",
+        "LDE",
+        "LDL",
+        "LDD",
+        "DLF",
+        "DLW",
+        "DLE",
+        "DLL",
+        "DLD"
+      ],
+      "win_rate": 0.4687,
+      "bayesian_win_rate": 0.4688,
+      "avg_damage_per_cast": 14.01
+    }
+  },
+  "synergies": {
+    "status_Frosty": {
+      "name": "Frosty",
+      "kind": "status",
+      "appliers": {
+        "recipes": [
+          "WDW",
+          "WDL",
+          "DWF",
+          "DWL"
+        ],
+        "casts": 10275,
+        "wins": 4658,
+        "losses": 5617,
+        "win_rate": 0.4533,
+        "bayesian_win_rate": 0.4534,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "EEF",
+          "DWD"
+        ],
+        "casts": 5222,
+        "wins": 2414,
+        "losses": 2808,
+        "win_rate": 0.4623,
+        "bayesian_win_rate": 0.4624,
+        "trigger_rate": 0.1494
+      }
+    },
+    "weather_Sunny": {
+      "name": "Sunny",
+      "kind": "weather",
+      "appliers": {
+        "recipes": [
+          "LLE"
+        ],
+        "casts": 2632,
+        "wins": 1029,
+        "losses": 1603,
+        "win_rate": 0.391,
+        "bayesian_win_rate": 0.3916,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "LLD",
+          "EWF"
+        ],
+        "casts": 4115,
+        "wins": 2159,
+        "losses": 1956,
+        "win_rate": 0.5247,
+        "bayesian_win_rate": 0.5246,
+        "trigger_rate": 0.0484
+      }
+    },
+    "status_Burning": {
+      "name": "Burning",
+      "kind": "status",
+      "appliers": {
+        "recipes": [
+          "FFW",
+          "FFL",
+          "FWF"
+        ],
+        "casts": 6079,
+        "wins": 3282,
+        "losses": 2797,
+        "win_rate": 0.5399,
+        "bayesian_win_rate": 0.5398,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "FFD",
+          "WWF",
+          "LEF"
+        ],
+        "casts": 6230,
+        "wins": 3264,
+        "losses": 2966,
+        "win_rate": 0.5239,
+        "bayesian_win_rate": 0.5239,
+        "trigger_rate": 0.0721
+      }
+    },
+    "status_Bleeding": {
+      "name": "Bleeding",
+      "kind": "status",
+      "appliers": {
+        "recipes": [
+          "WFE",
+          "FDL",
+          "DFW",
+          "EWD"
+        ],
+        "casts": 7592,
+        "wins": 4345,
+        "losses": 3247,
+        "win_rate": 0.5723,
+        "bayesian_win_rate": 0.5722,
+        "trigger_rate": 0.0156
+      },
+      "beneficiaries": {
+        "recipes": [
+          "WFF",
+          "DFF",
+          "ELF",
+          "EDD",
+          "DEL"
+        ],
+        "casts": 9592,
+        "wins": 4774,
+        "losses": 4818,
+        "win_rate": 0.4977,
+        "bayesian_win_rate": 0.4977,
+        "trigger_rate": 0.0302
+      }
+    },
+    "status_Stunned": {
+      "name": "Stunned",
+      "kind": "status",
+      "appliers": {
+        "recipes": [
+          "EEF",
+          "FLW",
+          "LFE",
+          "LFD",
+          "WDF",
+          "LDW"
+        ],
+        "casts": 15448,
+        "wins": 7032,
+        "losses": 8416,
+        "win_rate": 0.4552,
+        "bayesian_win_rate": 0.4552,
+        "trigger_rate": 0.0953
+      },
+      "beneficiaries": {
+        "recipes": [
+          "FLF",
+          "FLD"
+        ],
+        "casts": 3966,
+        "wins": 1945,
+        "losses": 2021,
+        "win_rate": 0.4904,
+        "bayesian_win_rate": 0.4905,
+        "trigger_rate": 0.0013
+      }
+    },
+    "status_Entangled": {
+      "name": "Entangled",
+      "kind": "status",
+      "appliers": {
+        "recipes": [
+          "WEL"
+        ],
+        "casts": 1632,
+        "wins": 850,
+        "losses": 782,
+        "win_rate": 0.5208,
+        "bayesian_win_rate": 0.5206,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "FEW",
+          "EFD",
+          "EWD"
+        ],
+        "casts": 5992,
+        "wins": 3006,
+        "losses": 2986,
+        "win_rate": 0.5017,
+        "bayesian_win_rate": 0.5017,
+        "trigger_rate": 0.0072
+      }
+    },
+    "status_Cursed": {
+      "name": "Cursed",
+      "kind": "status",
+      "appliers": {
+        "recipes": [
+          "FWW",
+          "FWL",
+          "WLW"
+        ],
+        "casts": 5233,
+        "wins": 2649,
+        "losses": 2584,
+        "win_rate": 0.5062,
+        "bayesian_win_rate": 0.5062,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "FWD",
+          "WLF"
+        ],
+        "casts": 4486,
+        "wins": 2320,
+        "losses": 2166,
+        "win_rate": 0.5172,
+        "bayesian_win_rate": 0.5171,
+        "trigger_rate": 0.0201
+      }
+    },
+    "weather_Raining": {
+      "name": "Raining",
+      "kind": "weather",
+      "appliers": {
+        "recipes": [
+          "WWE"
+        ],
+        "casts": 1776,
+        "wins": 953,
+        "losses": 823,
+        "win_rate": 0.5366,
+        "bayesian_win_rate": 0.5363,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "WDF",
+          "ELD"
+        ],
+        "casts": 5151,
+        "wins": 2401,
+        "losses": 2750,
+        "win_rate": 0.4661,
+        "bayesian_win_rate": 0.4662,
+        "trigger_rate": 0.0534
+      }
+    },
+    "weather_Darkness": {
+      "name": "Darkness",
+      "kind": "weather",
+      "appliers": {
+        "recipes": [
+          "DDE"
+        ],
+        "casts": 2286,
+        "wins": 1134,
+        "losses": 1152,
+        "win_rate": 0.4961,
+        "bayesian_win_rate": 0.4961,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "LFL",
+          "FDD",
+          "WLD",
+          "DLL"
+        ],
+        "casts": 7942,
+        "wins": 3869,
+        "losses": 4073,
+        "win_rate": 0.4872,
+        "bayesian_win_rate": 0.4872,
+        "trigger_rate": 0.0568
+      }
+    },
+    "weather_Storming": {
+      "name": "Storming",
+      "kind": "weather",
+      "appliers": {
+        "recipes": [
+          "FLE"
+        ],
+        "casts": 2174,
+        "wins": 1045,
+        "losses": 1129,
+        "win_rate": 0.4807,
+        "bayesian_win_rate": 0.4808,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "FLD"
+        ],
+        "casts": 2071,
+        "wins": 967,
+        "losses": 1104,
+        "win_rate": 0.4669,
+        "bayesian_win_rate": 0.4672,
+        "trigger_rate": 0.0
+      }
+    },
+    "weather_Blizzard": {
+      "name": "Blizzard",
+      "kind": "weather",
+      "appliers": {
+        "recipes": [
+          "ELD"
+        ],
+        "casts": 2115,
+        "wins": 1066,
+        "losses": 1049,
+        "win_rate": 0.504,
+        "bayesian_win_rate": 0.504,
+        "trigger_rate": 0.0582
+      },
+      "beneficiaries": {
+        "recipes": [
+          "WDD"
+        ],
+        "casts": 2452,
+        "wins": 1080,
+        "losses": 1372,
+        "win_rate": 0.4405,
+        "bayesian_win_rate": 0.4408,
+        "trigger_rate": 0.0094
+      }
+    },
+    "location_Jungle": {
+      "name": "Jungle",
+      "kind": "location",
+      "appliers": {
+        "recipes": [
+          "WEE"
+        ],
+        "casts": 1853,
+        "wins": 899,
+        "losses": 954,
+        "win_rate": 0.4852,
+        "bayesian_win_rate": 0.4853,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "EFD",
+          "WEF"
+        ],
+        "casts": 4006,
+        "wins": 2053,
+        "losses": 1953,
+        "win_rate": 0.5125,
+        "bayesian_win_rate": 0.5124,
+        "trigger_rate": 0.0367
+      }
+    },
+    "location_Enchanted Forest": {
+      "name": "Enchanted Forest",
+      "kind": "location",
+      "appliers": {
+        "recipes": [
+          "WLE"
+        ],
+        "casts": 1828,
+        "wins": 820,
+        "losses": 1008,
+        "win_rate": 0.4486,
+        "bayesian_win_rate": 0.449,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "WLD",
+          "LWF"
+        ],
+        "casts": 3618,
+        "wins": 1734,
+        "losses": 1884,
+        "win_rate": 0.4793,
+        "bayesian_win_rate": 0.4794,
+        "trigger_rate": 0.0453
+      }
+    },
+    "location_Tundra": {
+      "name": "Tundra",
+      "kind": "location",
+      "appliers": {
+        "recipes": [
+          "DWE"
+        ],
+        "casts": 1851,
+        "wins": 865,
+        "losses": 986,
+        "win_rate": 0.4673,
+        "bayesian_win_rate": 0.4676,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "WDD"
+        ],
+        "casts": 2452,
+        "wins": 1080,
+        "losses": 1372,
+        "win_rate": 0.4405,
+        "bayesian_win_rate": 0.4408,
+        "trigger_rate": 0.0094
+      }
+    },
+    "location_Swamp": {
+      "name": "Swamp",
+      "kind": "location",
+      "appliers": {
+        "recipes": [
+          "EDE"
+        ],
+        "casts": 2245,
+        "wins": 1179,
+        "losses": 1066,
+        "win_rate": 0.5252,
+        "bayesian_win_rate": 0.525,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "EDD"
+        ],
+        "casts": 2197,
+        "wins": 1009,
+        "losses": 1188,
+        "win_rate": 0.4593,
+        "bayesian_win_rate": 0.4595,
+        "trigger_rate": 0.0036
+      }
+    },
+    "location_Graveyard": {
+      "name": "Graveyard",
+      "kind": "location",
+      "appliers": {
+        "recipes": [
+          "FWE"
+        ],
+        "casts": 1990,
+        "wins": 931,
+        "losses": 1059,
+        "win_rate": 0.4678,
+        "bayesian_win_rate": 0.4681,
+        "trigger_rate": 0.0
+      },
+      "beneficiaries": {
+        "recipes": [
+          "FWD"
+        ],
+        "casts": 2194,
+        "wins": 1088,
+        "losses": 1106,
+        "win_rate": 0.4959,
+        "bayesian_win_rate": 0.4959,
+        "trigger_rate": 0.0005
+      }
+    }
+  },
+  "top_overtuned_spells": [
+    {
+      "recipe": "EFL",
+      "spell": "EFL",
+      "class": "Beasts",
+      "category": "Buff / Sustain",
+      "b": 30.4,
+      "n": 0.0,
+      "max_potential": 30.4,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 2151,
+      "cast_count": 2151,
+      "times_cast": 2151,
+      "caster_wins": 1809,
+      "caster_losses": 342,
+      "total_damage": 0.0,
+      "damage": 0.0,
+      "total_healing": 50873.231593517914,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.841,
+      "bayesian_win_rate": 0.8391,
+      "winrate": 0.841,
+      "win_rate": 0.841,
+      "wins": 1809,
+      "losses": 342,
+      "pick_rate": 0.00826,
+      "avg_damage": 0.0,
+      "avg_healing": 23.65,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "EDL",
+      "spell": "EDL",
+      "class": "Poison",
+      "category": "Debuff / Control",
+      "b": 21.6,
+      "n": 0.0,
+      "max_potential": 21.6,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 1810,
+      "cast_count": 1810,
+      "times_cast": 1810,
+      "caster_wins": 1482,
+      "caster_losses": 328,
+      "total_damage": 18983.51,
+      "damage": 18983.51,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.8188,
+      "bayesian_win_rate": 0.8167,
+      "winrate": 0.8188,
+      "win_rate": 0.8188,
+      "wins": 1482,
+      "losses": 328,
+      "pick_rate": 0.00695,
+      "avg_damage": 10.49,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "EWW",
+      "spell": "EWW",
+      "class": "Plants",
+      "category": "Debuff / Control",
+      "b": 38.5,
+      "n": 0.0,
+      "max_potential": 38.5,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 2269,
+      "cast_count": 2269,
+      "times_cast": 2269,
+      "caster_wins": 1853,
+      "caster_losses": 416,
+      "total_damage": 41185.54,
+      "damage": 41185.54,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.8167,
+      "bayesian_win_rate": 0.815,
+      "winrate": 0.8167,
+      "win_rate": 0.8167,
+      "wins": 1853,
+      "losses": 416,
+      "pick_rate": 0.00871,
+      "avg_damage": 18.15,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "FDL",
+      "spell": "FDL",
+      "class": "Blood",
+      "category": "Debuff / Control",
+      "b": 41.4,
+      "n": 0.0,
+      "max_potential": 41.4,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 1839,
+      "cast_count": 1839,
+      "times_cast": 1839,
+      "caster_wins": 1132,
+      "caster_losses": 707,
+      "total_damage": 35835.26,
+      "damage": 35835.26,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.6156,
+      "bayesian_win_rate": 0.6148,
+      "winrate": 0.6156,
+      "win_rate": 0.6156,
+      "wins": 1132,
+      "losses": 707,
+      "pick_rate": 0.00706,
+      "avg_damage": 19.49,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "DFW",
+      "spell": "DFW",
+      "class": "Blood",
+      "category": "Debuff / Control",
+      "b": 32.4,
+      "n": 0.0,
+      "max_potential": 32.4,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 2153,
+      "cast_count": 2153,
+      "times_cast": 2153,
+      "caster_wins": 1303,
+      "caster_losses": 850,
+      "total_damage": 33184.36,
+      "damage": 33184.36,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.6052,
+      "bayesian_win_rate": 0.6046,
+      "winrate": 0.6052,
+      "win_rate": 0.6052,
+      "wins": 1303,
+      "losses": 850,
+      "pick_rate": 0.00827,
+      "avg_damage": 15.41,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "WFE",
+      "spell": "WFE",
+      "class": "Ghostfire",
+      "category": "Debuff / Control",
+      "b": 42.7,
+      "n": 0.0,
+      "max_potential": 42.7,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 1874,
+      "cast_count": 1874,
+      "times_cast": 1874,
+      "caster_wins": 1123,
+      "caster_losses": 751,
+      "total_damage": 37357.07,
+      "damage": 37357.07,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.5993,
+      "bayesian_win_rate": 0.5986,
+      "winrate": 0.5993,
+      "win_rate": 0.5993,
+      "wins": 1123,
+      "losses": 751,
+      "pick_rate": 0.0072,
+      "avg_damage": 19.93,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "LLL",
+      "spell": "LLL",
+      "class": "Light",
+      "category": "Buff / Sustain",
+      "b": 33.8,
+      "n": 0.0,
+      "max_potential": 33.8,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 2031,
+      "cast_count": 2031,
+      "times_cast": 2031,
+      "caster_wins": 1197,
+      "caster_losses": 834,
+      "total_damage": 0.0,
+      "damage": 0.0,
+      "total_healing": 57904.26932089431,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.5894,
+      "bayesian_win_rate": 0.5888,
+      "winrate": 0.5894,
+      "win_rate": 0.5894,
+      "wins": 1197,
+      "losses": 834,
+      "pick_rate": 0.0078,
+      "avg_damage": 0.0,
+      "avg_healing": 28.51,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "EDW",
+      "spell": "EDW",
+      "class": "Poison",
+      "category": "Debuff / Control",
+      "b": 34.0,
+      "n": 0.0,
+      "max_potential": 34.0,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 1607,
+      "cast_count": 1607,
+      "times_cast": 1607,
+      "caster_wins": 940,
+      "caster_losses": 667,
+      "total_damage": 27107.72,
+      "damage": 27107.72,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.5849,
+      "bayesian_win_rate": 0.5843,
+      "winrate": 0.5849,
+      "win_rate": 0.5849,
+      "wins": 940,
+      "losses": 667,
+      "pick_rate": 0.00617,
+      "avg_damage": 16.87,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "DDD",
+      "spell": "DDD",
+      "class": "Dark",
+      "category": "Debuff / Control",
+      "b": 33.8,
+      "n": 0.0,
+      "max_potential": 33.8,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 1746,
+      "cast_count": 1746,
+      "times_cast": 1746,
+      "caster_wins": 1015,
+      "caster_losses": 731,
+      "total_damage": 29617.39,
+      "damage": 29617.39,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.5813,
+      "bayesian_win_rate": 0.5808,
+      "winrate": 0.5813,
+      "win_rate": 0.5813,
+      "wins": 1015,
+      "losses": 731,
+      "pick_rate": 0.00671,
+      "avg_damage": 16.96,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "WWF",
+      "spell": "WWF",
+      "class": "Water",
+      "category": "Conditional Strike",
+      "b": 35.8,
+      "n": 2.7,
+      "max_potential": 132.5,
+      "condition_required": "the target is Charged or Burning",
+      "is_conditional": true,
+      "casts": 2391,
+      "cast_count": 2391,
+      "times_cast": 2391,
+      "caster_wins": 1387,
+      "caster_losses": 1004,
+      "total_damage": 39229.96,
+      "damage": 39229.96,
+      "total_healing": 0.0,
+      "condition_checks": 2391,
+      "condition_triggers": 228,
+      "conditional_casts_met": 228,
+      "condition_met_casts": 228,
+      "times_condition_met": 228,
+      "conditional_casts_while_conditions_met": 228,
+      "payoff_damage_sum": 3579.583032928985,
+      "base_damage_sum": 35650.38027491213,
+      "raw_win_rate": 0.5801,
+      "bayesian_win_rate": 0.5797,
+      "winrate": 0.5801,
+      "win_rate": 0.5801,
+      "wins": 1387,
+      "losses": 1004,
+      "pick_rate": 0.00918,
+      "avg_damage": 16.41,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0954,
+      "avg_payoff_damage": 15.7,
+      "avg_base_damage": 16.48
+    }
+  ],
+  "top_undertuned_spells": [
+    {
+      "recipe": "DLE",
+      "spell": "DLE",
+      "class": "Cosmic",
+      "category": "Direct Damage",
+      "b": 35.0,
+      "n": 0.0,
+      "max_potential": 35.0,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 3232,
+      "cast_count": 3232,
+      "times_cast": 3232,
+      "caster_wins": 1129,
+      "caster_losses": 2103,
+      "total_damage": 0.0,
+      "damage": 0.0,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.3493,
+      "bayesian_win_rate": 0.3499,
+      "winrate": 0.3493,
+      "win_rate": 0.3493,
+      "wins": 1129,
+      "losses": 2103,
+      "pick_rate": 0.01241,
+      "avg_damage": 0.0,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "WFL",
+      "spell": "WFL",
+      "class": "Ghostfire",
+      "category": "Buff / Sustain",
+      "b": 35.0,
+      "n": 0.0,
+      "max_potential": 35.0,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 2860,
+      "cast_count": 2860,
+      "times_cast": 2860,
+      "caster_wins": 1070,
+      "caster_losses": 1790,
+      "total_damage": 0.0,
+      "damage": 0.0,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.3741,
+      "bayesian_win_rate": 0.3747,
+      "winrate": 0.3741,
+      "win_rate": 0.3741,
+      "wins": 1070,
+      "losses": 1790,
+      "pick_rate": 0.01098,
+      "avg_damage": 0.0,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "DFE",
+      "spell": "DFE",
+      "class": "Blood",
+      "category": "Buff / Sustain",
+      "b": 35.5,
+      "n": 0.0,
+      "max_potential": 35.5,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 2409,
+      "cast_count": 2409,
+      "times_cast": 2409,
+      "caster_wins": 906,
+      "caster_losses": 1503,
+      "total_damage": 0.0,
+      "damage": 0.0,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.3761,
+      "bayesian_win_rate": 0.3767,
+      "winrate": 0.3761,
+      "win_rate": 0.3761,
+      "wins": 906,
+      "losses": 1503,
+      "pick_rate": 0.00925,
+      "avg_damage": 0.0,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "LLE",
+      "spell": "LLE",
+      "class": "Light",
+      "category": "Setup - Weather",
+      "b": 20.0,
+      "n": 0.0,
+      "max_potential": 20.0,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 2632,
+      "cast_count": 2632,
+      "times_cast": 2632,
+      "caster_wins": 1029,
+      "caster_losses": 1603,
+      "total_damage": 0.0,
+      "damage": 0.0,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.391,
+      "bayesian_win_rate": 0.3915,
+      "winrate": 0.391,
+      "win_rate": 0.391,
+      "wins": 1029,
+      "losses": 1603,
+      "pick_rate": 0.01011,
+      "avg_damage": 0.0,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "DWL",
+      "spell": "DWL",
+      "class": "Ice",
+      "category": "Debuff / Control",
+      "b": 45.0,
+      "n": 0.0,
+      "max_potential": 45.0,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 2933,
+      "cast_count": 2933,
+      "times_cast": 2933,
+      "caster_wins": 1202,
+      "caster_losses": 1731,
+      "total_damage": 55926.5,
+      "damage": 55926.5,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.4098,
+      "bayesian_win_rate": 0.4102,
+      "winrate": 0.4098,
+      "win_rate": 0.4098,
+      "wins": 1202,
+      "losses": 1731,
+      "pick_rate": 0.01126,
+      "avg_damage": 19.07,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "DWW",
+      "spell": "DWW",
+      "class": "Ice",
+      "category": "Debuff / Control",
+      "b": 35.0,
+      "n": 0.0,
+      "max_potential": 35.0,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 2808,
+      "cast_count": 2808,
+      "times_cast": 2808,
+      "caster_wins": 1189,
+      "caster_losses": 1619,
+      "total_damage": 46102.24,
+      "damage": 46102.24,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.4234,
+      "bayesian_win_rate": 0.4238,
+      "winrate": 0.4234,
+      "win_rate": 0.4234,
+      "wins": 1189,
+      "losses": 1619,
+      "pick_rate": 0.01078,
+      "avg_damage": 16.42,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "EEF",
+      "spell": "EEF",
+      "class": "Earth",
+      "category": "Conditional Strike",
+      "b": 25.0,
+      "n": 2.8,
+      "max_potential": 95.0,
+      "condition_required": "the target is Frosty",
+      "is_conditional": true,
+      "casts": 3364,
+      "cast_count": 3364,
+      "times_cast": 3364,
+      "caster_wins": 1444,
+      "caster_losses": 1920,
+      "total_damage": 46692.93,
+      "damage": 46692.93,
+      "total_healing": 0.0,
+      "condition_checks": 3364,
+      "condition_triggers": 509,
+      "conditional_casts_met": 509,
+      "condition_met_casts": 509,
+      "times_condition_met": 509,
+      "conditional_casts_while_conditions_met": 509,
+      "payoff_damage_sum": 14914.957213629728,
+      "base_damage_sum": 31777.9751439016,
+      "raw_win_rate": 0.4293,
+      "bayesian_win_rate": 0.4295,
+      "winrate": 0.4293,
+      "win_rate": 0.4293,
+      "wins": 1444,
+      "losses": 1920,
+      "pick_rate": 0.01292,
+      "avg_damage": 13.88,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.1513,
+      "avg_payoff_damage": 29.3,
+      "avg_base_damage": 11.13
+    },
+    {
+      "recipe": "EDF",
+      "spell": "EDF",
+      "class": "Poison",
+      "category": "Conditional Strike",
+      "b": 22.5,
+      "n": 2.8,
+      "max_potential": 85.5,
+      "condition_required": "the target is Weakened",
+      "is_conditional": true,
+      "casts": 2898,
+      "cast_count": 2898,
+      "times_cast": 2898,
+      "caster_wins": 1244,
+      "caster_losses": 1654,
+      "total_damage": 31971.38,
+      "damage": 31971.38,
+      "total_healing": 0.0,
+      "condition_checks": 2898,
+      "condition_triggers": 105,
+      "conditional_casts_met": 105,
+      "condition_met_casts": 105,
+      "times_condition_met": 105,
+      "conditional_casts_while_conditions_met": 105,
+      "payoff_damage_sum": 3346.3019871530805,
+      "base_damage_sum": 28625.08064955743,
+      "raw_win_rate": 0.4293,
+      "bayesian_win_rate": 0.4296,
+      "winrate": 0.4293,
+      "win_rate": 0.4293,
+      "wins": 1244,
+      "losses": 1654,
+      "pick_rate": 0.01113,
+      "avg_damage": 11.03,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0362,
+      "avg_payoff_damage": 31.87,
+      "avg_base_damage": 10.25
+    },
+    {
+      "recipe": "DWF",
+      "spell": "DWF",
+      "class": "Ice",
+      "category": "Debuff / Control",
+      "b": 45.0,
+      "n": 0.0,
+      "max_potential": 45.0,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 3321,
+      "cast_count": 3321,
+      "times_cast": 3321,
+      "caster_wins": 1427,
+      "caster_losses": 1894,
+      "total_damage": 69533.3,
+      "damage": 69533.3,
+      "total_healing": 0.0,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.4297,
+      "bayesian_win_rate": 0.4299,
+      "winrate": 0.4297,
+      "win_rate": 0.4297,
+      "wins": 1427,
+      "losses": 1894,
+      "pick_rate": 0.01275,
+      "avg_damage": 20.94,
+      "avg_healing": 0.0,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    },
+    {
+      "recipe": "DED",
+      "spell": "DED",
+      "class": "Poison",
+      "category": "Debuff / Control",
+      "b": 28.8,
+      "n": 0.0,
+      "max_potential": 28.8,
+      "condition_required": "None",
+      "is_conditional": false,
+      "casts": 1991,
+      "cast_count": 1991,
+      "times_cast": 1991,
+      "caster_wins": 873,
+      "caster_losses": 1118,
+      "total_damage": 27275.35,
+      "damage": 27275.35,
+      "total_healing": 25469.96694505543,
+      "condition_checks": 0,
+      "condition_triggers": 0,
+      "conditional_casts_met": 0,
+      "condition_met_casts": 0,
+      "times_condition_met": 0,
+      "conditional_casts_while_conditions_met": 0,
+      "payoff_damage_sum": 0.0,
+      "base_damage_sum": 0.0,
+      "raw_win_rate": 0.4385,
+      "bayesian_win_rate": 0.4388,
+      "winrate": 0.4385,
+      "win_rate": 0.4385,
+      "wins": 873,
+      "losses": 1118,
+      "pick_rate": 0.00765,
+      "avg_damage": 13.7,
+      "avg_healing": 12.79,
+      "trigger_rate": 0.0,
+      "avg_payoff_damage": 0.0,
+      "avg_base_damage": 0.0
+    }
+  ]
+}
