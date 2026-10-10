@@ -1,10 +1,10 @@
 # Project Sorcery - Simulation & Dynamic Spell Balancing Report
 
-**Date:** 2026-10-10T15:16:58Z  
+**Date:** 2026-10-10T15:32:15Z  
 **Simulation Mode:** games  
 **Total Games Simulated:** 10,000  
 **Evaluated Games Window:** 5,000 matches  
-**Simulation Runtime:** 98.0s  
+**Simulation Runtime:** 110.9s  
 **Total Spells Tuned:** 116 / 125  
 
 ## Executive Summary
@@ -25,21 +25,21 @@ the resulting telemetry:
 
 | Class | Casts | Win Rate (Smoothed) | Raw Win Rate | Avg Damage/Cast | Status |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| **Blood** | 15,372 | 64.5% | 64.5% | 10.9 | Overtuned ⚠️ |
-| **Poison** | 24,272 | 62.0% | 62.0% | 6.7 | Overtuned ⚠️ |
-| **Earth** | 21,088 | 61.9% | 61.9% | 21.7 | Overtuned ⚠️ |
-| **Fire** | 7,903 | 60.8% | 60.8% | 10.7 | Overtuned ⚠️ |
-| **Lightning** | 22,233 | 57.6% | 57.6% | 8.4 | Overtuned ⚠️ |
-| **Ghostfire** | 33,361 | 54.6% | 54.6% | 6.6 | Overtuned ⚠️ |
-| **Plants** | 18,365 | 53.5% | 53.5% | 3.2 | Overtuned ⚠️ |
-| **Light** | 9,861 | 50.8% | 50.8% | 3.0 | Balanced ✅ |
-| **Ice** | 33,819 | 49.4% | 49.4% | 12.5 | Balanced ✅ |
-| **Cosmic** | 26,817 | 48.5% | 48.5% | 14.7 | Balanced ✅ |
-| **Dark** | 12,246 | 44.9% | 44.9% | 9.7 | Undertuned ⚠️ |
-| **Water** | 10,403 | 42.1% | 42.1% | 2.5 | Undertuned ⚠️ |
-| **Beasts** | 30,047 | 40.9% | 40.9% | 3.5 | Undertuned ⚠️ |
-| **Fey** | 24,912 | 37.0% | 37.0% | 6.2 | Undertuned ⚠️ |
-| **Wind** | 19,024 | 33.7% | 33.6% | 5.9 | Undertuned ⚠️ |
+| **Earth** | 17,850 | 63.0% | 63.0% | 17.4 | Overtuned ⚠️ |
+| **Fire** | 7,710 | 61.6% | 61.6% | 10.1 | Overtuned ⚠️ |
+| **Ghostfire** | 24,502 | 57.9% | 57.9% | 6.9 | Overtuned ⚠️ |
+| **Blood** | 32,112 | 57.3% | 57.3% | 7.3 | Overtuned ⚠️ |
+| **Dark** | 14,350 | 57.3% | 57.3% | 8.9 | Overtuned ⚠️ |
+| **Ice** | 34,621 | 54.2% | 54.2% | 11.3 | Overtuned ⚠️ |
+| **Poison** | 17,437 | 54.2% | 54.2% | 4.8 | Overtuned ⚠️ |
+| **Cosmic** | 34,343 | 51.6% | 51.6% | 14.2 | Balanced ✅ |
+| **Light** | 14,470 | 51.1% | 51.1% | 3.1 | Balanced ✅ |
+| **Plants** | 16,739 | 46.7% | 46.7% | 3.0 | Balanced ✅ |
+| **Lightning** | 21,134 | 45.9% | 45.9% | 4.5 | Undertuned ⚠️ |
+| **Fey** | 25,113 | 45.5% | 45.4% | 6.6 | Undertuned ⚠️ |
+| **Beasts** | 27,908 | 41.1% | 41.0% | 3.2 | Undertuned ⚠️ |
+| **Water** | 19,932 | 39.5% | 39.4% | 2.6 | Undertuned ⚠️ |
+| **Wind** | 28,869 | 38.0% | 38.0% | 4.2 | Undertuned ⚠️ |
 
 ---
 
@@ -47,13 +47,13 @@ the resulting telemetry:
 
 | Synergy Group | Applier Casts (WR) | Beneficiary Casts (WR) | Trigger Rate | Synergy Pipeline Health |
 | :--- | :---: | :---: | :---: | :--- |
-| **Frosty** (status) | 18,803 (53.4%) | 6,222 (29.8%) | 5.9% | Under-Triggered ⚠️ (Spread Widened) |
-| **Sunny** (weather) | 2,115 (4.8%) | 9,568 (47.3%) | 1.3% | Under-Triggered ⚠️ (Spread Widened) |
-| **Burning** (status) | 8,376 (76.0%) | 6,920 (48.2%) | 5.8% | Under-Triggered ⚠️ (Spread Widened) |
-| **Bleeding** (status) | 10,572 (76.9%) | 5,525 (41.3%) | 0.3% | Under-Triggered ⚠️ (Spread Widened) |
-| **Stunned** (status) | 17,315 (55.4%) | 2,690 (46.4%) | 0.0% | Under-Triggered ⚠️ (Spread Widened) |
-| **Entangled** (status) | 1,949 (46.6%) | 6,885 (44.6%) | 0.0% | Under-Triggered ⚠️ (Spread Widened) |
-| **Raining** (weather) | 2,191 (18.0%) | 1,988 (24.6%) | 1.0% | Under-Triggered ⚠️ (Spread Widened) |
+| **Frosty** (status) | 16,714 (68.4%) | 7,546 (41.3%) | 4.5% | Under-Triggered ⚠️ (Spread Widened) |
+| **Sunny** (weather) | 3,700 (8.0%) | 5,325 (43.1%) | 2.4% | Under-Triggered ⚠️ (Spread Widened) |
+| **Burning** (status) | 6,599 (70.6%) | 12,899 (51.6%) | 1.7% | Under-Triggered ⚠️ (Spread Widened) |
+| **Bleeding** (status) | 12,487 (75.6%) | 9,467 (41.0%) | 1.9% | Under-Triggered ⚠️ (Spread Widened) |
+| **Stunned** (status) | 16,353 (56.5%) | 3,586 (41.4%) | 0.0% | Under-Triggered ⚠️ (Spread Widened) |
+| **Entangled** (status) | 900 (38.5%) | 3,574 (34.9%) | 0.2% | Under-Triggered ⚠️ (Spread Widened) |
+| **Raining** (weather) | 3,515 (14.8%) | 3,885 (30.2%) | 0.2% | Under-Triggered ⚠️ (Spread Widened) |
 
 ---
 
@@ -61,119 +61,119 @@ the resulting telemetry:
 
 | Spell | Class | Category | b (Old -> New) | n (Old -> New) | Max Pot. (Old -> New) | Primary Balancing Rationale |
 | :---: | :--- | :--- | :---: | :---: | :---: | :--- |
-| `FFF` | Fire | Direct Damage | 44.4 -> **42.5** (-4.3%) | - | 44.4 -> **42.5** | Class Fire overtuned (WR: 60.8%, factor: 0.957) |
-| `FFW` | Fire | Debuff / Control | 26.7 -> **23.6** (-11.6%) | - | 26.7 -> **23.6** | Class Fire overtuned (WR: 60.8%, factor: 0.957); Status 'Burning' appliers overtuned on own (WR: 76.0%) |
-| `FFE` | Fire | Debuff / Control | 26.8 -> **25.0** (-6.7%) | - | 26.8 -> **25.0** | Class Fire overtuned (WR: 60.8%, factor: 0.957); Individual spell overtuned (WR: 57.7%, Casts: 1724, mult: 0.973) |
-| `FFL` | Fire | Debuff / Control | 3.0 -> **2.4** (-20.0%) | - | 3.0 -> **2.4** | Class Fire overtuned (WR: 60.8%, factor: 0.957); Status 'Burning' appliers overtuned on own (WR: 76.0%) |
-| `FFD` | Fire | Conditional Strike | 6.8 -> **5.4** (-20.6%) | 21.7 -> **29.5** | 154.4 -> **164.7** | Class Fire overtuned (WR: 60.8%, factor: 0.957); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 1.4% vs 30% floor, Casts: 288). Increasing spread: b -17.4%, n +35.8% |
-| `WWF` | Water | Conditional Strike | 6.3 -> **5.5** (-12.7%) | 17.9 -> **23.3** | 119.1 -> **133.7** | Class Water undertuned (WR: 42.1%, factor: 1.032); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 8.1% vs 30% floor, Casts: 4690). Increasing spread: b -14.8%, n +30.3% |
-| `WWE` | Water | Setup - Weather | 27.9 -> **36.1** (+29.4%) | - | 27.9 -> **36.1** | Class Water undertuned (WR: 42.1%, factor: 1.032); Weather 'Raining' appliers undertuned (WR: 18.0%, casts: 2191) |
-| `WWL` | Water | Buff / Sustain | 46.7 -> **43.7** (-6.4%) | - | 46.7 -> **43.7** | Class Water undertuned (WR: 42.1%, factor: 1.032); Individual spell overtuned (WR: 73.9%, Casts: 574, mult: 0.907) |
-| `WWD` | Water | Buff / Sustain | 32.7 -> **36.1** (+10.4%) | - | 32.7 -> **36.1** | Class Water undertuned (WR: 42.1%, factor: 1.032); Individual spell undertuned (WR: 31.3%, Casts: 512, mult: 1.071) |
-| `EEF` | Earth | Conditional Strike | 8.0 -> **6.8** (-15.0%) | 22.7 -> **32.9** | 189.6 -> **230.5** | Class Earth overtuned (WR: 61.9%, factor: 0.952); Status 'Frosty' beneficiaries undertuned (WR: 29.8%) |
-| `EEW` | Earth | Buff / Sustain | 56.9 -> **50.6** (-11.1%) | - | 56.9 -> **50.6** | Class Earth overtuned (WR: 61.9%, factor: 0.952); Individual spell overtuned (WR: 67.7%, Casts: 3153, mult: 0.933) |
-| `EED` | Earth | Direct Damage | 4.9 -> **4.4** (-10.2%) | - | 4.9 -> **4.4** | Class Earth overtuned (WR: 61.9%, factor: 0.952); Individual spell overtuned (WR: 63.0%, Casts: 8623, mult: 0.952) |
-| `LLF` | Light | Conditional Strike | 0.8 -> **0.6** (-25.0%) | 23.7 -> **32.3** | 19.8 -> **20.0** | Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.7% vs 30% floor, Casts: 3195). Increasing spread: b -17.7%, n +36.4%; Individual spell overtuned (WR: 67.0%, Casts: 3195, mult: 0.936) |
-| `LLW` | Light | Debuff / Control | 23.1 -> **22.6** (-2.2%) | - | 23.1 -> **22.6** | Individual spell overtuned (WR: 56.2%, Casts: 2414, mult: 0.979) |
-| `LLE` | Light | Setup - Weather | 49.5 -> **65.4** (+32.1%) | - | 49.5 -> **65.4** | Weather 'Sunny' appliers undertuned (WR: 4.8%, casts: 2115); Individual spell undertuned (WR: 4.8%, Casts: 2115, mult: 1.180) |
-| `LLL` | Light | Buff / Sustain | 19.8 -> **17.8** (-10.1%) | - | 19.8 -> **17.8** | Individual spell overtuned (WR: 76.2%, Casts: 1751, mult: 0.897) |
-| `LLD` | Light | Ultimate | 13.3 -> **16.1** (+21.1%) | 20.5 -> **19.3** | 285.9 -> **326.8** | Multi-condition setup trap (N=2 conditions, Trigger Rate: 0.0% vs 16% floor, Casts: 386, WR: 20.3%). Compressing spread to rescue baseline floor: b +8.0%, n -6.0%; Individual spell undertuned (WR: 20.3%, Casts: 386, mult: 1.118) |
-| `DDF` | Dark | Conditional Strike | 5.5 -> **4.6** (-16.4%) | 26.4 -> **36.2** | 150.7 -> **171.1** | Class Dark undertuned (WR: 44.9%, factor: 1.020); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 1475). Increasing spread: b -18.0%, n +37.0% |
-| `DDW` | Dark | Debuff / Control | 41.4 -> **42.2** (+1.9%) | - | 41.4 -> **42.2** | Class Dark undertuned (WR: 44.9%, factor: 1.020) |
-| `DDE` | Dark | Setup - Weather | 41.7 -> **56.0** (+34.3%) | - | 41.7 -> **56.0** | Class Dark undertuned (WR: 44.9%, factor: 1.020); Weather 'Darkness' appliers undertuned (WR: 7.6%, casts: 2122) |
-| `DDL` | Dark | Debuff / Control | 18.9 -> **19.3** (+2.1%) | - | 18.9 -> **19.3** | Class Dark undertuned (WR: 44.9%, factor: 1.020) |
-| `DDD` | Dark | Debuff / Control | 16.3 -> **15.5** (-4.9%) | - | 16.3 -> **15.5** | Class Dark undertuned (WR: 44.9%, factor: 1.020); Individual spell overtuned (WR: 67.9%, Casts: 785, mult: 0.932) |
-| `FWF` | Ghostfire | Debuff / Control | 14.8 -> **11.6** (-21.6%) | - | 14.8 -> **11.6** | Class Ghostfire overtuned (WR: 54.6%, factor: 0.982); Status 'Burning' appliers overtuned on own (WR: 76.0%) |
-| `FWE` | Ghostfire | Setup - Location | 46.0 -> **54.0** (+17.4%) | - | 46.0 -> **54.0** | Class Ghostfire overtuned (WR: 54.6%, factor: 0.982); Location 'Graveyard' appliers undertuned (WR: 24.8%, casts: 2009) |
-| `FWL` | Ghostfire | Debuff / Control | 31.8 -> **31.2** (-1.9%) | - | 31.8 -> **31.2** | Class Ghostfire overtuned (WR: 54.6%, factor: 0.982) |
-| `FWD` | Ghostfire | Ultimate | 11.5 -> **12.6** (+9.6%) | 20.4 -> **20.6** | 246.1 -> **272.2** | Class Ghostfire overtuned (WR: 54.6%, factor: 0.982); Status 'Cursed' beneficiaries undertuned (WR: 41.3%) |
-| `WFF` | Ghostfire | Conditional Strike | 6.4 -> **5.0** (-21.9%) | 28.6 -> **40.5** | 189.4 -> **207.5** | Class Ghostfire overtuned (WR: 54.6%, factor: 0.982); Status 'Bleeding' beneficiaries undertuned (WR: 41.3%) |
-| `WFW` | Ghostfire | Debuff / Control | 21.1 -> **17.4** (-17.5%) | - | 21.1 -> **17.4** | Class Ghostfire overtuned (WR: 54.6%, factor: 0.982); Individual spell overtuned (WR: 88.6%, Casts: 4082, mult: 0.842) |
-| `WFE` | Ghostfire | Debuff / Control | 9.8 -> **7.7** (-21.4%) | - | 9.8 -> **7.7** | Class Ghostfire overtuned (WR: 54.6%, factor: 0.982); Status 'Bleeding' appliers overtuned on own (WR: 76.9%) |
-| `WFL` | Ghostfire | Buff / Sustain | 34.3 -> **38.7** (+12.8%) | - | 34.3 -> **38.7** | Class Ghostfire overtuned (WR: 54.6%, factor: 0.982); Individual spell undertuned (WR: 13.2%, Casts: 3588, mult: 1.150) |
-| `WFD` | Ghostfire | Conditional Strike | 6.1 -> **4.7** (-23.0%) | 23.0 -> **31.5** | 146.4 -> **152.8** | Class Ghostfire overtuned (WR: 54.6%, factor: 0.982); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 1797). Increasing spread: b -18.0%, n +37.0% |
-| `FEF` | Beasts | Debuff / Control | 19.8 -> **20.1** (+1.5%) | - | 19.8 -> **20.1** | Class Beasts undertuned (WR: 40.9%, factor: 1.037); Individual spell overtuned (WR: 55.5%, Casts: 2798, mult: 0.981) |
-| `FEW` | Beasts | Conditional Strike | 6.2 -> **5.3** (-14.5%) | 28.0 -> **39.2** | 179.8 -> **213.1** | Class Beasts undertuned (WR: 40.9%, factor: 1.037); Status 'Entangled' beneficiaries undertuned (WR: 44.6%) |
-| `FEE` | Beasts | Buff / Sustain | 27.6 -> **28.3** (+2.5%) | - | 27.6 -> **28.3** | Class Beasts undertuned (WR: 40.9%, factor: 1.037); Individual spell overtuned (WR: 53.7%, Casts: 2142, mult: 0.988) |
-| `FEL` | Beasts | Buff / Sustain | 45.1 -> **54.1** (+20.0%) | - | 45.1 -> **54.1** | Class Beasts undertuned (WR: 40.9%, factor: 1.037); Individual spell undertuned (WR: 11.5%, Casts: 7821, mult: 1.157) |
-| `FED` | Beasts | Conditional Strike | 4.5 -> **4.6** (+2.2%) | 3.2 -> **3.5** | 18.9 -> **20.7** | Class Beasts undertuned (WR: 40.9%, factor: 1.037); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 20.1% vs 30% floor, Casts: 4773). Increasing spread: b -10.0%, n +20.2% |
-| `EFF` | Beasts | Debuff / Control | 8.4 -> **8.1** (-3.6%) | 25.2 -> **34.5** | 220.1 -> **287.6** | Class Beasts undertuned (WR: 40.9%, factor: 1.037); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 389). Increasing spread: b -18.0%, n +37.0% |
-| `EFW` | Beasts | Buff / Sustain | 27.0 -> **28.0** (+3.7%) | - | 27.0 -> **28.0** | Class Beasts undertuned (WR: 40.9%, factor: 1.037) |
-| `EFE` | Beasts | Buff / Sustain | 27.7 -> **28.7** (+3.6%) | - | 27.7 -> **28.7** | Class Beasts undertuned (WR: 40.9%, factor: 1.037) |
-| `EFL` | Beasts | Buff / Sustain | 9.0 -> **7.6** (-15.6%) | - | 9.0 -> **7.6** | Class Beasts undertuned (WR: 40.9%, factor: 1.037); Individual spell overtuned (WR: 93.9%, Casts: 3484, mult: 0.820) |
-| `EFD` | Beasts | Ultimate | 10.8 -> **12.6** (+16.7%) | 39.8 -> **40.4** | 440.6 -> **521.6** | Class Beasts undertuned (WR: 40.9%, factor: 1.037); Status 'Entangled' beneficiaries undertuned (WR: 44.6%) |
-| `FLF` | Lightning | Conditional Strike | 6.1 -> **4.8** (-21.3%) | 28.2 -> **39.2** | 178.1 -> **193.0** | Class Lightning overtuned (WR: 57.6%, factor: 0.969); Status 'Stunned' beneficiaries undertuned (WR: 46.4%) |
-| `FLW` | Lightning | Debuff / Control | 30.4 -> **26.8** (-11.8%) | - | 30.4 -> **26.8** | Class Lightning overtuned (WR: 57.6%, factor: 0.969); Status 'Stunned' appliers overtuned on own (WR: 55.4%) |
-| `FLE` | Lightning | Setup - Weather | 25.3 -> **27.2** (+7.5%) | - | 25.3 -> **27.2** | Class Lightning overtuned (WR: 57.6%, factor: 0.969); Weather 'Storming' appliers undertuned (WR: 35.1%, casts: 576) |
-| `FLL` | Lightning | Buff / Sustain | 33.4 -> **34.2** (+2.4%) | - | 33.4 -> **34.2** | Class Lightning overtuned (WR: 57.6%, factor: 0.969); Individual spell undertuned (WR: 35.0%, Casts: 999, mult: 1.056) |
-| `FLD` | Lightning | Ultimate | 18.3 -> **19.5** (+6.6%) | 17.1 -> **16.6** | 331.2 -> **343.2** | Class Lightning overtuned (WR: 57.6%, factor: 0.969); Status 'Stunned' beneficiaries undertuned (WR: 46.4%) |
-| `LFF` | Lightning | Conditional Strike | 6.6 -> **5.7** (-13.6%) | 25.2 -> **34.4** | 172.9 -> **201.8** | Class Lightning overtuned (WR: 57.6%, factor: 0.969); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.4% vs 30% floor, Casts: 1511). Increasing spread: b -17.8%, n +36.7% |
-| `LFW` | Lightning | Buff / Sustain | 28.0 -> **25.8** (-7.9%) | - | 28.0 -> **25.8** | Class Lightning overtuned (WR: 57.6%, factor: 0.969); Individual spell overtuned (WR: 63.1%, Casts: 2782, mult: 0.952) |
-| `LFE` | Lightning | Debuff / Control | 28.0 -> **24.9** (-11.1%) | - | 28.0 -> **24.9** | Class Lightning overtuned (WR: 57.6%, factor: 0.969); Status 'Stunned' appliers overtuned on own (WR: 55.4%) |
-| `LFL` | Lightning | Debuff / Control | 11.0 -> **8.6** (-21.8%) | 19.2 -> **25.9** | 222.2 -> **231.3** | Class Lightning overtuned (WR: 57.6%, factor: 0.969); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 2.4% vs 30% floor, Casts: 2670). Increasing spread: b -17.0%, n +35.0% |
-| `LFD` | Lightning | Conditional Strike | 6.6 -> **5.2** (-21.2%) | 32.2 -> **44.0** | 219.1 -> **234.0** | Class Lightning overtuned (WR: 57.6%, factor: 0.969); Status 'Stunned' appliers overtuned on own (WR: 55.4%) |
-| `FDF` | Blood | Conditional Strike | 5.5 -> **4.2** (-23.6%) | 26.4 -> **36.2** | 150.7 -> **156.2** | Class Blood overtuned (WR: 64.5%, factor: 0.942); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 356). Increasing spread: b -18.0%, n +37.0% |
-| `FDW` | Blood | Direct Damage | 75.0 -> **74.5** (-0.7%) | - | 75.0 -> **74.5** | Class Blood overtuned (WR: 64.5%, factor: 0.942); Individual spell undertuned (WR: 32.6%, Casts: 34, mult: 1.054) |
-| `FDE` | Blood | Setup - Weather | 36.2 -> **37.3** (+3.0%) | - | 36.2 -> **37.3** | Class Blood overtuned (WR: 64.5%, factor: 0.942); Individual spell undertuned (WR: 25.7%, Casts: 1916, mult: 1.095) |
-| `FDL` | Blood | Debuff / Control | 10.3 -> **7.5** (-27.2%) | - | 10.3 -> **7.5** | Class Blood overtuned (WR: 64.5%, factor: 0.942); Status 'Bleeding' appliers overtuned on own (WR: 76.9%) |
-| `FDD` | Blood | Ultimate | 17.5 -> **12.2** (-30.3%) | 14.3 -> **19.6** | 267.8 -> **251.3** | Class Blood overtuned (WR: 64.5%, factor: 0.942); Conditional payoff under-triggered (N=2 conditions, Trigger Rate: 0.1% vs 16% floor, Casts: 1520). Increasing spread: b -17.9%, n +36.9% |
-| `DFF` | Blood | Conditional Strike | 6.8 -> **5.6** (-17.6%) | 26.2 -> **36.9** | 185.0 -> **212.2** | Class Blood overtuned (WR: 64.5%, factor: 0.942); Status 'Bleeding' beneficiaries undertuned (WR: 41.3%) |
-| `DFW` | Blood | Debuff / Control | 8.0 -> **5.9** (-26.2%) | - | 8.0 -> **5.9** | Class Blood overtuned (WR: 64.5%, factor: 0.942); Status 'Bleeding' appliers overtuned on own (WR: 76.9%) |
-| `DFE` | Blood | Buff / Sustain | 71.2 -> **77.2** (+8.4%) | - | 71.2 -> **77.2** | Class Blood overtuned (WR: 64.5%, factor: 0.942); Individual spell undertuned (WR: 13.1%, Casts: 469, mult: 1.150) |
-| `DFL` | Blood | Buff / Sustain | 22.8 -> **20.9** (-8.3%) | - | 22.8 -> **20.9** | Class Blood overtuned (WR: 64.5%, factor: 0.942); Individual spell overtuned (WR: 58.0%, Casts: 3591, mult: 0.972) |
-| `DFD` | Blood | Conditional Strike | 59.5 -> **62.1** (+4.4%) | 0.2 -> **0.1** | 71.4 -> **68.3** | Class Blood overtuned (WR: 64.5%, factor: 0.942); Condition triggers excessively (N=1 conditions, Trigger Rate: 86.9% vs 55% ceiling, WR: 71.1%). Compressing spread: b +20.5%, n -27.8% |
-| `WEF` | Plants | Conditional Strike | 6.4 -> **5.7** (-10.9%) | 26.5 -> **38.4** | 176.0 -> **224.6** | Class Plants overtuned (WR: 53.5%, factor: 0.986); Location 'Jungle' beneficiaries undertuned (WR: 35.8%) |
-| `WEW` | Plants | Debuff / Control | 34.6 -> **33.2** (-4.0%) | - | 34.6 -> **33.2** | Class Plants overtuned (WR: 53.5%, factor: 0.986); Individual spell overtuned (WR: 58.0%, Casts: 131, mult: 0.972) |
-| `WEE` | Plants | Setup - Location | 42.2 -> **45.3** (+7.3%) | - | 42.2 -> **45.3** | Class Plants overtuned (WR: 53.5%, factor: 0.986); Location 'Jungle' appliers undertuned (WR: 38.0%, casts: 252) |
-| `WEL` | Plants | Debuff / Control | 31.7 -> **31.3** (-1.3%) | - | 31.7 -> **31.3** | Class Plants overtuned (WR: 53.5%, factor: 0.986) |
-| `WED` | Plants | Conditional Strike | 14.6 -> **11.6** (-20.5%) | 8.6 -> **11.8** | 140.2 -> **148.5** | Class Plants overtuned (WR: 53.5%, factor: 0.986); Conditional payoff under-triggered (N=3 conditions, Trigger Rate: 0.0% vs 8% floor, Casts: 1255). Increasing spread: b -18.0%, n +37.0% |
-| `EWF` | Plants | Buff / Sustain | 6.4 -> **5.2** (-18.8%) | 20.3 -> **27.6** | 136.3 -> **148.7** | Class Plants overtuned (WR: 53.5%, factor: 0.986); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 1.4% vs 30% floor, Casts: 9182). Increasing spread: b -17.4%, n +35.8% |
-| `EWW` | Plants | Debuff / Control | 9.8 -> **8.0** (-18.4%) | - | 9.8 -> **8.0** | Class Plants overtuned (WR: 53.5%, factor: 0.986); Individual spell overtuned (WR: 91.7%, Casts: 2818, mult: 0.828) |
-| `EWL` | Plants | Debuff / Control | 44.8 -> **46.6** (+4.0%) | - | 44.8 -> **46.6** | Class Plants overtuned (WR: 53.5%, factor: 0.986); Individual spell undertuned (WR: 35.0%, Casts: 385, mult: 1.056) |
-| `EWD` | Plants | Conditional Strike | 2.7 -> **2.1** (-22.2%) | 27.5 -> **38.5** | 77.0 -> **83.0** | Class Plants overtuned (WR: 53.5%, factor: 0.986); Status 'Bleeding' appliers overtuned on own (WR: 76.9%) |
-| `WLF` | Fey | Conditional Strike | 7.9 -> **6.8** (-13.9%) | 22.3 -> **31.5** | 184.1 -> **221.0** | Class Fey undertuned (WR: 37.0%, factor: 1.052); Status 'Cursed' beneficiaries undertuned (WR: 41.3%) |
-| `WLW` | Fey | Debuff / Control | 32.5 -> **34.2** (+5.2%) | - | 32.5 -> **34.2** | Class Fey undertuned (WR: 37.0%, factor: 1.052) |
-| `WLE` | Fey | Setup - Location | 78.3 -> **99.9** (+27.6%) | - | 78.3 -> **99.9** | Class Fey undertuned (WR: 37.0%, factor: 1.052); Location 'Enchanted Forest' appliers undertuned (WR: 22.8%, casts: 5883) |
-| `WLL` | Fey | Direct Damage | 54.5 -> **56.6** (+3.9%) | - | 54.5 -> **56.6** | Class Fey undertuned (WR: 37.0%, factor: 1.052); Individual spell overtuned (WR: 54.1%, Casts: 927, mult: 0.987) |
-| `WLD` | Fey | Ultimate | 21.7 -> **24.7** (+13.8%) | 15.8 -> **14.9** | 364.6 -> **392.7** | Class Fey undertuned (WR: 37.0%, factor: 1.052); Multi-condition setup trap (N=3 conditions, Trigger Rate: 0.0% vs 8% floor, Casts: 7393, WR: 47.9%). Compressing spread to rescue baseline floor: b +8.0%, n -6.0% |
-| `LWF` | Fey | Debuff / Control | 13.4 -> **11.4** (-14.9%) | 23.0 -> **31.3** | 321.6 -> **368.2** | Class Fey undertuned (WR: 37.0%, factor: 1.052); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 1.3% vs 30% floor, Casts: 630). Increasing spread: b -17.5%, n +35.9% |
-| `LWW` | Fey | Debuff / Control | 57.1 -> **67.4** (+18.0%) | - | 57.1 -> **67.4** | Class Fey undertuned (WR: 37.0%, factor: 1.052); Individual spell undertuned (WR: 19.6%, Casts: 1139, mult: 1.121) |
-| `LWL` | Fey | Debuff / Control | 45.6 -> **48.0** (+5.3%) | - | 45.6 -> **48.0** | Class Fey undertuned (WR: 37.0%, factor: 1.052) |
-| `LWD` | Fey | Conditional Strike | 8.4 -> **7.7** (-8.3%) | 26.4 -> **36.2** | 230.2 -> **286.4** | Class Fey undertuned (WR: 37.0%, factor: 1.052); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 4458). Increasing spread: b -18.0%, n +37.0% |
-| `WDF` | Ice | Conditional Strike | 8.1 -> **7.1** (-12.3%) | 23.7 -> **35.8** | 200.1 -> **261.3** | Status 'Stunned' appliers overtuned on own (WR: 55.4%); Weather 'Raining' beneficiaries undertuned (WR: 24.6%) |
-| `WDW` | Ice | Buff / Sustain | 25.0 -> **29.0** (+16.0%) | - | 25.0 -> **29.0** | Individual spell undertuned (WR: 10.7%, Casts: 5282, mult: 1.161) |
-| `WDL` | Ice | Debuff / Control | 52.0 -> **49.5** (-4.8%) | - | 52.0 -> **49.5** | Individual spell overtuned (WR: 63.1%, Casts: 1752, mult: 0.952) |
-| `WDD` | Ice | Ultimate | 22.0 -> **17.7** (-19.5%) | 15.4 -> **20.3** | 360.8 -> **377.0** | Weather 'Blizzard' beneficiaries overtuned (WR: 55.0%); Location 'Tundra' beneficiaries overtuned (WR: 55.0%) |
-| `DWF` | Ice | Debuff / Control | 53.5 -> **48.5** (-9.3%) | - | 53.5 -> **48.5** | Individual spell overtuned (WR: 73.8%, Casts: 3738, mult: 0.907) |
-| `DWW` | Ice | Debuff / Control | 38.1 -> **36.3** (-4.7%) | - | 38.1 -> **36.3** | Individual spell overtuned (WR: 62.7%, Casts: 3964, mult: 0.954) |
-| `DWE` | Ice | Setup - Location | 33.4 -> **40.3** (+20.7%) | - | 33.4 -> **40.3** | Location 'Tundra' appliers undertuned (WR: 23.6%, casts: 1795); Individual spell undertuned (WR: 23.6%, Casts: 1795, mult: 1.104) |
-| `DWL` | Ice | Debuff / Control | 52.9 -> **48.9** (-7.6%) | - | 52.9 -> **48.9** | Individual spell overtuned (WR: 69.9%, Casts: 8031, mult: 0.924) |
-| `DWD` | Ice | Conditional Strike | 11.4 -> **10.4** (-8.8%) | 20.0 -> **28.2** | 239.4 -> **303.7** | Status 'Frosty' beneficiaries undertuned (WR: 29.8%); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 7.8% vs 30% floor, Casts: 3252). Increasing spread: b -14.9%, n +30.5% |
-| `ELF` | Wind | Conditional Strike | 11.7 -> **10.3** (-12.0%) | 27.3 -> **38.5** | 331.1 -> **406.9** | Class Wind undertuned (WR: 33.7%, factor: 1.065); Status 'Bleeding' beneficiaries undertuned (WR: 41.3%) |
-| `ELW` | Wind | Debuff / Control | 33.1 -> **35.3** (+6.6%) | - | 33.1 -> **35.3** | Class Wind undertuned (WR: 33.7%, factor: 1.065) |
-| `ELE` | Wind | Setup - Weather | 26.1 -> **32.4** (+24.1%) | - | 26.1 -> **32.4** | Class Wind undertuned (WR: 33.7%, factor: 1.065); Individual spell undertuned (WR: 9.9%, Casts: 4017, mult: 1.165) |
-| `ELL` | Wind | Buff / Sustain | 46.8 -> **51.4** (+9.8%) | - | 46.8 -> **51.4** | Class Wind undertuned (WR: 33.7%, factor: 1.065); Individual spell undertuned (WR: 41.3%, Casts: 682, mult: 1.030) |
-| `ELD` | Wind | Conditional Strike | 6.3 -> **7.3** (+15.9%) | 23.3 -> **33.8** | 153.1 -> **254.0** | Class Wind undertuned (WR: 33.7%, factor: 1.065); Weather 'Raining' beneficiaries undertuned (WR: 24.6%) |
-| `LEF` | Wind | Conditional Strike | 6.9 -> **6.5** (-5.8%) | 22.3 -> **30.4** | 160.8 -> **204.1** | Class Wind undertuned (WR: 33.7%, factor: 1.065); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.8% vs 30% floor, Casts: 1942). Increasing spread: b -17.7%, n +36.3% |
-| `LEW` | Wind | Debuff / Control | 42.3 -> **41.9** (-0.9%) | - | 42.3 -> **41.9** | Class Wind undertuned (WR: 33.7%, factor: 1.065); Individual spell overtuned (WR: 68.3%, Casts: 4464, mult: 0.931) |
-| `LEE` | Wind | Setup - Weather | 21.9 -> **27.1** (+23.7%) | - | 21.9 -> **27.1** | Class Wind undertuned (WR: 33.7%, factor: 1.065); Individual spell undertuned (WR: 11.1%, Casts: 2310, mult: 1.159) |
-| `LEL` | Wind | Buff / Sustain | 54.4 -> **59.2** (+8.8%) | - | 54.4 -> **59.2** | Class Wind undertuned (WR: 33.7%, factor: 1.065); Individual spell undertuned (WR: 43.7%, Casts: 375, mult: 1.022) |
-| `EDF` | Poison | Conditional Strike | 6.8 -> **5.5** (-19.1%) | 22.1 -> **29.6** | 157.1 -> **168.3** | Class Poison overtuned (WR: 62.0%, factor: 0.952); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 3.9% vs 30% floor, Casts: 3677). Increasing spread: b -16.4%, n +33.7% |
-| `EDW` | Poison | Debuff / Control | 16.2 -> **13.5** (-16.7%) | - | 16.2 -> **13.5** | Class Poison overtuned (WR: 62.0%, factor: 0.952); Individual spell overtuned (WR: 80.8%, Casts: 279, mult: 0.877) |
-| `EDE` | Poison | Setup - Location | 29.2 -> **29.4** (+0.7%) | - | 29.2 -> **29.4** | Class Poison overtuned (WR: 62.0%, factor: 0.952); Location 'Swamp' appliers undertuned (WR: 42.0%, casts: 184) |
-| `EDL` | Poison | Debuff / Control | 5.7 -> **4.5** (-21.1%) | - | 5.7 -> **4.5** | Class Poison overtuned (WR: 62.0%, factor: 0.952); Individual spell overtuned (WR: 90.3%, Casts: 3891, mult: 0.834) |
-| `EDD` | Poison | Ultimate | 17.6 -> **19.0** (+8.0%) | 20.0 -> **20.6** | 369.6 -> **410.4** | Class Poison overtuned (WR: 62.0%, factor: 0.952); Status 'Bleeding' beneficiaries undertuned (WR: 41.3%) |
-| `DEF` | Poison | Conditional Strike | 21.1 -> **18.1** (-14.2%) | 3.1 -> **3.8** | 86.5 -> **86.9** | Class Poison overtuned (WR: 62.0%, factor: 0.952); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 17.0% vs 30% floor, Casts: 666). Increasing spread: b -11.2%, n +22.9% |
-| `DEW` | Poison | Debuff / Control | 15.7 -> **13.2** (-15.9%) | - | 15.7 -> **13.2** | Class Poison overtuned (WR: 62.0%, factor: 0.952); Individual spell overtuned (WR: 79.5%, Casts: 5398, mult: 0.883) |
-| `DEE` | Poison | Debuff / Control | 20.9 -> **19.3** (-7.7%) | - | 20.9 -> **19.3** | Class Poison overtuned (WR: 62.0%, factor: 0.952); Individual spell overtuned (WR: 58.8%, Casts: 4655, mult: 0.969) |
-| `DEL` | Poison | Conditional Strike | 0.7 -> **0.6** (-14.3%) | 26.2 -> **37.1** | 19.0 -> **22.9** | Class Poison overtuned (WR: 62.0%, factor: 0.952); Status 'Bleeding' beneficiaries undertuned (WR: 41.3%) |
-| `DED` | Poison | Debuff / Control | 23.4 -> **22.6** (-3.4%) | - | 23.4 -> **22.6** | Class Poison overtuned (WR: 62.0%, factor: 0.952); Individual spell undertuned (WR: 45.1%, Casts: 2532, mult: 1.016) |
-| `LDF` | Cosmic | Debuff / Control | 36.8 -> **35.5** (-3.5%) | - | 36.8 -> **35.5** | Individual spell overtuned (WR: 59.6%, Casts: 2704, mult: 0.966) |
-| `LDW` | Cosmic | Debuff / Control | 31.1 -> **29.1** (-6.4%) | - | 31.1 -> **29.1** | Status 'Stunned' appliers overtuned on own (WR: 55.4%); Individual spell overtuned (WR: 62.7%, Casts: 1628, mult: 0.954) |
-| `LDE` | Cosmic | Setup - Location | 21.0 -> **21.3** (+1.4%) | - | 21.0 -> **21.3** | Individual spell undertuned (WR: 45.9%, Casts: 221, mult: 1.013) |
-| `LDL` | Cosmic | Conditional Strike | 6.5 -> **5.8** (-10.8%) | 22.4 -> **30.7** | 152.1 -> **183.9** | Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.1% vs 30% floor, Casts: 6575). Increasing spread: b -18.0%, n +37.0%; Individual spell undertuned (WR: 25.7%, Casts: 6575, mult: 1.095) |
-| `LDD` | Cosmic | Ultimate | 14.6 -> **11.6** (-20.5%) | 21.2 -> **29.0** | 324.1 -> **348.0** | Conditional payoff under-triggered (N=4 conditions, Trigger Rate: 0.0% vs 3% floor, Casts: 937). Increasing spread: b -18.0%, n +37.0%; Individual spell overtuned (WR: 58.3%, Casts: 937, mult: 0.971) |
-| `DLF` | Cosmic | Conditional Strike | 7.5 -> **6.7** (-10.7%) | 23.4 -> **30.7** | 183.0 -> **212.4** | Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 6.7% vs 30% floor, Casts: 1921). Increasing spread: b -15.3%, n +31.4%; Individual spell undertuned (WR: 35.8%, Casts: 1921, mult: 1.053) |
-| `DLW` | Cosmic | Direct Damage | 44.8 -> **41.6** (-7.1%) | - | 44.8 -> **41.6** | Individual spell overtuned (WR: 69.0%, Casts: 4897, mult: 0.928) |
-| `DLE` | Cosmic | Direct Damage | 50.7 -> **58.7** (+15.8%) | - | 50.7 -> **58.7** | Individual spell undertuned (WR: 11.3%, Casts: 2945, mult: 1.158) |
-| `DLL` | Cosmic | Conditional Strike | 10.9 -> **9.9** (-9.2%) | 20.7 -> **28.4** | 236.5 -> **291.1** | Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 314). Increasing spread: b -18.0%, n +37.0%; Individual spell undertuned (WR: 23.6%, Casts: 314, mult: 1.104) |
+| `FFF` | Fire | Direct Damage | 42.5 -> **37.6** (-11.5%) | - | 42.5 -> **37.6** | Class Fire overtuned (WR: 61.6%, factor: 0.954); Individual spell overtuned (WR: 69.0%, Casts: 1446, mult: 0.928) |
+| `FFW` | Fire | Debuff / Control | 23.6 -> **21.6** (-8.5%) | - | 23.6 -> **21.6** | Class Fire overtuned (WR: 61.6%, factor: 0.954); Status 'Burning' appliers overtuned on own (WR: 70.6%) |
+| `FFE` | Fire | Debuff / Control | 25.0 -> **23.4** (-6.4%) | - | 25.0 -> **23.4** | Class Fire overtuned (WR: 61.6%, factor: 0.954); Individual spell overtuned (WR: 55.2%, Casts: 1633, mult: 0.983) |
+| `FFL` | Fire | Debuff / Control | 2.4 -> **1.9** (-20.8%) | - | 2.4 -> **1.9** | Class Fire overtuned (WR: 61.6%, factor: 0.954); Status 'Burning' appliers overtuned on own (WR: 70.6%) |
+| `FFD` | Fire | Conditional Strike | 5.4 -> **4.9** (-9.3%) | 29.5 -> **40.0** | 164.7 -> **200.9** | Class Fire overtuned (WR: 61.6%, factor: 0.954); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 1.8% vs 30% floor, Casts: 561). Increasing spread: b -17.3%, n +35.5% |
+| `WWF` | Water | Conditional Strike | 5.5 -> **4.7** (-14.5%) | 23.3 -> **31.5** | 133.7 -> **152.8** | Class Water undertuned (WR: 39.5%, factor: 1.042); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 1.9% vs 30% floor, Casts: 9602). Increasing spread: b -17.2%, n +35.4% |
+| `WWE` | Water | Setup - Weather | 36.1 -> **48.2** (+33.5%) | - | 36.1 -> **48.2** | Class Water undertuned (WR: 39.5%, factor: 1.042); Weather 'Raining' appliers undertuned (WR: 14.8%, casts: 3515) |
+| `WWL` | Water | Buff / Sustain | 43.7 -> **42.7** (-2.3%) | - | 43.7 -> **42.7** | Class Water undertuned (WR: 39.5%, factor: 1.042); Individual spell overtuned (WR: 66.5%, Casts: 1266, mult: 0.938) |
+| `WWD` | Water | Buff / Sustain | 36.1 -> **34.6** (-4.2%) | - | 36.1 -> **34.6** | Class Water undertuned (WR: 39.5%, factor: 1.042); Individual spell overtuned (WR: 70.8%, Casts: 289, mult: 0.920) |
+| `EEF` | Earth | Conditional Strike | 6.8 -> **5.6** (-17.6%) | 32.9 -> **44.1** | 230.5 -> **252.6** | Class Earth overtuned (WR: 63.0%, factor: 0.948); Status 'Frosty' beneficiaries undertuned (WR: 41.3%) |
+| `EEW` | Earth | Buff / Sustain | 50.6 -> **46.6** (-7.9%) | - | 50.6 -> **46.6** | Class Earth overtuned (WR: 63.0%, factor: 0.948); Individual spell overtuned (WR: 57.9%, Casts: 2572, mult: 0.972) |
+| `EED` | Earth | Direct Damage | 4.4 -> **3.9** (-11.4%) | - | 4.4 -> **3.9** | Class Earth overtuned (WR: 63.0%, factor: 0.948); Individual spell overtuned (WR: 68.4%, Casts: 5886, mult: 0.930) |
+| `LLF` | Light | Conditional Strike | 0.6 -> **0.4** (-33.3%) | 32.3 -> **44.0** | 20.0 -> **18.0** | Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 1.1% vs 30% floor, Casts: 3710). Increasing spread: b -17.6%, n +36.1%; Individual spell overtuned (WR: 73.5%, Casts: 3710, mult: 0.909) |
+| `LLW` | Light | Debuff / Control | 22.6 -> **21.6** (-4.4%) | - | 22.6 -> **21.6** | Individual spell overtuned (WR: 62.1%, Casts: 3420, mult: 0.956) |
+| `LLE` | Light | Setup - Weather | 65.4 -> **86.0** (+31.5%) | - | 65.4 -> **86.0** | Weather 'Sunny' appliers undertuned (WR: 8.0%, casts: 3700); Individual spell undertuned (WR: 8.0%, Casts: 3700, mult: 1.174) |
+| `LLL` | Light | Buff / Sustain | 17.8 -> **16.4** (-7.9%) | - | 17.8 -> **16.4** | Individual spell overtuned (WR: 70.8%, Casts: 2166, mult: 0.920) |
+| `LLD` | Light | Ultimate | 16.1 -> **13.2** (-18.0%) | 19.3 -> **27.2** | 326.8 -> **372.2** | Weather 'Sunny' beneficiaries undertuned (WR: 43.1%); Conditional payoff under-triggered (N=2 conditions, Trigger Rate: 0.0% vs 16% floor, Casts: 1474). Increasing spread: b -18.0%, n +37.0% |
+| `DDF` | Dark | Conditional Strike | 4.6 -> **3.6** (-21.7%) | 36.2 -> **49.6** | 171.1 -> **182.2** | Class Dark overtuned (WR: 57.3%, factor: 0.971); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 4708). Increasing spread: b -18.0%, n +37.0% |
+| `DDW` | Dark | Debuff / Control | 42.2 -> **39.4** (-6.6%) | - | 42.2 -> **39.4** | Class Dark overtuned (WR: 57.3%, factor: 0.971); Individual spell overtuned (WR: 60.4%, Casts: 4567, mult: 0.963) |
+| `DDE` | Dark | Setup - Weather | 56.0 -> **65.1** (+16.2%) | - | 56.0 -> **65.1** | Class Dark overtuned (WR: 57.3%, factor: 0.971); Weather 'Darkness' appliers undertuned (WR: 24.7%, casts: 838) |
+| `DDL` | Dark | Debuff / Control | 19.3 -> **19.1** (-1.0%) | - | 19.3 -> **19.1** | Class Dark overtuned (WR: 57.3%, factor: 0.971); Individual spell undertuned (WR: 44.2%, Casts: 2395, mult: 1.019) |
+| `DDD` | Dark | Debuff / Control | 15.5 -> **12.9** (-16.8%) | - | 15.5 -> **12.9** | Class Dark overtuned (WR: 57.3%, factor: 0.971); Individual spell overtuned (WR: 85.5%, Casts: 1842, mult: 0.856) |
+| `FWF` | Ghostfire | Debuff / Control | 11.6 -> **9.4** (-19.0%) | - | 11.6 -> **9.4** | Class Ghostfire overtuned (WR: 57.9%, factor: 0.968); Status 'Burning' appliers overtuned on own (WR: 70.6%) |
+| `FWW` | Ghostfire | Debuff / Control | 12.2 -> **10.9** (-10.7%) | - | 12.2 -> **10.9** | Class Ghostfire overtuned (WR: 57.9%, factor: 0.968); Status 'Cursed' appliers overtuned on own (WR: 59.7%) |
+| `FWE` | Ghostfire | Setup - Location | 54.0 -> **61.8** (+14.4%) | - | 54.0 -> **61.8** | Class Ghostfire overtuned (WR: 57.9%, factor: 0.968); Location 'Graveyard' appliers undertuned (WR: 25.5%, casts: 38) |
+| `FWL` | Ghostfire | Debuff / Control | 31.2 -> **29.2** (-6.4%) | - | 31.2 -> **29.2** | Class Ghostfire overtuned (WR: 57.9%, factor: 0.968); Status 'Cursed' appliers overtuned on own (WR: 59.7%) |
+| `FWD` | Ghostfire | Ultimate | 12.6 -> **13.6** (+7.9%) | 20.6 -> **20.8** | 272.2 -> **296.5** | Class Ghostfire overtuned (WR: 57.9%, factor: 0.968); Status 'Cursed' beneficiaries undertuned (WR: 41.5%) |
+| `WFF` | Ghostfire | Conditional Strike | 5.0 -> **3.8** (-24.0%) | 40.5 -> **57.5** | 207.5 -> **222.3** | Class Ghostfire overtuned (WR: 57.9%, factor: 0.968); Status 'Bleeding' beneficiaries undertuned (WR: 41.0%) |
+| `WFW` | Ghostfire | Debuff / Control | 17.4 -> **15.9** (-8.6%) | - | 17.4 -> **15.9** | Class Ghostfire overtuned (WR: 57.9%, factor: 0.968); Individual spell overtuned (WR: 64.9%, Casts: 885, mult: 0.945) |
+| `WFE` | Ghostfire | Debuff / Control | 7.7 -> **5.9** (-23.4%) | - | 7.7 -> **5.9** | Class Ghostfire overtuned (WR: 57.9%, factor: 0.968); Status 'Bleeding' appliers overtuned on own (WR: 75.6%) |
+| `WFL` | Ghostfire | Buff / Sustain | 38.7 -> **40.0** (+3.4%) | - | 38.7 -> **40.0** | Class Ghostfire overtuned (WR: 57.9%, factor: 0.968); Individual spell undertuned (WR: 32.1%, Casts: 278, mult: 1.068) |
+| `WFD` | Ghostfire | Conditional Strike | 4.7 -> **3.6** (-23.4%) | 31.5 -> **43.0** | 152.8 -> **158.4** | Class Ghostfire overtuned (WR: 57.9%, factor: 0.968); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.8% vs 30% floor, Casts: 1978). Increasing spread: b -17.7%, n +36.4% |
+| `FEF` | Beasts | Debuff / Control | 20.1 -> **18.8** (-6.5%) | - | 20.1 -> **18.8** | Class Beasts undertuned (WR: 41.1%, factor: 1.036); Individual spell overtuned (WR: 74.6%, Casts: 5699, mult: 0.904) |
+| `FEW` | Beasts | Conditional Strike | 5.3 -> **4.5** (-15.1%) | 39.2 -> **57.0** | 213.1 -> **261.0** | Class Beasts undertuned (WR: 41.1%, factor: 1.036); Status 'Entangled' beneficiaries undertuned (WR: 34.9%) |
+| `FEE` | Beasts | Buff / Sustain | 28.3 -> **30.3** (+7.1%) | - | 28.3 -> **30.3** | Class Beasts undertuned (WR: 41.1%, factor: 1.036); Individual spell undertuned (WR: 40.2%, Casts: 617, mult: 1.035) |
+| `FEL` | Beasts | Buff / Sustain | 54.1 -> **64.4** (+19.0%) | - | 54.1 -> **64.4** | Class Beasts undertuned (WR: 41.1%, factor: 1.036); Individual spell undertuned (WR: 13.2%, Casts: 6107, mult: 1.150) |
+| `FED` | Beasts | Conditional Strike | 4.6 -> **4.4** (-4.3%) | 3.5 -> **3.5** | 20.7 -> **19.8** | Class Beasts undertuned (WR: 41.1%, factor: 1.036); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 7.9% vs 30% floor, Casts: 4407). Increasing spread: b -14.8%, n +30.4% |
+| `EFF` | Beasts | Debuff / Control | 8.1 -> **7.9** (-2.5%) | 34.5 -> **46.4** | 287.6 -> **374.5** | Class Beasts undertuned (WR: 41.1%, factor: 1.036); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 3.0% vs 30% floor, Casts: 6115). Increasing spread: b -16.8%, n +34.5% |
+| `EFW` | Beasts | Buff / Sustain | 28.0 -> **30.3** (+8.2%) | - | 28.0 -> **30.3** | Class Beasts undertuned (WR: 41.1%, factor: 1.036); Individual spell undertuned (WR: 32.4%, Casts: 22, mult: 1.044) |
+| `EFE` | Beasts | Buff / Sustain | 28.7 -> **29.7** (+3.5%) | - | 28.7 -> **29.7** | Class Beasts undertuned (WR: 41.1%, factor: 1.036) |
+| `EFL` | Beasts | Buff / Sustain | 7.6 -> **6.5** (-14.5%) | - | 7.6 -> **6.5** | Class Beasts undertuned (WR: 41.1%, factor: 1.036); Individual spell overtuned (WR: 94.3%, Casts: 3107, mult: 0.820) |
+| `EFD` | Beasts | Ultimate | 12.6 -> **15.0** (+19.0%) | 40.4 -> **42.2** | 521.6 -> **648.0** | Class Beasts undertuned (WR: 41.1%, factor: 1.036); Status 'Entangled' beneficiaries undertuned (WR: 34.9%) |
+| `FLF` | Lightning | Conditional Strike | 4.8 -> **4.1** (-14.6%) | 39.2 -> **55.6** | 193.0 -> **232.1** | Class Lightning undertuned (WR: 45.9%, factor: 1.016); Status 'Stunned' beneficiaries undertuned (WR: 41.4%) |
+| `FLW` | Lightning | Debuff / Control | 26.8 -> **24.4** (-9.0%) | - | 26.8 -> **24.4** | Class Lightning undertuned (WR: 45.9%, factor: 1.016); Status 'Stunned' appliers overtuned on own (WR: 56.5%) |
+| `FLE` | Lightning | Setup - Weather | 27.2 -> **27.8** (+2.2%) | - | 27.2 -> **27.8** | Class Lightning undertuned (WR: 45.9%, factor: 1.016); Weather 'Storming' appliers undertuned (WR: 48.5%, casts: 19) |
+| `FLL` | Lightning | Buff / Sustain | 34.2 -> **39.6** (+15.8%) | - | 34.2 -> **39.6** | Class Lightning undertuned (WR: 45.9%, factor: 1.016); Individual spell undertuned (WR: 15.6%, Casts: 4185, mult: 1.139) |
+| `FLD` | Lightning | Ultimate | 19.5 -> **22.6** (+15.9%) | 16.6 -> **17.1** | 343.2 -> **409.1** | Class Lightning undertuned (WR: 45.9%, factor: 1.016); Status 'Stunned' beneficiaries undertuned (WR: 41.4%) |
+| `LFF` | Lightning | Conditional Strike | 5.7 -> **4.9** (-14.0%) | 34.4 -> **47.1** | 201.8 -> **235.7** | Class Lightning undertuned (WR: 45.9%, factor: 1.016); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 2313). Increasing spread: b -18.0%, n +37.0% |
+| `LFW` | Lightning | Buff / Sustain | 25.8 -> **24.7** (-4.3%) | - | 25.8 -> **24.7** | Class Lightning undertuned (WR: 45.9%, factor: 1.016); Individual spell overtuned (WR: 65.7%, Casts: 2941, mult: 0.941) |
+| `LFE` | Lightning | Debuff / Control | 24.9 -> **22.8** (-8.4%) | - | 24.9 -> **22.8** | Class Lightning undertuned (WR: 45.9%, factor: 1.016); Status 'Stunned' appliers overtuned on own (WR: 56.5%) |
+| `LFL` | Lightning | Debuff / Control | 8.6 -> **7.2** (-16.3%) | 25.9 -> **35.4** | 231.3 -> **262.1** | Class Lightning undertuned (WR: 45.9%, factor: 1.016); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.5% vs 30% floor, Casts: 3921). Increasing spread: b -17.8%, n +36.6% |
+| `LFD` | Lightning | Conditional Strike | 5.2 -> **5.0** (-3.8%) | 44.0 -> **57.7** | 234.0 -> **293.5** | Class Lightning undertuned (WR: 45.9%, factor: 1.016); Status 'Stunned' appliers overtuned on own (WR: 56.5%) |
+| `FDF` | Blood | Conditional Strike | 4.2 -> **3.2** (-23.8%) | 36.2 -> **49.6** | 156.2 -> **161.9** | Class Blood overtuned (WR: 57.3%, factor: 0.971); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 2688). Increasing spread: b -18.0%, n +37.0% |
+| `FDW` | Blood | Direct Damage | 74.5 -> **70.4** (-5.5%) | - | 74.5 -> **70.4** | Class Blood overtuned (WR: 57.3%, factor: 0.971); Individual spell overtuned (WR: 60.0%, Casts: 28, mult: 0.973) |
+| `FDE` | Blood | Setup - Weather | 37.3 -> **40.5** (+8.6%) | - | 37.3 -> **40.5** | Class Blood overtuned (WR: 57.3%, factor: 0.971); Individual spell undertuned (WR: 20.3%, Casts: 3737, mult: 1.118) |
+| `FDL` | Blood | Debuff / Control | 7.5 -> **5.6** (-25.3%) | - | 7.5 -> **5.6** | Class Blood overtuned (WR: 57.3%, factor: 0.971); Status 'Bleeding' appliers overtuned on own (WR: 75.6%) |
+| `FDD` | Blood | Ultimate | 12.2 -> **9.7** (-20.5%) | 19.6 -> **26.8** | 251.3 -> **269.7** | Class Blood overtuned (WR: 57.3%, factor: 0.971); Conditional payoff under-triggered (N=2 conditions, Trigger Rate: 0.0% vs 16% floor, Casts: 7795). Increasing spread: b -18.0%, n +37.0% |
+| `DFF` | Blood | Conditional Strike | 5.6 -> **4.8** (-14.3%) | 36.9 -> **51.0** | 212.2 -> **249.6** | Class Blood overtuned (WR: 57.3%, factor: 0.971); Status 'Bleeding' beneficiaries undertuned (WR: 41.0%) |
+| `DFW` | Blood | Debuff / Control | 5.9 -> **4.5** (-23.7%) | - | 5.9 -> **4.5** | Class Blood overtuned (WR: 57.3%, factor: 0.971); Status 'Bleeding' appliers overtuned on own (WR: 75.6%) |
+| `DFE` | Blood | Buff / Sustain | 77.2 -> **87.1** (+12.8%) | - | 77.2 -> **87.1** | Class Blood overtuned (WR: 57.3%, factor: 0.971); Individual spell undertuned (WR: 10.6%, Casts: 1576, mult: 1.162) |
+| `DFL` | Blood | Buff / Sustain | 20.9 -> **18.3** (-12.4%) | - | 20.9 -> **18.3** | Class Blood overtuned (WR: 57.3%, factor: 0.971); Individual spell overtuned (WR: 75.5%, Casts: 3995, mult: 0.900) |
+| `DFD` | Blood | Conditional Strike | 62.1 -> **64.4** (+3.7%) | 0.1 -> **0.1** | 68.3 -> **70.8** | Class Blood overtuned (WR: 57.3%, factor: 0.971); Condition triggers excessively (N=1 conditions, Trigger Rate: 71.2% vs 55% ceiling, WR: 76.5%). Compressing spread: b +19.2%, n -24.4% |
+| `WEF` | Plants | Conditional Strike | 5.7 -> **4.9** (-14.0%) | 38.4 -> **55.2** | 224.6 -> **275.4** | Location 'Jungle' beneficiaries undertuned (WR: 37.8%); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 2936). Increasing spread: b -18.0%, n +37.0% |
+| `WEW` | Plants | Debuff / Control | 33.2 -> **33.7** (+1.5%) | - | 33.2 -> **33.7** | Individual spell undertuned (WR: 45.8%, Casts: 1991, mult: 1.014) |
+| `WEE` | Plants | Setup - Location | 45.3 -> **51.0** (+12.6%) | - | 45.3 -> **51.0** | Location 'Jungle' appliers undertuned (WR: 33.4%, casts: 154); Individual spell undertuned (WR: 33.1%, Casts: 154, mult: 1.064) |
+| `WEL` | Plants | Debuff / Control | 31.3 -> **33.9** (+8.3%) | - | 31.3 -> **33.9** | Status 'Entangled' appliers undertuned (WR: 38.5%, casts: 900); Individual spell undertuned (WR: 38.5%, Casts: 900, mult: 1.042) |
+| `WED` | Plants | Conditional Strike | 11.6 -> **12.8** (+10.3%) | 11.8 -> **11.1** | 148.5 -> **154.9** | Multi-condition setup trap (N=3 conditions, Trigger Rate: 0.0% vs 8% floor, Casts: 1977, WR: 43.9%). Compressing spread to rescue baseline floor: b +8.0%, n -6.0%; Individual spell undertuned (WR: 43.9%, Casts: 1977, mult: 1.021) |
+| `EWF` | Plants | Buff / Sustain | 5.2 -> **4.5** (-13.5%) | 27.6 -> **38.1** | 148.7 -> **176.0** | Weather 'Sunny' beneficiaries undertuned (WR: 43.1%); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 3.2% vs 30% floor, Casts: 3851). Increasing spread: b -16.7%, n +34.3% |
+| `EWW` | Plants | Debuff / Control | 8.0 -> **6.6** (-17.5%) | - | 8.0 -> **6.6** | Individual spell overtuned (WR: 92.2%, Casts: 1974, mult: 0.826) |
+| `EWL` | Plants | Debuff / Control | 46.6 -> **42.5** (-8.8%) | - | 46.6 -> **42.5** | Individual spell overtuned (WR: 72.4%, Casts: 115, mult: 0.913) |
+| `EWD` | Plants | Conditional Strike | 2.1 -> **1.7** (-19.0%) | 38.5 -> **55.8** | 83.0 -> **96.6** | Status 'Bleeding' appliers overtuned on own (WR: 75.6%); Status 'Entangled' beneficiaries undertuned (WR: 34.9%) |
+| `WLF` | Fey | Conditional Strike | 6.8 -> **5.4** (-20.6%) | 31.5 -> **39.6** | 221.0 -> **219.2** | Class Fey undertuned (WR: 45.5%, factor: 1.018); Status 'Cursed' beneficiaries undertuned (WR: 41.5%) |
+| `WLW` | Fey | Debuff / Control | 34.2 -> **30.5** (-10.8%) | - | 34.2 -> **30.5** | Class Fey undertuned (WR: 45.5%, factor: 1.018); Status 'Cursed' appliers overtuned on own (WR: 59.7%) |
+| `WLE` | Fey | Setup - Location | 99.9 -> **122.0** (+22.1%) | - | 99.9 -> **122.0** | Class Fey undertuned (WR: 45.5%, factor: 1.018); Location 'Enchanted Forest' appliers undertuned (WR: 24.4%, casts: 3140) |
+| `WLL` | Fey | Direct Damage | 56.6 -> **56.3** (-0.5%) | - | 56.6 -> **56.3** | Class Fey undertuned (WR: 45.5%, factor: 1.018); Individual spell overtuned (WR: 56.5%, Casts: 1733, mult: 0.978) |
+| `WLD` | Fey | Ultimate | 24.7 -> **20.3** (-17.8%) | 14.9 -> **19.8** | 392.7 -> **422.2** | Class Fey undertuned (WR: 45.5%, factor: 1.018); Location 'Enchanted Forest' beneficiaries overtuned (WR: 57.2%) |
+| `LWF` | Fey | Debuff / Control | 11.4 -> **9.6** (-15.8%) | 31.3 -> **39.3** | 368.2 -> **386.9** | Class Fey undertuned (WR: 45.5%, factor: 1.018); Location 'Enchanted Forest' beneficiaries overtuned (WR: 57.2%) |
+| `LWW` | Fey | Debuff / Control | 67.4 -> **71.7** (+6.4%) | - | 67.4 -> **71.7** | Class Fey undertuned (WR: 45.5%, factor: 1.018); Individual spell undertuned (WR: 37.5%, Casts: 1823, mult: 1.045) |
+| `LWL` | Fey | Debuff / Control | 48.0 -> **56.7** (+18.1%) | - | 48.0 -> **56.7** | Class Fey undertuned (WR: 45.5%, factor: 1.018); Individual spell undertuned (WR: 11.0%, Casts: 2335, mult: 1.160) |
+| `LWD` | Fey | Conditional Strike | 7.7 -> **6.6** (-14.3%) | 36.2 -> **49.6** | 286.4 -> **334.0** | Class Fey undertuned (WR: 45.5%, factor: 1.018); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 4177). Increasing spread: b -18.0%, n +37.0% |
+| `WDF` | Ice | Conditional Strike | 7.1 -> **6.0** (-15.5%) | 35.8 -> **52.9** | 261.3 -> **323.4** | Class Ice overtuned (WR: 54.2%, factor: 0.983); Status 'Stunned' appliers overtuned on own (WR: 56.5%) |
+| `WDW` | Ice | Buff / Sustain | 29.0 -> **27.5** (-5.2%) | - | 29.0 -> **27.5** | Class Ice overtuned (WR: 54.2%, factor: 0.983); Status 'Frosty' appliers overtuned on own (WR: 68.4%) |
+| `WDE` | Ice | Setup - Weather | 44.0 -> **41.3** (-6.1%) | - | 44.0 -> **41.3** | Class Ice overtuned (WR: 54.2%, factor: 0.983); Individual spell overtuned (WR: 62.6%, Casts: 437, mult: 0.954) |
+| `WDL` | Ice | Debuff / Control | 49.5 -> **40.5** (-18.2%) | - | 49.5 -> **40.5** | Class Ice overtuned (WR: 54.2%, factor: 0.983); Status 'Frosty' appliers overtuned on own (WR: 68.4%) |
+| `WDD` | Ice | Ultimate | 17.7 -> **19.3** (+9.0%) | 20.3 -> **20.3** | 377.0 -> **411.1** | Class Ice overtuned (WR: 54.2%, factor: 0.983); Weather 'Blizzard' beneficiaries undertuned (WR: 42.1%) |
+| `DWF` | Ice | Debuff / Control | 48.5 -> **39.5** (-18.6%) | - | 48.5 -> **39.5** | Class Ice overtuned (WR: 54.2%, factor: 0.983); Status 'Frosty' appliers overtuned on own (WR: 68.4%) |
+| `DWW` | Ice | Debuff / Control | 36.3 -> **33.9** (-6.6%) | - | 36.3 -> **33.9** | Class Ice overtuned (WR: 54.2%, factor: 0.983); Individual spell overtuned (WR: 63.8%, Casts: 4721, mult: 0.949) |
+| `DWE` | Ice | Setup - Location | 40.3 -> **50.0** (+24.1%) | - | 40.3 -> **50.0** | Class Ice overtuned (WR: 54.2%, factor: 0.983); Location 'Tundra' appliers undertuned (WR: 17.4%, casts: 3502) |
+| `DWL` | Ice | Debuff / Control | 48.9 -> **40.5** (-17.2%) | - | 48.9 -> **40.5** | Class Ice overtuned (WR: 54.2%, factor: 0.983); Status 'Frosty' appliers overtuned on own (WR: 68.4%) |
+| `DWD` | Ice | Conditional Strike | 10.4 -> **8.7** (-16.3%) | 28.2 -> **39.4** | 303.7 -> **351.5** | Class Ice overtuned (WR: 54.2%, factor: 0.983); Status 'Frosty' beneficiaries undertuned (WR: 41.3%) |
+| `ELF` | Wind | Conditional Strike | 10.3 -> **9.1** (-11.7%) | 38.5 -> **54.2** | 406.9 -> **502.3** | Class Wind undertuned (WR: 38.0%, factor: 1.048); Status 'Bleeding' beneficiaries undertuned (WR: 41.0%) |
+| `ELW` | Wind | Debuff / Control | 35.3 -> **37.9** (+7.4%) | - | 35.3 -> **37.9** | Class Wind undertuned (WR: 38.0%, factor: 1.048); Individual spell undertuned (WR: 42.9%, Casts: 179, mult: 1.024) |
+| `ELE` | Wind | Setup - Weather | 32.4 -> **35.9** (+10.8%) | - | 32.4 -> **35.9** | Class Wind undertuned (WR: 38.0%, factor: 1.048); Individual spell undertuned (WR: 35.0%, Casts: 6665, mult: 1.056) |
+| `ELL` | Wind | Buff / Sustain | 51.4 -> **49.8** (-3.1%) | - | 51.4 -> **49.8** | Class Wind undertuned (WR: 38.0%, factor: 1.048); Individual spell overtuned (WR: 69.8%, Casts: 240, mult: 0.924) |
+| `ELD` | Wind | Conditional Strike | 7.3 -> **6.5** (-11.0%) | 33.8 -> **49.7** | 254.0 -> **329.6** | Class Wind undertuned (WR: 38.0%, factor: 1.048); Weather 'Raining' beneficiaries undertuned (WR: 30.2%) |
+| `LEF` | Wind | Conditional Strike | 6.5 -> **5.7** (-12.3%) | 30.4 -> **41.4** | 204.1 -> **241.7** | Class Wind undertuned (WR: 38.0%, factor: 1.048); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.9% vs 30% floor, Casts: 2736). Increasing spread: b -17.6%, n +36.3% |
+| `LEW` | Wind | Debuff / Control | 41.9 -> **39.1** (-6.7%) | - | 41.9 -> **39.1** | Class Wind undertuned (WR: 38.0%, factor: 1.048); Individual spell overtuned (WR: 77.6%, Casts: 4842, mult: 0.891) |
+| `LEE` | Wind | Setup - Weather | 27.1 -> **32.8** (+21.0%) | - | 27.1 -> **32.8** | Class Wind undertuned (WR: 38.0%, factor: 1.048); Individual spell undertuned (WR: 12.0%, Casts: 5839, mult: 1.155) |
+| `LEL` | Wind | Buff / Sustain | 59.2 -> **66.6** (+12.5%) | - | 59.2 -> **66.6** | Class Wind undertuned (WR: 38.0%, factor: 1.048); Individual spell undertuned (WR: 30.6%, Casts: 1086, mult: 1.074) |
+| `EDF` | Poison | Conditional Strike | 5.5 -> **4.1** (-25.5%) | 29.6 -> **40.6** | 168.3 -> **170.6** | Class Poison overtuned (WR: 54.2%, factor: 0.983); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 787). Increasing spread: b -18.0%, n +37.0% |
+| `EDW` | Poison | Debuff / Control | 13.5 -> **12.2** (-9.6%) | - | 13.5 -> **12.2** | Class Poison overtuned (WR: 54.2%, factor: 0.983); Individual spell overtuned (WR: 70.2%, Casts: 323, mult: 0.923) |
+| `EDE` | Poison | Setup - Location | 29.4 -> **36.8** (+25.2%) | - | 29.4 -> **36.8** | Class Poison overtuned (WR: 54.2%, factor: 0.983); Location 'Swamp' appliers undertuned (WR: 15.9%, casts: 3520) |
+| `EDL` | Poison | Debuff / Control | 4.5 -> **3.7** (-17.8%) | - | 4.5 -> **3.7** | Class Poison overtuned (WR: 54.2%, factor: 0.983); Individual spell overtuned (WR: 90.3%, Casts: 2863, mult: 0.834) |
+| `EDD` | Poison | Ultimate | 19.0 -> **20.2** (+6.3%) | 20.6 -> **20.1** | 410.4 -> **426.2** | Class Poison overtuned (WR: 54.2%, factor: 0.983); Status 'Bleeding' beneficiaries undertuned (WR: 41.0%) |
+| `DEF` | Poison | Conditional Strike | 18.1 -> **18.3** (+1.1%) | 3.8 -> **4.4** | 86.9 -> **98.8** | Class Poison overtuned (WR: 54.2%, factor: 0.983); Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 25.6% vs 30% floor, Casts: 242). Increasing spread: b -7.8%, n +15.7% |
+| `DEW` | Poison | Debuff / Control | 13.2 -> **11.4** (-13.6%) | - | 13.2 -> **11.4** | Class Poison overtuned (WR: 54.2%, factor: 0.983); Individual spell overtuned (WR: 80.8%, Casts: 3533, mult: 0.877) |
+| `DEL` | Poison | Conditional Strike | 0.6 -> **0.5** (-16.7%) | 37.1 -> **52.5** | 22.9 -> **26.8** | Class Poison overtuned (WR: 54.2%, factor: 0.983); Status 'Bleeding' beneficiaries undertuned (WR: 41.0%) |
+| `LDF` | Cosmic | Debuff / Control | 35.5 -> **33.9** (-4.5%) | - | 35.5 -> **33.9** | Individual spell overtuned (WR: 62.1%, Casts: 3060, mult: 0.956) |
+| `LDW` | Cosmic | Debuff / Control | 29.1 -> **25.9** (-11.0%) | - | 29.1 -> **25.9** | Status 'Stunned' appliers overtuned on own (WR: 56.5%); Individual spell overtuned (WR: 73.0%, Casts: 6095, mult: 0.911) |
+| `LDE` | Cosmic | Setup - Location | 21.3 -> **24.0** (+12.7%) | - | 21.3 -> **24.0** | Individual spell undertuned (WR: 17.9%, Casts: 3811, mult: 1.129) |
+| `LDL` | Cosmic | Conditional Strike | 5.8 -> **5.2** (-10.3%) | 30.7 -> **42.1** | 183.9 -> **224.1** | Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 6778). Increasing spread: b -18.0%, n +37.0%; Individual spell undertuned (WR: 27.0%, Casts: 6778, mult: 1.089) |
+| `LDD` | Cosmic | Ultimate | 11.6 -> **13.3** (+14.7%) | 29.0 -> **27.3** | 348.0 -> **376.4** | Multi-condition setup trap (N=4 conditions, Trigger Rate: 0.0% vs 3% floor, Casts: 2269, WR: 33.9%). Compressing spread to rescue baseline floor: b +8.0%, n -6.0%; Individual spell undertuned (WR: 33.9%, Casts: 2269, mult: 1.060) |
+| `DLF` | Cosmic | Conditional Strike | 6.7 -> **6.1** (-9.0%) | 30.7 -> **38.5** | 212.4 -> **240.9** | Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 14.1% vs 30% floor, Casts: 1015). Increasing spread: b -12.4%, n +25.3%; Individual spell undertuned (WR: 39.3%, Casts: 1015, mult: 1.038) |
+| `DLW` | Cosmic | Direct Damage | 41.6 -> **39.2** (-5.8%) | - | 41.6 -> **39.2** | Individual spell overtuned (WR: 65.7%, Casts: 6259, mult: 0.941) |
+| `DLE` | Cosmic | Direct Damage | 58.7 -> **61.3** (+4.4%) | - | 58.7 -> **61.3** | Individual spell undertuned (WR: 37.9%, Casts: 484, mult: 1.044) |
+| `DLL` | Cosmic | Conditional Strike | 9.9 -> **8.5** (-14.1%) | 28.4 -> **38.9** | 291.1 -> **339.1** | Conditional payoff under-triggered (N=1 conditions, Trigger Rate: 0.0% vs 30% floor, Casts: 102). Increasing spread: b -18.0%, n +37.0%; Individual spell undertuned (WR: 36.8%, Casts: 102, mult: 1.048) |
