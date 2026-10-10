@@ -110,26 +110,26 @@ def get_spell_class(recipe: str) -> SpellClass:
 # Buff Definitions
 # Name, Associated Stat/Element, Base Magnitude (%), Duration (Turns)
 BUFF_CONFIGS = {
-    "Charged": {"stat": "potency", "magnitude": 0.25, "duration": 3, "desc": "Increases Potency by 25% for 3 rounds."},
-    "Honed": {"stat": "luck", "magnitude": 0.25, "duration": 3, "desc": "Increases Luck by 25% for 3 rounds."},
-    "Shielded": {"stat": "defense", "magnitude": 0.25, "duration": 3, "desc": "Increases Defense by 25% and grants immunity to negative status effects."},
-    "Quickened": {"stat": "speed", "magnitude": 0.30, "duration": 3, "desc": "Increases Speed by 30% for 3 rounds."},
+    "Charged": {"stat": "potency", "magnitude": 0.25, "duration": 5, "desc": "Increases Potency by 25% for 5 rounds."},
+    "Honed": {"stat": "luck", "magnitude": 0.25, "duration": 5, "desc": "Increases Luck by 25% for 5 rounds."},
+    "Shielded": {"stat": "defense", "magnitude": 0.25, "duration": 5, "desc": "Increases Defense by 25% and grants immunity to negative status effects for 5 rounds."},
+    "Quickened": {"stat": "speed", "magnitude": 0.30, "duration": 5, "desc": "Increases Speed by 30% for 5 rounds."},
     "Invisible": {"stat": "invulnerable", "magnitude": 0.50, "duration": 1, "desc": "Invulnerable to direct damage & increases Potency by 50% for 1 round."},
     "Blessed": {"stat": "all", "magnitude": 0.20, "duration": 5, "desc": "Increases all stats by 20% and heals 5% max health each turn for 5 rounds."},
 }
 
 # Negative Status Effect (Debuff) Definitions
 STATUS_CONFIGS = {
-    "Burning": {"category": "DoT", "magnitude": 0.05, "duration": 3, "desc": "Deals 5% of target's Current Health each turn."},
+    "Burning": {"category": "DoT", "magnitude": 0.05, "duration": 5, "desc": "Deals 5% of target's Current Health each turn for 5 rounds."},
     "Poisoned": {"category": "Escalating DoT", "magnitude": 0.03, "duration": -1, "desc": "Deals 3% of target's Maximum Health, increasing by +2% each turn active (Until cleansed)."},
-    "Cursed": {"category": "Stat Debuff", "magnitude": 0.15, "duration": 3, "desc": "Decreases all stats by 15% for 3 rounds."},
-    "Slowed": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 3, "desc": "Decreases Speed by 25% for 3 rounds."},
-    "Vulnerable": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 3, "desc": "Decreases Defense by 25% for 3 rounds (amplifies incoming damage)."},
-    "Weakened": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 3, "desc": "Decreases Potency by 25% for 3 rounds."},
-    "Blinded": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 3, "desc": "Decreases Luck by 25% for 3 rounds."},
-    "Bleeding": {"category": "DoT", "magnitude": 0.06, "duration": 3, "desc": "Deals 6% of target's Maximum Health each turn."},
-    "Entangled": {"category": "Crowd Control", "magnitude": 0.30, "duration": 3, "desc": "Decreases Speed by 30% and prevents turn priority."},
-    "Frosty": {"category": "Dual Debuff", "magnitude": 0.15, "duration": 3, "desc": "Decreases Speed and Potency each by 15%."},
+    "Cursed": {"category": "Stat Debuff", "magnitude": 0.15, "duration": 5, "desc": "Decreases all stats by 15% for 5 rounds."},
+    "Slowed": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 5, "desc": "Decreases Speed by 25% for 5 rounds."},
+    "Vulnerable": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 5, "desc": "Decreases Defense by 25% for 5 rounds (amplifies incoming damage)."},
+    "Weakened": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 5, "desc": "Decreases Potency by 25% for 5 rounds."},
+    "Blinded": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 5, "desc": "Decreases Luck by 25% for 5 rounds."},
+    "Bleeding": {"category": "DoT", "magnitude": 0.06, "duration": 5, "desc": "Deals 6% of target's Maximum Health each turn for 5 rounds."},
+    "Entangled": {"category": "Crowd Control", "magnitude": 0.30, "duration": 5, "desc": "Decreases Speed by 30% and prevents turn priority for 5 rounds."},
+    "Frosty": {"category": "Dual Debuff", "magnitude": 0.15, "duration": 5, "desc": "Decreases Speed and Potency each by 15% for 5 rounds."},
     "Stunned": {"category": "Hard CC", "magnitude": 0.25, "duration": 1, "desc": "Skips turn; incoming damage increased by 25%."},
     "Asleep": {"category": "Hard CC", "magnitude": 0.30, "duration": 1, "desc": "Skips turn; decreases Defense by 30%; breaks upon taking damage."},
     "Polymorphed": {"category": "Hard CC", "magnitude": 0.25, "duration": 1, "desc": "Skips turn; removes all active buffs and status effects; incoming damage increased by 25%."},
@@ -340,9 +340,14 @@ class Wizard:
     healing_done: float = 0.0
     turns_survived: int = 0
 
+    # Match-long class damage multipliers (secondary effect of weather/location spells)
+    class_multipliers: Dict[str, float] = field(default_factory=dict)
+
     def __post_init__(self):
         self.max_health = float(self.starting_hp)
         self.current_health = float(self.starting_hp)
+        if not self.class_multipliers:
+            self.class_multipliers = {cls.value: 1.0 for cls in SpellClass}
 
     def reset(self):
         """Reset match-specific variables to original starting values."""
@@ -360,6 +365,15 @@ class Wizard:
         self.damage_taken = 0.0
         self.healing_done = 0.0
         self.turns_survived = 0
+        self.class_multipliers = {cls.value: 1.0 for cls in SpellClass}
+
+    def get_class_multiplier(self, spell_class: Union[SpellClass, str]) -> float:
+        cls_name = spell_class.value if isinstance(spell_class, SpellClass) else spell_class
+        return self.class_multipliers.get(cls_name, 1.0)
+
+    def multiply_class_multiplier(self, spell_class: Union[SpellClass, str], mult: float) -> None:
+        cls_name = spell_class.value if isinstance(spell_class, SpellClass) else spell_class
+        self.class_multipliers[cls_name] = round(self.class_multipliers.get(cls_name, 1.0) * mult, 4)
 
     @property
     def is_alive(self) -> bool:
@@ -614,12 +628,16 @@ class Wizard:
 class Environment:
     """
     Tracks the active Weather, active Location, and their summoned potencies.
-    Also tracks the battlefield Seedling state (planted, rained on, sunny).
+    Also tracks the battlefield Seedling state (planted, rained on, sunny)
+    and active duration for the 3-turn stability rule.
     """
     weather: Weather = Weather.CLEAR
     weather_potency: float = 0.20  # Default 20% modifier
+    weather_turns_active: int = 0
     location: Location = Location.NONE
     location_potency: float = 0.20  # Default 20% modifier
+    location_turns_active: int = 0
+    current_turn: int = 1
 
     # Seedling mechanics (Plant spells: EWE, EWL, WED)
     seedling_active: bool = False
@@ -629,13 +647,17 @@ class Environment:
 
     def set_weather(self, weather: Weather, potency_b: Optional[float] = None) -> None:
         """Sets weather. Spells use Base Factor (b) to set environment potency."""
-        self.weather = weather
+        if self.weather != weather:
+            self.weather = weather
+            self.weather_turns_active = 0
         if potency_b is not None:
             self.weather_potency = float(potency_b) / 100.0 if potency_b > 1.0 else float(potency_b)
 
     def set_location(self, location: Location, potency_b: Optional[float] = None) -> None:
         """Sets location/terrain. Spells use Base Factor (b) to set environment potency."""
-        self.location = location
+        if self.location != location:
+            self.location = location
+            self.location_turns_active = 0
         if potency_b is not None:
             self.location_potency = float(potency_b) / 100.0 if potency_b > 1.0 else float(potency_b)
 
@@ -723,7 +745,10 @@ class CombatMath:
         eff_defense = target.get_effective_stat("defense")
         defense_factor = 100.0 / (100.0 + max(0.0, eff_defense))
 
-        total_damage = raw_damage * env_mult * potency_factor * defense_factor
+        # 4. Match-Long Class Multipliers (from weather / location setups)
+        caster_class_mult = caster.get_class_multiplier(spell_class)
+
+        total_damage = raw_damage * env_mult * caster_class_mult * potency_factor * defense_factor
         return total_damage
 
     @staticmethod
@@ -742,6 +767,208 @@ class CombatMath:
 # 6. ALL 125 SPELL MECHANICS RESOLVER
 # =============================================================================
 
+
+# =============================================================================
+# 4.5 RUNE PROGRESSION & MULTI-CONDITION COMBOS HELPERS
+# =============================================================================
+
+def get_target_rune_pool_size(turn: int) -> int:
+    """
+    Rune pool progression logic:
+    - Turn 1: 3 runes in pool
+    - Turn 2-4: 4 runes in pool (unused runes stay in pool)
+    - Turn 5-7: 5 runes in pool
+    - Turn 8-11: 6 runes in pool
+    - Turn 12-14: 7 runes in pool
+    - Turn 15+: 8 runes in pool
+    """
+    if turn <= 1:
+        return 3
+    elif turn < 5:
+        return 4
+    elif turn < 8:
+        return 5
+    elif turn < 12:
+        return 6
+    elif turn < 15:
+        return 7
+    else:
+        return 8
+
+
+def get_castable_spells_from_pool(pool: List[str], all_recipes: List[str]) -> List[str]:
+    """Determines which 3-rune spell recipes can be drafted from the current rune pool."""
+    from collections import Counter
+    counts = Counter(pool)
+    castable = []
+    for r in all_recipes:
+        r_counts = Counter(r)
+        if all(counts[ch] >= r_counts[ch] for ch in r_counts):
+            castable.append(r)
+    return castable
+
+
+MULTI_CONDITION_REQUIREMENTS: Dict[str, List[Tuple[str, Any]]] = {
+    "LLD": [
+        ("weather", Weather.SUNNY),
+        ("caster_buff", "Blessed"),
+    ],
+    "FWD": [
+        ("target_debuff", "Cursed"),
+        ("weather", Weather.BLOOD_RAIN),
+        ("location", Location.GRAVEYARD),
+    ],
+    "EFD": [
+        ("target_debuff", "Entangled"),
+        ("location", Location.JUNGLE),
+    ],
+    "FLD": [
+        ("target_debuff", "Stunned"),
+        ("caster_buff", "Charged"),
+        ("weather", Weather.STORMING),
+    ],
+    "FDD": [
+        ("target_debuff", "Blinded"),
+        ("weather", Weather.DARKNESS),
+    ],
+    "WLD": [
+        ("target_debuff", "Asleep"),
+        ("weather", Weather.DARKNESS),
+        ("location", Location.ENCHANTED_FOREST),
+    ],
+    "WDD": [
+        ("weather", Weather.BLIZZARD),
+        ("location", Location.TUNDRA),
+    ],
+    "EDD": [
+        ("target_debuff", "Bleeding"),
+        ("location", Location.SWAMP),
+    ],
+    "LDD": [
+        ("target_debuff", "Blinded"),
+        ("target_debuff", "Weakened"),
+        ("target_debuff", "Slowed"),
+        ("target_debuff", "Vulnerable"),
+    ],
+    "WED": [
+        ("seedling", "active"),
+        ("seedling", "rained_on"),
+        ("seedling", "sunny_on"),
+    ],
+}
+
+
+def evaluate_multi_condition_score(recipe: str, caster: Wizard, target: Wizard, env: Environment) -> float:
+    """Calculates live score (0.0 to 1.0) based on how close the gamestate is to reaching needed conditions."""
+    reqs = MULTI_CONDITION_REQUIREMENTS.get(recipe, [])
+    if not reqs:
+        return 0.0
+    met = 0
+    for req_type, req_val in reqs:
+        if req_type == "weather":
+            if env.weather == req_val: met += 1
+        elif req_type == "location":
+            if env.location == req_val: met += 1
+        elif req_type == "caster_buff":
+            if req_val in caster.buffs: met += 1
+        elif req_type == "target_debuff":
+            if req_val in target.debuffs: met += 1
+        elif req_type == "seedling":
+            if req_val == "active" and env.seedling_active: met += 1
+            elif req_val == "rained_on" and env.seedling_rained_on: met += 1
+            elif req_val == "sunny_on" and env.seedling_sunny_on: met += 1
+    return round(met / len(reqs), 3)
+
+
+def get_all_multi_condition_scores(caster: Wizard, target: Wizard, env: Environment) -> Dict[str, float]:
+    """Returns live condition fulfillment scores for all multi-condition spells."""
+    return {r: evaluate_multi_condition_score(r, caster, target, env) for r in MULTI_CONDITION_REQUIREMENTS}
+
+
+def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, castable_spells: List[str]) -> Dict[str, Dict[str, Any]]:
+    """Evaluates for each castable spell how casting it this turn would advance combo-setup scores of multi-condition spells."""
+    current_scores = get_all_multi_condition_scores(caster, target, env)
+    impacts: Dict[str, Dict[str, Any]] = {}
+
+    for sp in castable_spells:
+        proj_weather = env.weather
+        proj_location = env.location
+        proj_caster_buffs = set(caster.buffs.keys())
+        proj_target_debuffs = set(target.debuffs.keys())
+        proj_seedling_active = env.seedling_active
+        proj_seedling_rained = env.seedling_rained_on
+        proj_seedling_sunny = env.seedling_sunny_on
+
+        # Weather setups
+        if sp == "WWE": proj_weather = Weather.RAINING
+        elif sp == "LLE": proj_weather = Weather.SUNNY
+        elif sp == "DDE": proj_weather = Weather.DARKNESS
+        elif sp == "FLE": proj_weather = Weather.STORMING
+        elif sp == "FDE": proj_weather = Weather.BLOOD_RAIN
+        elif sp == "WDE": proj_weather = Weather.SNOWING
+        elif sp == "ELE": proj_weather = Weather.WINDY
+        elif sp == "LEE": proj_weather = Weather.SANDSTORM
+        elif sp == "ELD": proj_weather = Weather.BLIZZARD
+
+        # Location setups
+        elif sp == "WEE": proj_location = Location.JUNGLE
+        elif sp == "FWE": proj_location = Location.GRAVEYARD
+        elif sp == "WLE": proj_location = Location.ENCHANTED_FOREST
+        elif sp == "DWE": proj_location = Location.TUNDRA
+        elif sp == "EDE": proj_location = Location.SWAMP
+        elif sp == "LDE": proj_location = Location.SPACE
+
+        # Buff setups
+        if sp in ["FLL", "DLL"]: proj_caster_buffs.add("Charged")
+        if sp in ["LLL", "LLF"]: proj_caster_buffs.add("Blessed")
+        if sp == "EEW": proj_caster_buffs.add("Shielded")
+        if sp in ["WFL"]: proj_caster_buffs.add("Honed")
+        if sp in ["LEL", "DLL"]: proj_caster_buffs.add("Quickened")
+        if sp == "FDF": proj_caster_buffs.add("Invisible")
+
+        # Debuff setups
+        if sp in ["FFW", "FFL"]: proj_target_debuffs.add("Burning")
+        if sp in ["FLW", "LFE", "EEF"]: proj_target_debuffs.add("Stunned")
+        if sp in ["FDL", "DDW", "FWW", "FWL"]: proj_target_debuffs.add("Cursed")
+        if sp in ["FEF", "EFE", "EEE"]: proj_target_debuffs.add("Entangled")
+        if sp in ["DFW", "EDL", "EWD"]: proj_target_debuffs.add("Bleeding")
+        if sp in ["LLW", "WFW"]: proj_target_debuffs.add("Blinded")
+        if sp in ["EDF", "DDL"]: proj_target_debuffs.add("Weakened")
+        if sp in ["DLF"]: proj_target_debuffs.add("Slowed")
+        if sp in ["EFF", "LWF"]: proj_target_debuffs.add("Vulnerable")
+        if sp == "DDF": proj_target_debuffs.add("Asleep")
+
+        # Seedling
+        if sp in ["EWE", "EWL"]: proj_seedling_active = True
+        if proj_seedling_active and proj_weather == Weather.RAINING: proj_seedling_rained = True
+        if proj_seedling_active and proj_weather == Weather.SUNNY: proj_seedling_sunny = True
+
+        deltas: Dict[str, float] = {}
+        total_advance = 0.0
+        for multi_r, reqs in MULTI_CONDITION_REQUIREMENTS.items():
+            met = 0
+            for req_type, req_val in reqs:
+                if req_type == "weather" and proj_weather == req_val: met += 1
+                elif req_type == "location" and proj_location == req_val: met += 1
+                elif req_type == "caster_buff" and req_val in proj_caster_buffs: met += 1
+                elif req_type == "target_debuff" and req_val in proj_target_debuffs: met += 1
+                elif req_type == "seedling":
+                    if req_val == "active" and proj_seedling_active: met += 1
+                    elif req_val == "rained_on" and proj_seedling_rained: met += 1
+                    elif req_val == "sunny_on" and proj_seedling_sunny: met += 1
+            new_score = round(met / len(reqs), 3)
+            delta = round(new_score - current_scores[multi_r], 3)
+            if delta > 0:
+                deltas[multi_r] = delta
+                total_advance += delta
+
+        impacts[sp] = {
+            "total_advance": round(total_advance, 3),
+            "deltas": deltas,
+        }
+
+    return impacts
+
 class SpellResolver:
     """
     Implements the complete mechanical specification for every one of the 125 spells,
@@ -750,13 +977,69 @@ class SpellResolver:
     def __init__(self, registry: SpellKnobsRegistry):
         self.registry = registry
 
+    @staticmethod
+    def _apply_secondary_class_multiplier(caster: Wizard, classes: List[SpellClass], mult: float) -> None:
+        for cls in classes:
+            caster.multiply_class_multiplier(cls, mult)
+
+    def _resolve_env_setup(
+        self,
+        env: Environment,
+        caster: Wizard,
+        env_type: str,
+        target_val: Union[Weather, Location],
+        b: float,
+        assoc_classes: List[SpellClass],
+        current_turn: int,
+        log: Dict[str, Any]
+    ) -> None:
+        """
+        14 weather and location only setup spells:
+        Checks if current environment (besides default) has been active for at least 3 turns (unless current turn < 3).
+        If yes: acts as normal and grants match-long multiplier tuned by b (1.0 + b/400.0).
+        If no: environment remains unchanged, but secondary multiplier is slightly increased (1.0 + b/400.0 * 1.5).
+        """
+        base_mult = round(1.0 + (b / 400.0), 4)
+        if env_type == "weather":
+            is_default = (env.weather == Weather.CLEAR)
+            can_change = is_default or env.weather_turns_active >= 3 or current_turn < 3
+            if can_change:
+                env.set_weather(target_val, b)
+                self._apply_secondary_class_multiplier(caster, assoc_classes, base_mult)
+                log["effects_applied"].append(
+                    f"Weather changed to {target_val.value} (potency {b}%). Match multiplier {base_mult:.3f}x granted for {[c.value for c in assoc_classes]}."
+                )
+            else:
+                boosted_mult = round(1.0 + (b / 400.0) * 1.5, 4)
+                self._apply_secondary_class_multiplier(caster, assoc_classes, boosted_mult)
+                log["effects_applied"].append(
+                    f"Weather unchanged ({env.weather.value} active {env.weather_turns_active} turns < 3). Match multiplier boosted to {boosted_mult:.3f}x for {[c.value for c in assoc_classes]}."
+                )
+        elif env_type == "location":
+            is_default = (env.location == Location.NONE)
+            can_change = is_default or env.location_turns_active >= 3 or current_turn < 3
+            if can_change:
+                env.set_location(target_val, b)
+                self._apply_secondary_class_multiplier(caster, assoc_classes, base_mult)
+                log["effects_applied"].append(
+                    f"Location changed to {target_val.value} (potency {b}%). Match multiplier {base_mult:.3f}x granted for {[c.value for c in assoc_classes]}."
+                )
+            else:
+                boosted_mult = round(1.0 + (b / 400.0) * 1.5, 4)
+                self._apply_secondary_class_multiplier(caster, assoc_classes, boosted_mult)
+                log["effects_applied"].append(
+                    f"Location unchanged ({env.location.value} active {env.location_turns_active} turns < 3). Match multiplier boosted to {boosted_mult:.3f}x for {[c.value for c in assoc_classes]}."
+                )
+
     def resolve(
         self,
         recipe: str,
         caster: Wizard,
         target: Wizard,
-        env: Environment
+        env: Environment,
+        current_turn: Optional[int] = None
     ) -> Dict[str, Any]:
+        cur_turn = current_turn if current_turn is not None else getattr(env, "current_turn", 1)
         """
         Resolves a spell cast by `caster` against `target` in environment `env`.
         Returns an execution log dictionary.
@@ -794,10 +1077,11 @@ class SpellResolver:
 
         # Helper method for healing
         def do_heal(target_wiz: Wizard, amount: float) -> float:
-            # Healing also scales with environment and potency
+            # Healing also scales with environment, potency, and class multipliers
             env_mult = env.get_class_multiplier(spell_class)
+            caster_class_mult = caster.get_class_multiplier(spell_class)
             eff_pot = caster.get_effective_stat("potency") / 100.0
-            h = target_wiz.heal(amount * env_mult * eff_pot)
+            h = target_wiz.heal(amount * env_mult * caster_class_mult * eff_pot)
             log["healing_done"] += h
             return h
 
@@ -852,8 +1136,7 @@ class SpellResolver:
             log["effects_applied"].append("Cleansed all status effects, +1 Water rune to pool")
 
         elif recipe == "WWE":
-            env.set_weather(Weather.RAINING, b)
-            log["effects_applied"].append(f"Weather changed to Raining (potency {b}%)")
+            self._resolve_env_setup(env, caster, "weather", Weather.RAINING, b, [SpellClass.WATER, SpellClass.PLANTS], cur_turn, log)
 
         elif recipe == "WWL":
             deal_damage(1.0 * b)
@@ -931,8 +1214,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Blinded")
 
         elif recipe == "LLE":
-            env.set_weather(Weather.SUNNY, b)
-            log["effects_applied"].append(f"Weather changed to Sunny (potency {b}%)")
+            self._resolve_env_setup(env, caster, "weather", Weather.SUNNY, b, [SpellClass.FIRE, SpellClass.LIGHT, SpellClass.PLANTS], cur_turn, log)
 
         elif recipe == "LLL":
             do_heal(caster, 1.0 * b)
@@ -941,12 +1223,18 @@ class SpellResolver:
             log["effects_applied"].append(f"Healed {b:.1f}, All stats +{b:.1f}")
 
         elif recipe == "LLD":
-            # Ultimate: Sunny AND Caster is Blessed
-            bonus = 0.0
-            if env.weather == Weather.SUNNY and "Blessed" in caster.buffs:
+            # Ultimate: Sunny AND Caster is Blessed (Sequential payoffs)
+            conds = [env.weather == Weather.SUNNY, "Blessed" in caster.buffs]
+            m = sum(bool(c) for c in conds)
+            if m == 2:
                 bonus = n * b
                 log["ultimate_triggered"] = True
                 log["notes"] += "ULTIMATE TRIGGERED! "
+            elif m > 0:
+                bonus = (m / 2.0) * (0.25 * n * b)
+                log["notes"] += f"Sequential payoff ({m}/2 conditions met: +{bonus:.1f}). "
+            else:
+                bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         # ---------------------------------------------------------------------
@@ -962,8 +1250,7 @@ class SpellResolver:
             log["effects_applied"].append("Caster Weakened")
 
         elif recipe == "DDE":
-            env.set_weather(Weather.DARKNESS, b)
-            log["effects_applied"].append(f"Weather changed to Darkness (potency {b}%)")
+            self._resolve_env_setup(env, caster, "weather", Weather.DARKNESS, b, [SpellClass.DARK, SpellClass.FEY], cur_turn, log)
 
         elif recipe == "DDL":
             deal_damage(1.0 * b)
@@ -991,8 +1278,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Cursed")
 
         elif recipe == "FWE":
-            env.set_location(Location.GRAVEYARD, b)
-            log["effects_applied"].append(f"Location changed to Graveyard (potency {b}%)")
+            self._resolve_env_setup(env, caster, "location", Location.GRAVEYARD, b, [SpellClass.GHOSTFIRE, SpellClass.DARK], cur_turn, log)
 
         elif recipe == "FWL":
             deal_damage(1.0 * b)
@@ -1000,12 +1286,18 @@ class SpellResolver:
             log["effects_applied"].append("Caster Cursed")
 
         elif recipe == "FWD":
-            # Ultimate: Target Cursed, Weather Blood Rain, Location Graveyard
-            bonus = 0.0
-            if "Cursed" in target.debuffs and env.weather == Weather.BLOOD_RAIN and env.location == Location.GRAVEYARD:
+            # Ultimate: Target Cursed, Weather Blood Rain, Location Graveyard (Sequential payoffs)
+            conds = ["Cursed" in target.debuffs, env.weather == Weather.BLOOD_RAIN, env.location == Location.GRAVEYARD]
+            m = sum(bool(c) for c in conds)
+            if m == 3:
                 bonus = n * b
                 log["ultimate_triggered"] = True
                 log["notes"] += "ULTIMATE TRIGGERED! "
+            elif m > 0:
+                bonus = (m / 3.0) * (0.25 * n * b)
+                log["notes"] += f"Sequential payoff ({m}/3 conditions met: +{bonus:.1f}). "
+            else:
+                bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "WFF":
@@ -1096,12 +1388,18 @@ class SpellResolver:
             log["effects_applied"].append("Healed caster, Target Poisoned")
 
         elif recipe == "EFD":
-            # Ultimate: Target Entangled AND Location Jungle
-            bonus = 0.0
-            if "Entangled" in target.debuffs and env.location == Location.JUNGLE:
+            # Ultimate: Target Entangled AND Location Jungle (Sequential payoffs)
+            conds = ["Entangled" in target.debuffs, env.location == Location.JUNGLE]
+            m = sum(bool(c) for c in conds)
+            if m == 2:
                 bonus = n * b
                 log["ultimate_triggered"] = True
                 log["notes"] += "ULTIMATE TRIGGERED! "
+            elif m > 0:
+                bonus = (m / 2.0) * (0.25 * n * b)
+                log["notes"] += f"Sequential payoff ({m}/2 conditions met: +{bonus:.1f}). "
+            else:
+                bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         # ---------------------------------------------------------------------
@@ -1118,8 +1416,7 @@ class SpellResolver:
                 log["effects_applied"].append("Stunned applied (Luck roll)")
 
         elif recipe == "FLE":
-            env.set_weather(Weather.STORMING, b)
-            log["effects_applied"].append(f"Weather changed to Storming (potency {b}%)")
+            self._resolve_env_setup(env, caster, "weather", Weather.STORMING, b, [SpellClass.LIGHTNING, SpellClass.WATER], cur_turn, log)
 
         elif recipe == "FLL":
             caster.apply_buff("Quickened")
@@ -1127,12 +1424,18 @@ class SpellResolver:
             log["effects_applied"].append("Quickened applied, Turn Priority on next turn")
 
         elif recipe == "FLD":
-            # Ultimate: Target Stunned, Caster Charged, Weather Storming
-            bonus = 0.0
-            if "Stunned" in target.debuffs and "Charged" in caster.buffs and env.weather == Weather.STORMING:
+            # Ultimate: Target Stunned, Caster Charged, Weather Storming (Sequential payoffs)
+            conds = ["Stunned" in target.debuffs, "Charged" in caster.buffs, env.weather == Weather.STORMING]
+            m = sum(bool(c) for c in conds)
+            if m == 3:
                 bonus = n * b
                 log["ultimate_triggered"] = True
                 log["notes"] += "ULTIMATE TRIGGERED! "
+            elif m > 0:
+                bonus = (m / 3.0) * (0.25 * n * b)
+                log["notes"] += f"Sequential payoff ({m}/3 conditions met: +{bonus:.1f}). "
+            else:
+                bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "LFF":
@@ -1177,8 +1480,7 @@ class SpellResolver:
             deal_self_damage(1.0 * b)
 
         elif recipe == "FDE":
-            env.set_weather(Weather.BLOOD_RAIN, b)
-            log["effects_applied"].append(f"Weather changed to Blood Rain (potency {b}%)")
+            self._resolve_env_setup(env, caster, "weather", Weather.BLOOD_RAIN, b, [SpellClass.BLOOD, SpellClass.GHOSTFIRE], cur_turn, log)
 
         elif recipe == "FDL":
             deal_damage(1.0 * b)
@@ -1186,12 +1488,18 @@ class SpellResolver:
             log["effects_applied"].append("Target Bleeding")
 
         elif recipe == "FDD":
-            # Ultimate: Target Blinded AND Weather Darkness
-            bonus = 0.0
-            if "Blinded" in target.debuffs and env.weather == Weather.DARKNESS:
+            # Ultimate: Target Blinded AND Weather Darkness (Sequential payoffs)
+            conds = ["Blinded" in target.debuffs, env.weather == Weather.DARKNESS]
+            m = sum(bool(c) for c in conds)
+            if m == 2:
                 bonus = n * b
                 log["ultimate_triggered"] = True
                 log["notes"] += "ULTIMATE TRIGGERED! "
+            elif m > 0:
+                bonus = (m / 2.0) * (0.25 * n * b)
+                log["notes"] += f"Sequential payoff ({m}/2 conditions met: +{bonus:.1f}). "
+            else:
+                bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "DFF":
@@ -1241,8 +1549,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Asleep")
 
         elif recipe == "WEE":
-            env.set_location(Location.JUNGLE, b)
-            log["effects_applied"].append(f"Location changed to Jungle (potency {b}%)")
+            self._resolve_env_setup(env, caster, "location", Location.JUNGLE, b, [SpellClass.BEASTS, SpellClass.PLANTS], cur_turn, log)
 
         elif recipe == "WEL":
             deal_damage(1.0 * b)
@@ -1250,11 +1557,17 @@ class SpellResolver:
             log["effects_applied"].append("Target Entangled")
 
         elif recipe == "WED":
-            # (3*b) bonus damage if active seedling has been rained on and sunny
-            bonus = 0.0
-            if env.seedling_active and env.seedling_rained_on and env.seedling_sunny_on:
+            # (3*b) bonus damage if active seedling has been rained on and sunny (Sequential payoffs)
+            conds = [env.seedling_active, env.seedling_rained_on, env.seedling_sunny_on]
+            m = sum(bool(c) for c in conds)
+            if m == 3:
                 bonus = 3.0 * b
                 log["notes"] += "Seedling was rained on and sunny (+3b bonus). "
+            elif m > 0:
+                bonus = (m / 3.0) * (1.0 * b)
+                log["notes"] += f"Seedling sequential payoff ({m}/3 conditions met: +{bonus:.1f}). "
+            else:
+                bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "EWF":
@@ -1297,19 +1610,24 @@ class SpellResolver:
             log["effects_applied"].append("Target Cursed")
 
         elif recipe == "WLE":
-            env.set_location(Location.ENCHANTED_FOREST, b)
-            log["effects_applied"].append(f"Location changed to Enchanted Forest (potency {b}%)")
+            self._resolve_env_setup(env, caster, "location", Location.ENCHANTED_FOREST, b, [SpellClass.FEY], cur_turn, log)
 
         elif recipe == "WLL":
             deal_damage(1.0 * b)
 
         elif recipe == "WLD":
-            # Ultimate: Target Asleep, Weather Darkness, Location Enchanted Forest
-            bonus = 0.0
-            if "Asleep" in target.debuffs and env.weather == Weather.DARKNESS and env.location == Location.ENCHANTED_FOREST:
+            # Ultimate: Target Asleep, Weather Darkness, Location Enchanted Forest (Sequential payoffs)
+            conds = ["Asleep" in target.debuffs, env.weather == Weather.DARKNESS, env.location == Location.ENCHANTED_FOREST]
+            m = sum(bool(c) for c in conds)
+            if m == 3:
                 bonus = n * b
                 log["ultimate_triggered"] = True
                 log["notes"] += "ULTIMATE TRIGGERED! "
+            elif m > 0:
+                bonus = (m / 3.0) * (0.25 * n * b)
+                log["notes"] += f"Sequential payoff ({m}/3 conditions met: +{bonus:.1f}). "
+            else:
+                bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "LWF":
@@ -1345,8 +1663,10 @@ class SpellResolver:
             deal_damage(1.0 * b)
             if env.weather == Weather.RAINING:
                 env.set_weather(Weather.SNOWING, b)
-                target.apply_debuff("Stunned")
-                log["effects_applied"].append("Weather changed to Snowing, Target Stunned")
+                target.apply_debuff("Stunned", 1)
+                mult = round(1.0 + (b / 400.0), 4)
+                self._apply_secondary_class_multiplier(caster, [SpellClass.ICE], mult)
+                log["effects_applied"].append(f"Weather changed to Snowing, Target Stunned, +{mult:.3f}x Ice multiplier")
 
         elif recipe == "WDW":
             caster.apply_buff("Shielded")
@@ -1354,8 +1674,7 @@ class SpellResolver:
             log["effects_applied"].append("Shielded applied with Frosty retaliation on hit")
 
         elif recipe == "WDE":
-            env.set_weather(Weather.SNOWING, b)
-            log["effects_applied"].append(f"Weather changed to Snowing (potency {b}%)")
+            self._resolve_env_setup(env, caster, "weather", Weather.SNOWING, b, [SpellClass.ICE], cur_turn, log)
 
         elif recipe == "WDL":
             deal_damage(1.0 * b)
@@ -1363,12 +1682,18 @@ class SpellResolver:
             log["effects_applied"].append("Target Frosty")
 
         elif recipe == "WDD":
-            # Ultimate: Weather Blizzard AND Location Tundra
-            bonus = 0.0
-            if env.weather == Weather.BLIZZARD and env.location == Location.TUNDRA:
+            # Ultimate: Weather Blizzard AND Location Tundra (Sequential payoffs)
+            conds = [env.weather == Weather.BLIZZARD, env.location == Location.TUNDRA]
+            m = sum(bool(c) for c in conds)
+            if m == 2:
                 bonus = n * b
                 log["ultimate_triggered"] = True
                 log["notes"] += "ULTIMATE TRIGGERED! "
+            elif m > 0:
+                bonus = (m / 2.0) * (0.25 * n * b)
+                log["notes"] += f"Sequential payoff ({m}/2 conditions met: +{bonus:.1f}). "
+            else:
+                bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "DWF":
@@ -1383,8 +1708,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Slowed")
 
         elif recipe == "DWE":
-            env.set_location(Location.TUNDRA, b)
-            log["effects_applied"].append(f"Location changed to Tundra (potency {b}%)")
+            self._resolve_env_setup(env, caster, "location", Location.TUNDRA, b, [SpellClass.ICE], cur_turn, log)
 
         elif recipe == "DWL":
             deal_damage(1.0 * b)
@@ -1409,7 +1733,9 @@ class SpellResolver:
             if "Bleeding" in caster.debuffs:
                 caster.remove_debuff("Bleeding")
                 env.set_weather(Weather.BLOOD_RAIN, b)
-                log["effects_applied"].append("Removed Bleeding -> Weather changed to Blood Rain")
+                mult = round(1.0 + (b / 400.0), 4)
+                self._apply_secondary_class_multiplier(caster, [SpellClass.BLOOD, SpellClass.GHOSTFIRE], mult)
+                log["effects_applied"].append(f"Removed Bleeding -> Weather changed to Blood Rain, +{mult:.3f}x Blood/Ghostfire multiplier")
 
         elif recipe == "ELW":
             deal_damage(1.0 * b)
@@ -1417,8 +1743,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Slowed")
 
         elif recipe == "ELE":
-            env.set_weather(Weather.WINDY, b)
-            log["effects_applied"].append(f"Weather changed to Windy (potency {b}%)")
+            self._resolve_env_setup(env, caster, "weather", Weather.WINDY, b, [SpellClass.WIND], cur_turn, log)
 
         elif recipe == "ELL":
             caster.apply_buff("Quickened")
@@ -1430,7 +1755,9 @@ class SpellResolver:
             bonus = 2.0 * b if env.weather == Weather.RAINING else 0.0
             deal_damage(1.0 * b + bonus)
             env.set_weather(Weather.BLIZZARD, b)
-            log["effects_applied"].append("Weather changed to Blizzard")
+            mult = round(1.0 + (b / 400.0), 4)
+            self._apply_secondary_class_multiplier(caster, [SpellClass.ICE], mult)
+            log["effects_applied"].append(f"Weather changed to Blizzard, +{mult:.3f}x Ice multiplier")
 
         elif recipe == "LEF":
             bonus = 2.0 * b if "Burning" in target.debuffs else 0.0
@@ -1442,8 +1769,7 @@ class SpellResolver:
             log["effects_applied"].append("Reset durations of all debuffs on target")
 
         elif recipe == "LEE":
-            env.set_weather(Weather.SANDSTORM, b)
-            log["effects_applied"].append(f"Weather changed to Sandstorm (potency {b}%)")
+            self._resolve_env_setup(env, caster, "weather", Weather.SANDSTORM, b, [SpellClass.EARTH, SpellClass.WIND], cur_turn, log)
 
         elif recipe == "LEL":
             caster.apply_buff("Quickened")
@@ -1469,8 +1795,7 @@ class SpellResolver:
             log["effects_applied"].append(f"Target Potency & Defense -{b:.1f}")
 
         elif recipe == "EDE":
-            env.set_location(Location.SWAMP, b)
-            log["effects_applied"].append(f"Location changed to Swamp (potency {b}%)")
+            self._resolve_env_setup(env, caster, "location", Location.SWAMP, b, [SpellClass.POISON], cur_turn, log)
 
         elif recipe == "EDL":
             deal_damage(1.0 * b)
@@ -1478,12 +1803,18 @@ class SpellResolver:
             log["effects_applied"].append("Target Poisoned")
 
         elif recipe == "EDD":
-            # Ultimate: Target Bleeding AND Location Swamp
-            bonus = 0.0
-            if "Bleeding" in target.debuffs and env.location == Location.SWAMP:
+            # Ultimate: Target Bleeding AND Location Swamp (Sequential payoffs)
+            conds = ["Bleeding" in target.debuffs, env.location == Location.SWAMP]
+            m = sum(bool(c) for c in conds)
+            if m == 2:
                 bonus = n * b
                 log["ultimate_triggered"] = True
                 log["notes"] += "ULTIMATE TRIGGERED! "
+            elif m > 0:
+                bonus = (m / 2.0) * (0.25 * n * b)
+                log["notes"] += f"Sequential payoff ({m}/2 conditions met: +{bonus:.1f}). "
+            else:
+                bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "DEF":
@@ -1533,21 +1864,26 @@ class SpellResolver:
                 log["effects_applied"].append("Target Stunned (Luck roll)")
 
         elif recipe == "LDE":
-            env.set_location(Location.SPACE, b)
-            log["effects_applied"].append(f"Location changed to Space (potency {b}%)")
+            self._resolve_env_setup(env, caster, "location", Location.SPACE, b, [SpellClass.COSMIC], cur_turn, log)
 
         elif recipe == "LDL":
             bonus = 2.0 * b if "Blinded" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "LDD":
-            # Ultimate: Target has Blinded, Weakened, Slowed, AND Vulnerable
-            bonus = 0.0
-            req = {"Blinded", "Weakened", "Slowed", "Vulnerable"}
-            if req.issubset(set(target.debuffs.keys())):
+            # Ultimate: Target has Blinded, Weakened, Slowed, AND Vulnerable (Sequential payoffs)
+            req = ["Blinded", "Weakened", "Slowed", "Vulnerable"]
+            conds = [st in target.debuffs for st in req]
+            m = sum(bool(c) for c in conds)
+            if m == 4:
                 bonus = n * b
                 log["ultimate_triggered"] = True
                 log["notes"] += "ULTIMATE TRIGGERED! "
+            elif m > 0:
+                bonus = (m / 4.0) * (0.25 * n * b)
+                log["notes"] += f"Sequential payoff ({m}/4 conditions met: +{bonus:.1f}). "
+            else:
+                bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "DLF":
@@ -1620,16 +1956,31 @@ class ProjectSorceryGame:
         self.is_over: bool = False
         self.winner: Optional[str] = None
         self.combat_logs: List[Dict[str, Any]] = []
+        self.turn_history: List[Dict[str, Any]] = []
 
     def reset(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        """Resets the match to the initial state."""
+        """Resets the match to initial state, starting with random weather and location."""
         self.player1.reset()
         self.player2.reset()
         self.env = Environment()
+
+        # Start match with a random non-default weather and location
+        non_default_weathers = [w for w in Weather if w != Weather.CLEAR]
+        non_default_locations = [l for l in Location if l != Location.NONE]
+        self.env.set_weather(random.choice(non_default_weathers))
+        self.env.set_location(random.choice(non_default_locations))
+        self.env.weather_turns_active = 0
+        self.env.location_turns_active = 0
+
+        # Initialize rune pools at Turn 1 (3 runes each)
+        self.player1.rune_pool = random.choices(ALL_RUNES, k=3)
+        self.player2.rune_pool = random.choices(ALL_RUNES, k=3)
+
         self.current_turn = 0
         self.is_over = False
         self.winner = None
         self.combat_logs.clear()
+        self.turn_history.clear()
         return self.get_state(0), self.get_state(1)
 
     def determine_initiative(self) -> Tuple[Wizard, Wizard]:
@@ -1694,12 +2045,29 @@ class ProjectSorceryGame:
             raise RuntimeError("Match is already over. Call reset() to start a new match.")
 
         self.current_turn += 1
+        self.env.current_turn = self.current_turn
         self.player1.turns_survived += 1
         self.player2.turns_survived += 1
+
+        # Replenish rune pools per progression logic:
+        # T1: 3, T2-T4: 4, T5-T7: 5, T8-T11: 6, T12-T14: 7, T15+: 8 (unused stay in pool)
+        target_runes = get_target_rune_pool_size(self.current_turn)
+        for wiz in (self.player1, self.player2):
+            if len(wiz.rune_pool) < target_runes:
+                needed = target_runes - len(wiz.rune_pool)
+                wiz.rune_pool.extend(random.choices(ALL_RUNES, k=needed))
 
         # Format action strings
         recipe1 = self._parse_action(action_p1)
         recipe2 = self._parse_action(action_p2)
+
+        # Deduct drafted runes from rune pool (unused runes stay in pool)
+        for ch in recipe1:
+            if ch in self.player1.rune_pool:
+                self.player1.rune_pool.remove(ch)
+        for ch in recipe2:
+            if ch in self.player2.rune_pool:
+                self.player2.rune_pool.remove(ch)
 
         turn_log = {
             "turn": self.current_turn,
@@ -1764,8 +2132,41 @@ class ProjectSorceryGame:
             else:
                 self._conclude_match(winner="Draw")
 
+        # Track active duration of non-default weather and location
+        if self.env.weather != Weather.CLEAR:
+            self.env.weather_turns_active += 1
+        if self.env.location != Location.NONE:
+            self.env.location_turns_active += 1
+
+        # Record snapshot of this turn to history (for bot memory)
+        self.turn_history.append({
+            "turn": self.current_turn,
+            "weather": self.env.weather.value,
+            "weather_turns_active": self.env.weather_turns_active,
+            "location": self.env.location.value,
+            "location_turns_active": self.env.location_turns_active,
+            "p1_hp": self.player1.current_health,
+            "p2_hp": self.player2.current_health,
+            "p1_action": recipe1,
+            "p2_action": recipe2,
+            "p1_buffs": dict(self.player1.buffs),
+            "p1_debuffs": dict(self.player1.debuffs),
+            "p2_buffs": dict(self.player2.buffs),
+            "p2_debuffs": dict(self.player2.debuffs),
+        })
+
         self.combat_logs.append(turn_log)
         r1, r2 = self._calculate_rewards()
+
+        # Replenish rune pools for the upcoming turn (unused runes stay in pool)
+        # Progression logic: Turn 1: 3, Turn 2-4: 4, Turn 5-7: 5, Turn 8-11: 6, Turn 12-14: 7, Turn 15+: 8
+        if not self.is_over:
+            next_turn_target = get_target_rune_pool_size(self.current_turn + 1)
+            for wiz in (self.player1, self.player2):
+                if len(wiz.rune_pool) < next_turn_target:
+                    needed = next_turn_target - len(wiz.rune_pool)
+                    wiz.rune_pool.extend(random.choices(ALL_RUNES, k=needed))
+
         return self.get_state(0), self.get_state(1), r1, r2, self.is_over, {"winner": self.winner}
 
     def _resolve_end_of_turn_effects(self, turn_log: Dict[str, Any]) -> None:
@@ -1888,12 +2289,21 @@ class ProjectSorceryGame:
         Returns rich structured state representation for an AI player.
         Contains:
         - player & opponent HP, max HP, and effective stats
-        - active buffs and debuffs with durations
-        - environment weather, location, and seedling status
+        - active buffs, debuffs, rune pools, and match-long class multipliers
+        - environment weather, location, active durations, seedling status
+        - turn history (memory of previous turns)
+        - live combo setup scores for multi-condition spells
+        - per-castable spell combo advance impact
         - numeric feature vector for direct neural network input
         """
+        import copy
         me = self.player1 if player_idx == 0 else self.player2
         opp = self.player2 if player_idx == 0 else self.player1
+
+        all_recs = self.registry.all_recipes()
+        castable_me = get_castable_spells_from_pool(me.rune_pool, all_recs)
+        combo_scores = get_all_multi_condition_scores(me, opp, self.env)
+        combo_impacts = get_combo_setup_impacts(me, opp, self.env, castable_me)
 
         return {
             "turn": self.current_turn,
@@ -1910,6 +2320,9 @@ class ProjectSorceryGame:
                 "buffs": dict(me.buffs),
                 "debuffs": dict(me.debuffs),
                 "has_priority": me.has_next_turn_priority,
+                "rune_pool": list(me.rune_pool),
+                "class_multipliers": dict(me.class_multipliers),
+                "castable_spells": castable_me,
             },
             "opponent": {
                 "name": opp.name,
@@ -1922,16 +2335,24 @@ class ProjectSorceryGame:
                 "buffs": dict(opp.buffs),
                 "debuffs": dict(opp.debuffs),
                 "has_priority": opp.has_next_turn_priority,
+                "rune_pool": list(opp.rune_pool),
+                "class_multipliers": dict(opp.class_multipliers),
             },
             "environment": {
                 "weather": self.env.weather.value,
                 "weather_potency": self.env.weather_potency,
+                "weather_turns_active": self.env.weather_turns_active,
                 "location": self.env.location.value,
                 "location_potency": self.env.location_potency,
+                "location_turns_active": self.env.location_turns_active,
                 "seedling_active": self.env.seedling_active,
                 "seedling_rained_on": self.env.seedling_rained_on,
                 "seedling_sunny_on": self.env.seedling_sunny_on,
             },
+            "turn_history": [copy.deepcopy(t) for t in self.turn_history],
+            "combo_setup_scores": combo_scores,
+            "combo_setup_impact": combo_impacts,
+            "castable_spells": castable_me,
             "feature_vector": self.get_observation_vector(player_idx)
         }
 
