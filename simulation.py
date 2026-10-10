@@ -50,6 +50,7 @@ try:
         Wizard,
         get_registry,
         get_spell_class,
+        PREFIX_TO_CLASS,
     )
 except ImportError:
     try:
@@ -58,6 +59,7 @@ except ImportError:
             Wizard,
             get_registry,
             get_spell_class,
+            PREFIX_TO_CLASS,
         )
     except ImportError as e:
         raise ImportError(f"Could not import project_sorcery engine: {e}")
@@ -91,12 +93,18 @@ class NeuralBotPolicy:
     """
     Feedforward Multi-Layer Perceptron (MLP) policy for Project Sorcery AI Bots.
     Architecture: [75 inputs -> 48 LeakyReLU -> 32 LeakyReLU -> 125 Logits -> Softmax]
+    Enhanced with:
+    - Bot memory tracking of previous turns in the match
+    - Visibility into rune pool drafting (restricting action selection to castable spells)
+    - Live awareness of secondary match-long class multipliers
+    - Live awareness of multi-condition combo scores and setup impact
     """
 
     def __init__(self, bot_dict: Dict[str, Any], action_catalog: List[str]):
         self.bot_id = bot_dict.get("bot_id", "Unknown")
         self.name = bot_dict.get("name", self.bot_id)
         self.action_catalog = action_catalog
+        self.memory: List[Dict[str, Any]] = []
 
         dna = bot_dict["dna"]
         self.w1 = np.array(dna["weights_layer_1"], dtype=np.float32)
@@ -111,12 +119,18 @@ class NeuralBotPolicy:
         self.decision_mode = hyperparams.get("decision_mode", "softmax_sample")
 
     def __call__(self, obs: Dict[str, Any]) -> str:
-        """Takes game state dict containing feature_vector and outputs 3-rune recipe."""
+        """Takes game state dict and outputs a valid 3-rune recipe."""
+        # 1. Update bot memory of previous game states in this match
+        if obs.get("turn", 1) <= 1:
+            self.memory.clear()
+        self.memory.append(obs)
+
         feature_vec = obs.get("feature_vector")
         if feature_vec is None:
             raise ValueError(f"Observation missing 'feature_vector' for bot {self.bot_id}")
 
-        x = np.array(feature_vec, dtype=np.float32)
+        # Feedforward MLP (aligned to DNA input dimension)
+        x = np.array(feature_vec[:self.w1.shape[0]], dtype=np.float32)
 
         # Layer 1
         z1 = np.dot(x, self.w1) + self.b1
@@ -129,11 +143,41 @@ class NeuralBotPolicy:
         # Layer 3 (Output logits over 125 actions)
         logits = np.dot(h2, self.w3) + self.b3
 
+        # 2. Integrate Bot Visibility: Rune Pool, Class Multipliers, and Combo Setup Impact
+        me_info = obs.get("me", {})
+        castable_spells = me_info.get("castable_spells", obs.get("castable_spells", []))
+        class_multipliers = me_info.get("class_multipliers", {})
+        combo_impacts = obs.get("combo_setup_impact", {})
+
+        for idx, recipe in enumerate(self.action_catalog):
+            # Check rune pool: mask uncastable spells so bot only drafts spells it has runes for
+            if castable_spells and recipe not in castable_spells:
+                logits[idx] = -1e9
+                continue
+
+            # Visibility into combo-setup advance: bonus for setting up multi-condition combos
+            if recipe in combo_impacts:
+                total_adv = combo_impacts[recipe].get("total_advance", 0.0)
+                if total_adv > 0:
+                    logits[idx] += total_adv * 2.5
+
+            # Visibility into match-long class multipliers
+            prefix = recipe[:2].upper()
+            if prefix in PREFIX_TO_CLASS:
+                cls_val = PREFIX_TO_CLASS[prefix].value
+                c_mult = class_multipliers.get(cls_val, 1.0)
+                if c_mult > 1.0:
+                    logits[idx] += (c_mult - 1.0) * 3.0
+
         # Scaled softmax
         scaled_logits = logits / max(1e-5, self.temperature)
         shifted_logits = scaled_logits - np.max(scaled_logits)
         exp_logits = np.exp(shifted_logits)
-        probs = exp_logits / np.sum(exp_logits)
+        sum_exp = np.sum(exp_logits)
+        if sum_exp > 0:
+            probs = exp_logits / sum_exp
+        else:
+            probs = np.ones(len(logits)) / len(logits)
 
         if self.decision_mode == "softmax_sample":
             action_idx = int(np.random.choice(len(probs), p=probs))
