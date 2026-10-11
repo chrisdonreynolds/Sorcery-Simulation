@@ -2,18 +2,17 @@
 """
 Project Sorcery - AI Bot Evolution & 1v1 Tournament Simulation
 ==============================================================
-Loads AI bot DNA genomes, conducts 50 random 1v1 matches across the 100-bot
-population, and mutates the neural network DNA of the losing bots.
+Loads AI bot DNA genomes, conducts 1v1 matches across the 100-bot population,
+evaluates Multi-Objective Fitness (Outcome, Peak Combo Setup, Net Damage),
+ranks bots, and mutates only the bottom 40% while preserving high-scoring
+partial-combo bots and allowing them to serve as cloning parents.
 
-Rules & Constraints:
-- Population: 100 bots loaded from ai_bots_dna.json
-- Matches per iteration: 50 1v1 matches (50 randomly pitted against the other 50)
-- Wizard parameters at match start:
-    - Max HP / Starting HP: 1000.0
-    - Base stats: 100.0 each (Potency, Defense, Luck, Speed)
-- Losers of each match undergo consequential mutation of their neural network DNA.
-- Updated DNA and performance statistics are saved back to ai_bots_dna.json.
-- Each call to main() executes one complete iteration of 50 matches and mutations.
+Features:
+- Multi-Objective Fitness: w_outcome*S_outcome + w_combo*S_combo + w_damage*S_damage
+- Action Masking: strictly restricts policy output logits to valid, craftable spells
+- 80-feature observation vector handling with automatic DNA layer-1 migration
+- Support for Reverse Curriculum board states (initial_board_state in play_duel)
+- Fitness-Ranked Selection protecting partial progress (top 60% survive)
 """
 
 import argparse
@@ -51,6 +50,9 @@ try:
         get_registry,
         get_spell_class,
         PREFIX_TO_CLASS,
+        MULTI_CONDITION_REQUIREMENTS,
+        get_castable_spells_from_pool,
+        evaluate_multi_condition_score,
     )
 except ImportError:
     try:
@@ -60,6 +62,9 @@ except ImportError:
             get_registry,
             get_spell_class,
             PREFIX_TO_CLASS,
+            MULTI_CONDITION_REQUIREMENTS,
+            get_castable_spells_from_pool,
+            evaluate_multi_condition_score,
         )
     except ImportError as e:
         raise ImportError(f"Could not import project_sorcery engine: {e}")
@@ -89,13 +94,45 @@ def resolve_file_path(filename: str, custom_path: Optional[str] = None) -> Path:
     return (SCRIPT_DIR / filename).resolve()
 
 
+def migrate_dna_registry(data: Dict[str, Any]) -> int:
+    """
+    Pads existing 75-feature weights_layer_1 arrays with 5 rows of small random weights
+    to adapt to the 80-feature observation vector, preventing matrix multiplication crashes.
+    """
+    migrated = 0
+    for bot in data.get("bots", []):
+        dna = bot.get("dna", {})
+        if "weights_layer_1" not in dna:
+            continue
+        w1 = np.array(dna["weights_layer_1"], dtype=np.float32)
+        if w1.shape[0] < 80 and w1.shape[0] > 0:
+            needed = 80 - w1.shape[0]
+            pad = np.random.normal(0.0, 0.05, size=(needed, w1.shape[1])).astype(np.float32)
+            new_w1 = np.vstack([w1, pad])
+            dna["weights_layer_1"] = [[round(float(v), 4) for v in row] for row in np.round(new_w1, 4).tolist()]
+            dna["architecture"] = [80, 48, 32, 125]
+            dna["total_parameters"] = 80 * 48 + 48 + 48 * 32 + 32 + 32 * 125 + 125
+            migrated += 1
+
+    meta = data.setdefault("meta", {})
+    model_arch = meta.setdefault("model_architecture", {})
+    model_arch["input_dimension"] = 80
+    model_arch["total_parameters_per_bot"] = 9581
+    model_arch["input_feature_description"] = (
+        "80 normalized features (75 tactical + 5 normalized rune counts F,W,E,L,D) "
+        "extracted via ProjectSorceryGame.get_observation_vector(player_idx)"
+    )
+    return migrated
+
+
 class NeuralBotPolicy:
     """
     Feedforward Multi-Layer Perceptron (MLP) policy for Project Sorcery AI Bots.
-    Architecture: [75 inputs -> 48 LeakyReLU -> 32 LeakyReLU -> 125 Logits -> Softmax]
+    Architecture: [80 inputs -> 48 LeakyReLU -> 32 LeakyReLU -> 125 Logits -> Softmax]
     Enhanced with:
+    - Action Masking: strictly sets uncraftable spell logits to -infinity
+    - 80-feature observation vector processing (including 5 normalized rune counts)
     - Bot memory tracking of previous turns in the match
-    - Visibility into rune pool drafting (restricting action selection to castable spells)
     - Live awareness of secondary match-long class multipliers
     - Live awareness of multi-condition combo scores and setup impact
     """
@@ -107,7 +144,14 @@ class NeuralBotPolicy:
         self.memory: List[Dict[str, Any]] = []
 
         dna = bot_dict["dna"]
-        self.w1 = np.array(dna["weights_layer_1"], dtype=np.float32)
+        w1_raw = np.array(dna["weights_layer_1"], dtype=np.float32)
+        # Fallback padding if not yet migrated
+        if w1_raw.shape[0] < 80:
+            needed = 80 - w1_raw.shape[0]
+            pad = np.random.normal(0.0, 0.05, size=(needed, w1_raw.shape[1])).astype(np.float32)
+            w1_raw = np.vstack([w1_raw, pad])
+
+        self.w1 = w1_raw
         self.b1 = np.array(dna["biases_layer_1"], dtype=np.float32)
         self.w2 = np.array(dna["weights_layer_2"], dtype=np.float32)
         self.b2 = np.array(dna["biases_layer_2"], dtype=np.float32)
@@ -119,9 +163,10 @@ class NeuralBotPolicy:
         self.decision_mode = hyperparams.get("decision_mode", "softmax_sample")
 
     def __call__(self, obs: Dict[str, Any]) -> str:
-        """Takes game state dict and outputs a valid 3-rune recipe."""
+        """Takes game state dict and outputs a valid, craftable 3-rune recipe."""
         # 1. Update bot memory of previous game states in this match
-        if obs.get("turn", 1) <= 1:
+        prev_turn = self.memory[-1].get("turn", 1) if self.memory else None
+        if prev_turn is None or obs.get("turn", 1) <= prev_turn:
             self.memory.clear()
         self.memory.append(obs)
 
@@ -129,7 +174,7 @@ class NeuralBotPolicy:
         if feature_vec is None:
             raise ValueError(f"Observation missing 'feature_vector' for bot {self.bot_id}")
 
-        # Feedforward MLP (aligned to DNA input dimension)
+        # Feedforward MLP (aligned to DNA input dimension 80)
         x = np.array(feature_vec[:self.w1.shape[0]], dtype=np.float32)
 
         # Layer 1
@@ -145,23 +190,21 @@ class NeuralBotPolicy:
 
         # 2. Integrate Bot Visibility: Rune Pool, Class Multipliers, and Combo Setup Impact
         me_info = obs.get("me", {})
+        rune_pool = me_info.get("rune_pool", [])
         castable_spells = me_info.get("castable_spells", obs.get("castable_spells", []))
+        if not castable_spells and rune_pool:
+            castable_spells = get_castable_spells_from_pool(rune_pool, self.action_catalog)
+
         class_multipliers = me_info.get("class_multipliers", {})
         combo_impacts = obs.get("combo_setup_impact", {})
 
+        # Heuristic tactical bias for setting up multi-condition combos & class multipliers
         for idx, recipe in enumerate(self.action_catalog):
-            # Check rune pool: mask uncastable spells so bot only drafts spells it has runes for
-            if castable_spells and recipe not in castable_spells:
-                logits[idx] = -1e9
-                continue
-
-            # Visibility into combo-setup advance: bonus for setting up multi-condition combos
             if recipe in combo_impacts:
                 total_adv = combo_impacts[recipe].get("total_advance", 0.0)
                 if total_adv > 0:
                     logits[idx] += total_adv * 2.5
 
-            # Visibility into match-long class multipliers
             prefix = recipe[:2].upper()
             if prefix in PREFIX_TO_CLASS:
                 cls_val = PREFIX_TO_CLASS[prefix].value
@@ -169,13 +212,26 @@ class NeuralBotPolicy:
                 if c_mult > 1.0:
                     logits[idx] += (c_mult - 1.0) * 3.0
 
-        # Scaled softmax
-        scaled_logits = logits / max(1e-5, self.temperature)
-        shifted_logits = scaled_logits - np.max(scaled_logits)
-        exp_logits = np.exp(shifted_logits)
-        sum_exp = np.sum(exp_logits)
-        if sum_exp > 0:
-            probs = exp_logits / sum_exp
+        # 3. ACTION MASKING: Set logits to -inf for spells that cannot be crafted
+        if castable_spells:
+            castable_set = set(castable_spells)
+            for idx, recipe in enumerate(self.action_catalog):
+                if recipe not in castable_set:
+                    logits[idx] = -np.inf
+
+        # 4. Numerically stable masked softmax
+        valid_mask = logits > -1e9
+        if np.any(valid_mask):
+            scaled_logits = logits / max(1e-5, self.temperature)
+            max_valid = np.max(scaled_logits[valid_mask])
+            shifted = np.where(valid_mask, scaled_logits - max_valid, -np.inf)
+            exp_logits = np.where(valid_mask, np.exp(shifted), 0.0)
+            sum_exp = np.sum(exp_logits)
+            if sum_exp > 0:
+                probs = exp_logits / sum_exp
+            else:
+                probs = np.zeros(len(logits))
+                probs[valid_mask] = 1.0 / np.sum(valid_mask)
         else:
             probs = np.ones(len(logits)) / len(logits)
 
@@ -213,7 +269,11 @@ def mutate_bot_dna(bot: Dict[str, Any]) -> None:
         mask = np.random.rand(*arr.shape) < mut_rate
         noise = np.random.normal(0.0, mut_power, size=arr.shape).astype(np.float32)
         mutated_arr = arr + mask * noise
-        dna[key] = np.round(mutated_arr, 4).tolist()
+        mutated_list = np.round(mutated_arr, 4).tolist()
+        if arr.ndim == 2:
+            dna[key] = [[round(float(v), 4) for v in row] for row in mutated_list]
+        else:
+            dna[key] = [round(float(v), 4) for v in mutated_list]
 
     bot["generation"] = bot.get("generation", 0) + 1
 
@@ -233,16 +293,41 @@ def create_wizard_for_bot(bot: Dict[str, Any]) -> Wizard:
     )
 
 
+def count_active_combo_conditions(caster: Wizard, target: Wizard, env: Any) -> int:
+    """Counts maximum simultaneously active combo prerequisites for any multi-condition spell."""
+    max_met = 0
+    for recipe, reqs in MULTI_CONDITION_REQUIREMENTS.items():
+        met = 0
+        for req_type, req_val in reqs:
+            if req_type == "weather":
+                if env.weather == req_val: met += 1
+            elif req_type == "location":
+                if env.location == req_val: met += 1
+            elif req_type == "caster_buff":
+                if req_val in caster.buffs: met += 1
+            elif req_type == "target_debuff":
+                if req_val in target.debuffs: met += 1
+            elif req_type == "seedling":
+                if req_val == "active" and env.seedling_active: met += 1
+                elif req_val == "rained_on" and env.seedling_rained_on: met += 1
+                elif req_val == "sunny_on" and env.seedling_sunny_on: met += 1
+        if met > max_met:
+            max_met = met
+    return max_met
+
+
 def play_duel(
     bot_a: Dict[str, Any],
     bot_b: Dict[str, Any],
     action_catalog: List[str],
     spell_data_path: str,
     max_turns: int = 50,
+    initial_board_state: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Conducts a single 1v1 duel between bot_a and bot_b.
-    Returns match statistics and identifies the winner and loser.
+    Evaluates Multi-Objective Fitness:
+      Fitness = w_outcome * S_outcome + w_combo * S_combo + w_damage * S_damage
     """
     wiz_a = create_wizard_for_bot(bot_a)
     wiz_b = create_wizard_for_bot(bot_b)
@@ -257,12 +342,19 @@ def play_duel(
         max_turns=max_turns,
     )
 
-    obs_a, obs_b = game.reset()
+    obs_a, obs_b = game.reset(initial_board_state=initial_board_state)
+
+    # Track peak simultaneous active combo conditions throughout the duel
+    peak_conditions_a = count_active_combo_conditions(wiz_a, wiz_b, game.env)
+    peak_conditions_b = count_active_combo_conditions(wiz_b, wiz_a, game.env)
 
     while not game.is_over:
         action_a = policy_a(obs_a)
         action_b = policy_b(obs_b)
         obs_a, obs_b, r1, r2, done, info = game.step(action_a, action_b)
+
+        peak_conditions_a = max(peak_conditions_a, count_active_combo_conditions(wiz_a, wiz_b, game.env))
+        peak_conditions_b = max(peak_conditions_b, count_active_combo_conditions(wiz_b, wiz_a, game.env))
 
     # Determine Winner and Loser
     if game.winner == wiz_a.name:
@@ -271,30 +363,59 @@ def play_duel(
         winner_wiz = wiz_a
         loser_wiz = wiz_b
         result_type = "win_p1"
+        s_outcome_a = 1.0
+        s_outcome_b = -1.0
     elif game.winner == wiz_b.name:
         winner_bot = bot_b
         loser_bot = bot_a
         winner_wiz = wiz_b
         loser_wiz = wiz_a
         result_type = "win_p2"
+        s_outcome_a = -1.0
+        s_outcome_b = 1.0
     else:
         # Tie breaker on remaining HP
         if wiz_a.current_health > wiz_b.current_health:
             winner_bot, loser_bot = bot_a, bot_b
             winner_wiz, loser_wiz = wiz_a, wiz_b
             result_type = "tiebreaker_p1"
+            s_outcome_a = 1.0
+            s_outcome_b = -1.0
         elif wiz_b.current_health > wiz_a.current_health:
             winner_bot, loser_bot = bot_b, bot_a
             winner_wiz, loser_wiz = wiz_b, wiz_a
             result_type = "tiebreaker_p2"
+            s_outcome_a = -1.0
+            s_outcome_b = 1.0
         else:
             if random.random() < 0.5:
                 winner_bot, loser_bot = bot_a, bot_b
                 winner_wiz, loser_wiz = wiz_a, wiz_b
+                s_outcome_a = 1.0
+                s_outcome_b = -1.0
             else:
                 winner_bot, loser_bot = bot_b, bot_a
                 winner_wiz, loser_wiz = wiz_b, wiz_a
+                s_outcome_a = -1.0
+                s_outcome_b = 1.0
             result_type = "tiebreaker_draw_resolved"
+
+    # Multi-Objective Fitness Evaluation
+    # 1. Match Outcome: +1.0 for Win, -1.0 for Loss (w_outcome = 1.0)
+    w_outcome = 1.0
+
+    # 2. Max Combo Prerequisites Active: +0.25 per active condition at peak setup (w_combo = 1.0)
+    w_combo = 1.0
+    s_combo_a = 0.25 * float(peak_conditions_a)
+    s_combo_b = 0.25 * float(peak_conditions_b)
+
+    # 3. Net Damage Differential: (Damage Dealt - Damage Taken) / 1000.0 (w_damage = 0.5)
+    w_damage = 0.5
+    s_damage_a = (wiz_a.damage_dealt - wiz_a.damage_taken) / 1000.0
+    s_damage_b = (wiz_b.damage_dealt - wiz_b.damage_taken) / 1000.0
+
+    fitness_a = round(w_outcome * s_outcome_a + w_combo * s_combo_a + w_damage * s_damage_a, 4)
+    fitness_b = round(w_outcome * s_outcome_b + w_combo * s_combo_b + w_damage * s_damage_b, 4)
 
     # Track spell and class usage from combat logs
     spells_cast_a: Dict[str, int] = {}
@@ -323,6 +444,8 @@ def play_duel(
         wiz: Wizard,
         spells_cast: Dict[str, int],
         classes_used: Dict[str, int],
+        match_fitness: float,
+        peak_conditions: int,
     ):
         tracker = bot.setdefault("performance_tracker", {})
         tracker["matches_played"] = tracker.get("matches_played", 0) + 1
@@ -346,12 +469,12 @@ def play_duel(
         for cls_name, c in classes_used.items():
             class_counts[cls_name] = class_counts.get(cls_name, 0) + c
 
-        hp_diff = (wiz.current_health - (1000.0 if not is_winner else 0.0)) / 1000.0
-        bonus = 10.0 if is_winner else -10.0
-        tracker["fitness"] = round(tracker.get("fitness", 0.0) + hp_diff + bonus, 2)
+        tracker["last_match_fitness"] = match_fitness
+        tracker["fitness"] = round(tracker.get("fitness", 0.0) + match_fitness, 4)
+        tracker["peak_combo_conditions"] = max(tracker.get("peak_combo_conditions", 0), peak_conditions)
 
-    update_bot_stats(bot_a, winner_bot is bot_a, wiz_a, spells_cast_a, classes_used_a)
-    update_bot_stats(bot_b, winner_bot is bot_b, wiz_b, spells_cast_b, classes_used_b)
+    update_bot_stats(bot_a, winner_bot is bot_a, wiz_a, spells_cast_a, classes_used_a, fitness_a, peak_conditions_a)
+    update_bot_stats(bot_b, winner_bot is bot_b, wiz_b, spells_cast_b, classes_used_b, fitness_b, peak_conditions_b)
 
     return {
         "bot_a_id": bot_a["bot_id"],
@@ -360,6 +483,10 @@ def play_duel(
         "loser_id": loser_bot["bot_id"],
         "winner_bot": winner_bot,
         "loser_bot": loser_bot,
+        "fitness_a": fitness_a,
+        "fitness_b": fitness_b,
+        "peak_conditions_a": peak_conditions_a,
+        "peak_conditions_b": peak_conditions_b,
         "turns": game.current_turn,
         "p1_final_hp": wiz_a.current_health,
         "p2_final_hp": wiz_b.current_health,
@@ -371,14 +498,17 @@ def run_tournament_iteration(
     dna_path: Optional[Union[str, Path]] = None,
     spell_data_path: Optional[Union[str, Path]] = None,
     verbose: bool = True,
+    board_states: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     Executes one tournament iteration:
-    1. Loads 100 bots from ai_bots_dna.json.
+    1. Loads 100 bots from ai_bots_dna.json (and migrates DNA to 80-dim if needed).
     2. Randomly partitions into two groups of 50.
     3. Runs 50 1v1 matches (1000 max HP, 100 base stats).
-    4. Mutates the 50 losing bots.
-    5. Saves updated DNA back to disk.
+    4. Evaluates Multi-Objective Fitness for each bot.
+    5. Ranks all bots by fitness and mutates only the bottom 40% (allowing high-scoring
+       partial-combo bots to survive or serve as cloning parents).
+    6. Saves updated DNA back to disk.
     """
     actual_dna_path = resolve_file_path("ai_bots_dna.json", str(dna_path) if dna_path else None)
     actual_spell_path = resolve_file_path("spell_data.json", str(spell_data_path) if spell_data_path else None)
@@ -394,6 +524,11 @@ def run_tournament_iteration(
 
     with open(actual_dna_path, "r", encoding="utf-8") as f:
         data = json.load(f)
+
+    # Automatic migration routine for DNA dimensions
+    migrated_count = migrate_dna_registry(data)
+    if migrated_count > 0 and verbose:
+        print(f"[Migration] Automatically migrated {migrated_count} bots to 80-dimensional input layer.")
 
     bots: List[Dict[str, Any]] = data.get("bots", [])
     if len(bots) < 100:
@@ -422,12 +557,11 @@ def run_tournament_iteration(
     group_2_indices = indices[50:100]
 
     match_results = []
-    losers_to_mutate = []
-
     start_time = time.time()
     if verbose:
         print("\n" + "=" * 70)
-        print(f"Starting 50 1v1 Matches (Iteration with {len(bots)} Bots)")
+        mode_str = "Curriculum Board States" if board_states else "Standard Duels"
+        print(f"Starting 50 1v1 Matches ({mode_str} with {len(bots)} Bots)")
         print("=" * 70)
 
     for match_num in range(50):
@@ -436,34 +570,62 @@ def run_tournament_iteration(
         bot_a = bots[idx_a]
         bot_b = bots[idx_b]
 
+        init_state = None
+        if board_states:
+            init_state = random.choice(board_states)
+
         result = play_duel(
             bot_a=bot_a,
             bot_b=bot_b,
             action_catalog=action_catalog,
             spell_data_path=str(actual_spell_path),
             max_turns=50,
+            initial_board_state=init_state,
         )
         match_results.append(result)
-        losers_to_mutate.append(result["loser_bot"])
 
         if verbose:
             print(
                 f"Match {match_num + 1:02d}/50: "
                 f"{bot_a['name']} ({bot_a['bot_id']}) vs {bot_b['name']} ({bot_b['bot_id']}) "
-                f"-> Winner: {result['winner_id']} in {result['turns']} turns "
-                f"(HP: {result['p1_final_hp']:.0f} vs {result['p2_final_hp']:.0f})"
+                f"-> Winner: {result['winner_id']} in {result['turns']} turns | "
+                f"Fitness: [A: {result['fitness_a']:+.2f}, B: {result['fitness_b']:+.2f}] "
+                f"(Peak Setup: A={result['peak_conditions_a']}, B={result['peak_conditions_b']})"
             )
 
     elapsed_time = time.time() - start_time
+
+    # Fitness-Ranked Selection:
+    # Rank all 100 bots by their Multi-Objective Fitness score in this iteration.
+    # Top 60% survive; only bottom 40% are mutated/cloned.
+    ranked_bots = sorted(
+        bots,
+        key=lambda b: b.get("performance_tracker", {}).get("last_match_fitness", 0.0),
+        reverse=True,
+    )
+    cutoff = int(len(bots) * 0.60)  # 60 bots survive
+    survivors = ranked_bots[:cutoff]
+    bottom_bots = ranked_bots[cutoff:]  # 40 bots in bottom 40%
+
     if verbose:
         print("-" * 70)
         print(f"Completed 50 1v1 matches in {elapsed_time:.2f}s ({elapsed_time/50:.4f}s/match)")
-        print(f"Mutating {len(losers_to_mutate)} losing bot genomes...")
+        print(
+            f"Fitness-Ranked Selection: Top {len(survivors)} bots survived (score range: "
+            f"{survivors[-1]['performance_tracker']['last_match_fitness']:+.2f} to "
+            f"{survivors[0]['performance_tracker']['last_match_fitness']:+.2f})."
+        )
+        print(f"Mutating {len(bottom_bots)} bots in bottom 40% (score cutoff: "
+              f"{bottom_bots[0]['performance_tracker']['last_match_fitness']:+.2f})...")
 
-    # Mutate losing bots
     mutated_count = 0
-    for loser in losers_to_mutate:
-        mutate_bot_dna(loser)
+    for bot in bottom_bots:
+        crossover_rate = float(bot.get("genetic_hyperparameters", {}).get("crossover_rate", 0.70))
+        # Allow high-scoring partial-combo bots to serve as cloning parents
+        if random.random() < crossover_rate and survivors:
+            parent = random.choice(survivors)
+            bot["dna"] = copy.deepcopy(parent["dna"])
+        mutate_bot_dna(bot)
         mutated_count += 1
 
     # Update metadata
@@ -478,7 +640,7 @@ def run_tournament_iteration(
     # Write atomically
     temp_dna_path = actual_dna_path.with_suffix(".tmp.json")
     with open(temp_dna_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
+        json.dump(data, f, separators=(",", ":"))
     temp_dna_path.replace(actual_dna_path)
 
     if verbose:
@@ -499,16 +661,17 @@ def main(
     dna_path: Optional[Union[str, Path]] = None,
     spell_data_path: Optional[Union[str, Path]] = None,
     verbose: bool = True,
+    board_states: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     Main entry point:
-    Pits 50 bots at random against the other half, executes 50 1v1 matches,
-    mutates the losing bots, and saves the updated DNA JSON.
+    Executes one complete iteration of 50 matches and fitness-ranked mutations.
     """
     return run_tournament_iteration(
         dna_path=dna_path,
         spell_data_path=spell_data_path,
         verbose=verbose,
+        board_states=board_states,
     )
 
 

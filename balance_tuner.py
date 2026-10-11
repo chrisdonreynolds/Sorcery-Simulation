@@ -68,6 +68,8 @@ try:
         get_registry,
         get_spell_class,
         MULTI_CONDITION_REQUIREMENTS,
+        BUFF_CONFIGS,
+        STATUS_CONFIGS,
     )
 except ImportError as e:
     raise ImportError(f"Could not import Project Sorcery modules: {e}")
@@ -361,10 +363,10 @@ class SimulationTelemetryTracker:
 
             return log
 
-        def hooked_play_duel(bot_a, bot_b, action_catalog, spell_data_path, max_turns=50):
+        def hooked_play_duel(bot_a, bot_b, action_catalog, spell_data_path, max_turns=50, initial_board_state=None, **kwargs):
             tracker.current_duel_casts = []
             tracker.run_duel_casts = []
-            result = tracker.orig_play_duel(bot_a, bot_b, action_catalog, spell_data_path, max_turns)
+            result = tracker.orig_play_duel(bot_a, bot_b, action_catalog, spell_data_path, max_turns, initial_board_state=initial_board_state, **kwargs)
 
             # Record duel telemetry for the entire run
             run_duel = DuelTelemetry(
@@ -519,9 +521,16 @@ class SimulationTelemetryTracker:
 
     def compute_run_spell_metrics(self) -> Dict[str, Dict[str, Any]]:
         """
-        Compiles spell telemetry for all duels conducted during the entire run.
+        Compiles spell telemetry strictly for the post-training evaluation matches (e.g., 5000 matches).
         """
-        metrics, _ = self.compute_spell_metrics(self.all_recorded_duels)
+        metrics, _ = self.compute_spell_metrics(self.recorded_duels)
+        return metrics
+
+    def compute_eval_spell_metrics(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Compiles spell telemetry strictly for the post-training evaluation matches (e.g., 5000 matches).
+        """
+        metrics, _ = self.compute_spell_metrics(self.recorded_duels)
         return metrics
 
     def compute_aggregates(self) -> Dict[str, Any]:
@@ -735,8 +744,9 @@ class SpellBalancingEngine:
         print("EXECUTING ADVANCED SPELL BALANCING ALGORITHMS")
         print("=" * 75)
 
-        # Stage 1: Group-Level Synergy & Class Tuning
+        # Stage 1: Group-Level Synergy & Class Tuning (Algorithm A: Classes & Status/Buff Magnitudes)
         group_adjustments = self.algorithm_group_tuning()
+        status_buff_knobs = self.tune_status_and_buff_magnitudes()
 
         # Stage 2: Conditional Payoff & Work-Towards Tuning
         conditional_adjustments = self.algorithm_conditional_payoffs()
@@ -753,7 +763,100 @@ class SpellBalancingEngine:
             "changelog": self.changelog,
             "modifications_count": len(self.changelog),
             "final_spell_data": self.tuned_spell_data,
+            "status_buff_knobs": status_buff_knobs,
         }
+
+    def tune_status_and_buff_magnitudes(self, output_path: str = "status_buff_knobs.json") -> Dict[str, Any]:
+        """
+        Algorithm A Extension: Status & Buff Magnitude Balancing Module
+        Computes aggregate Bayesian winrate across all spells that apply each specific buff or debuff.
+        - If aggregate winrate > 53.5%, damp/reduce baseline magnitude proportionally.
+        - If aggregate winrate < 46.5%, scale magnitude upward proportionally (safety clamp +/- 25%).
+        Saves tuned magnitudes to status_buff_knobs.json.
+        """
+        print("\n--- [Algorithm A: Status & Buff Magnitude Balancing Module] ---")
+        per_spell = self.telemetry["per_spell"]
+        k = 12.0
+
+        tuned_buffs = {}
+        tuned_statuses = {}
+
+        # 1. Buffs
+        for buff_name, b_cfg in BUFF_CONFIGS.items():
+            base_mag = b_cfg["magnitude"]
+            applier_recipes = []
+            for r, sp_data in self.original_spell_data.items():
+                s_tags = tag_spell_synergies(r, sp_data)
+                if buff_name in s_tags.get("applies_buff", []):
+                    applier_recipes.append(r)
+
+            tot_wins = sum(per_spell.get(r, {}).get("caster_wins", 0) for r in applier_recipes)
+            tot_losses = sum(per_spell.get(r, {}).get("caster_losses", 0) for r in applier_recipes)
+            tot_resolved = tot_wins + tot_losses
+            tot_casts = sum(per_spell.get(r, {}).get("casts", 0) for r in applier_recipes)
+
+            agg_wr = (tot_wins + k * 0.5) / (tot_resolved + k) if tot_resolved > 0 else 0.50
+
+            new_mag = base_mag
+            if agg_wr > 0.535:
+                delta = agg_wr - 0.50
+                scaling = max(0.75, 1.0 - (delta * 2.0))
+                new_mag = base_mag * scaling
+                print(f"  * Buff '{buff_name}' overtuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {base_mag*100:.1f}% -> {new_mag*100:.1f}%")
+            elif agg_wr < 0.465 and tot_casts >= 10:
+                delta = 0.50 - agg_wr
+                scaling = min(1.25, 1.0 + (delta * 2.0))
+                new_mag = base_mag * scaling
+                print(f"  * Buff '{buff_name}' undertuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {base_mag*100:.1f}% -> {new_mag*100:.1f}%")
+            else:
+                print(f"  * Buff '{buff_name}' balanced (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude remains {base_mag*100:.1f}%")
+
+            new_mag = max(0.75 * base_mag, min(1.25 * base_mag, new_mag))
+            tuned_buffs[buff_name] = round(new_mag, 4)
+
+        # 2. Status Effects
+        for st_name, s_cfg in STATUS_CONFIGS.items():
+            base_mag = s_cfg["magnitude"]
+            applier_recipes = []
+            for r, sp_data in self.original_spell_data.items():
+                s_tags = tag_spell_synergies(r, sp_data)
+                if st_name in s_tags.get("applies_status", []):
+                    applier_recipes.append(r)
+
+            tot_wins = sum(per_spell.get(r, {}).get("caster_wins", 0) for r in applier_recipes)
+            tot_losses = sum(per_spell.get(r, {}).get("caster_losses", 0) for r in applier_recipes)
+            tot_resolved = tot_wins + tot_losses
+            tot_casts = sum(per_spell.get(r, {}).get("casts", 0) for r in applier_recipes)
+
+            agg_wr = (tot_wins + k * 0.5) / (tot_resolved + k) if tot_resolved > 0 else 0.50
+
+            new_mag = base_mag
+            if agg_wr > 0.535:
+                delta = agg_wr - 0.50
+                scaling = max(0.75, 1.0 - (delta * 2.0))
+                new_mag = base_mag * scaling
+                print(f"  * Status '{st_name}' overtuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {base_mag*100:.1f}% -> {new_mag*100:.1f}%")
+            elif agg_wr < 0.465 and tot_casts >= 10:
+                delta = 0.50 - agg_wr
+                scaling = min(1.25, 1.0 + (delta * 2.0))
+                new_mag = base_mag * scaling
+                print(f"  * Status '{st_name}' undertuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {base_mag*100:.1f}% -> {new_mag*100:.1f}%")
+            else:
+                print(f"  * Status '{st_name}' balanced (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude remains {base_mag*100:.1f}%")
+
+            new_mag = max(0.75 * base_mag, min(1.25 * base_mag, new_mag))
+            tuned_statuses[st_name] = round(new_mag, 4)
+
+        result = {
+            "buffs": tuned_buffs,
+            "statuses": tuned_statuses
+        }
+
+        out_p = Path(output_path).resolve()
+        with open(out_p, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2)
+        print(f"[Status/Buff Knobs] Exported tuned status & buff magnitudes to: {out_p}")
+        return result
 
     def algorithm_group_tuning(self) -> Dict[str, Dict[str, float]]:
         """
@@ -953,6 +1056,12 @@ class SpellBalancingEngine:
                     b_reduction = 0.06 + 0.12 * deficit
                     b_spread_mult = 1.0 - b_reduction
 
+                    # Algorithm B Hard Floor Constraint: b_min = 0.60 * b_initial
+                    b_initial = float(self.original_spell_data[r].get("b", sp["b"]))
+                    b_floor = 0.60 * b_initial
+                    if sp["b"] * b_spread_mult < b_floor:
+                        b_spread_mult = max(b_spread_mult, b_floor / max(1e-5, sp["b"]))
+
                     n_increase = 0.12 + 0.25 * deficit
                     n_spread_mult = 1.0 + n_increase
 
@@ -1112,6 +1221,9 @@ class SpellBalancingEngine:
             b_new = max(min_b, min(max_b, b_orig * total_b_factor))
             if category == "Ultimate":
                 b_new = max(ULTIMATE_B_FLOOR, b_new)
+            is_conditional = (n_orig > 0) or (orig_data.get("condition_required", "None") != "None")
+            if is_conditional:
+                b_new = max(round(0.60 * b_orig, 1), b_new)
             b_new = round(b_new, 1)
 
             if n_orig > 0:
@@ -1164,25 +1276,34 @@ class SpellBalancingEngine:
 # =============================================================================
 
 def run_balance_simulation_suite(
-    total_games: int = 10000,
-    eval_games: int = 5000,
-    mode: str = "games",
+    stage1_matches: int = 2000,
+    stage2_matches: int = 2000,
+    stage3_matches: int = 2000,
+    stage4_matches: int = 2000,
+    eval_matches: int = 5000,
+    curriculum_path: Optional[str] = None,
     spell_data_path: Optional[str] = None,
     dna_path: Optional[str] = None,
     apply_tuning: bool = True,
-    backup: bool = True,
-    report_json_path: Optional[str] = None,
-    report_md_path: Optional[str] = None,
     data_log_path: Optional[str] = None,
     sync_interval: int = 50,
     verbose: bool = True,
+    total_games: Optional[int] = None,
+    eval_games: Optional[int] = None,
+    mode: str = "games",
 ) -> Dict[str, Any]:
     """
-    Main orchestrator:
-    - Runs the simulation main loop for the target volume (e.g. 10,000 games).
-    - Collects telemetry from the last 5,000 games.
-    - Executes the balancing algorithms.
-    - Saves updated knobs directly into spell_data.json.
+    Restructured 5-Phase Iteration Workflow:
+    ├── Stage 1 Training: 2,000 matches (Random sampling from Stage 1 Board States)
+    ├── Stage 2 Training: 2,000 matches (Random sampling from Stage 2 Board States)
+    ├── Stage 3 Training: 2,000 matches (Random sampling from Stage 3 Board States)
+    ├── Stage 4 Training: 2,000 matches (Random sampling from Stage 4 Board States)
+    └── Evaluation & Balancing: 5,000 matches (Standard unseeded matches from Turn 1)
+         ├── Evaluate Multi-Objective Fitness & Select Top Performers
+         ├── Run Algorithm A (Classes & Status/Buff Magnitudes)
+         ├── Run Algorithm B (Conditional Spreads with b Floor)
+         ├── Run Algorithm C (Outlier Regressions)
+         └── Export updated spell_data.json and status_buff_knobs.json
     """
     resolved_spell_path = simulation.resolve_file_path("spell_data.json", spell_data_path)
     resolved_dna_path = simulation.resolve_file_path("ai_bots_dna.json", dna_path)
@@ -1195,35 +1316,40 @@ def run_balance_simulation_suite(
     with open(resolved_spell_path, "r", encoding="utf-8") as f:
         spell_data = json.load(f)
 
-    matches_per_main = 50
-    if mode == "iterations":
-        total_iterations = total_games
-        computed_total_games = total_iterations * matches_per_main
-        eval_start_game = max(0, computed_total_games - eval_games)
-    else:  # mode == "games"
-        computed_total_games = total_games
-        total_iterations = math.ceil(total_games / matches_per_main)
-        eval_start_game = max(0, total_games - eval_games)
+    # Resolve Curriculum Board States
+    curr_path = Path(curriculum_path).resolve() if curriculum_path else simulation.resolve_file_path("curriculum_board_states.json")
+    if not curr_path.exists():
+        if generate_board_states is not None:
+            print("[Curriculum] Generating curriculum_board_states.json...")
+            generate_board_states.generate_curriculum(str(resolved_spell_path), str(curr_path))
+        else:
+            raise FileNotFoundError(f"Curriculum board states not found at: {curr_path}")
+
+    with open(curr_path, "r", encoding="utf-8") as f:
+        curriculum_data = json.load(f)
+
+    stage1_states = list(curriculum_data[0].values()) if len(curriculum_data) > 0 else []
+    stage2_states = list(curriculum_data[1].values()) if len(curriculum_data) > 1 else []
+    stage3_states = list(curriculum_data[2].values()) if len(curriculum_data) > 2 else []
+    stage4_states = list(curriculum_data[3].values()) if len(curriculum_data) > 3 else []
+
+    total_curriculum_matches = stage1_matches + stage2_matches + stage3_matches + stage4_matches
+    total_run_matches = total_curriculum_matches + eval_matches
 
     print("=" * 75)
-    print("PROJECT SORCERY - 10,000 RUN SIMULATION & SPELL BALANCING SUITE")
+    print("PROJECT SORCERY - 5-PHASE CURRICULUM SIMULATION & SPELL BALANCING SUITE")
     print("=" * 75)
-    print(f"Target Total Games:        {computed_total_games:,}")
-    print(f"Matches Per main() Call:   {matches_per_main}")
-    print(f"Total main() Iterations:   {total_iterations:,}")
-    print(f"Evaluation Window:         Last {eval_games:,} games (starting at game {eval_start_game:,})")
+    print(f"Stage 1 Training Matches:  {stage1_matches:,} (Sampling from Stage 1 Board States)")
+    print(f"Stage 2 Training Matches:  {stage2_matches:,} (Sampling from Stage 2 Board States)")
+    print(f"Stage 3 Training Matches:  {stage3_matches:,} (Sampling from Stage 3 Board States)")
+    print(f"Stage 4 Training Matches:  {stage4_matches:,} (Sampling from Stage 4 Board States)")
+    print(f"Evaluation Matches:        {eval_matches:,} (Standard unseeded matches from Turn 1)")
+    print(f"Total Matches Scheduled:   {total_run_matches:,}")
+    print(f"Curriculum Source:         {curr_path}")
     print(f"Spell Data Path:           {resolved_spell_path}")
     print(f"AI Bots DNA Path:          {resolved_dna_path}")
     print(f"Apply Tuning to JSON:      {apply_tuning}")
     print("=" * 75)
-
-    # Initialize Telemetry Tracker
-    tracker = SimulationTelemetryTracker(
-        eval_start_game=eval_start_game,
-        total_games=computed_total_games,
-        spell_data=spell_data,
-    )
-    tracker.install_hooks()
 
     # Fast Registry Cache during Batch Loop
     cached_registry = get_registry(str(resolved_spell_path))
@@ -1257,31 +1383,53 @@ def run_balance_simulation_suite(
 
     start_wall_time = time.time()
 
+    # Initialize Telemetry Tracker for Evaluation Phase
+    eval_iters = math.ceil(eval_matches / 50)
+    actual_eval_games = eval_iters * 50
+    tracker = SimulationTelemetryTracker(
+        eval_start_game=0,
+        total_games=actual_eval_games,
+        spell_data=spell_data,
+    )
+
     try:
-        print(f"\n[Simulation] Launching {total_iterations} iterations of simulation.main()...")
-        for iter_num in range(1, total_iterations + 1):
-            sim_res = simulation.main(
+        # Phase 1 to 4: Progressive Reverse Curriculum Training
+        curriculum_stages = [
+            ("Stage 1", stage1_matches, stage1_states),
+            ("Stage 2", stage2_matches, stage2_states),
+            ("Stage 3", stage3_matches, stage3_states),
+            ("Stage 4", stage4_matches, stage4_states),
+        ]
+
+        for st_name, st_count, st_boards in curriculum_stages:
+            if st_count <= 0:
+                continue
+            st_iters = math.ceil(st_count / 50)
+            if verbose:
+                print(f"\n[Curriculum {st_name} Training] Simulating {st_count:,} matches across {st_iters} iterations...")
+            for it in range(1, st_iters + 1):
+                simulation.main(
+                    dna_path=str(resolved_dna_path),
+                    spell_data_path=str(resolved_spell_path),
+                    verbose=False,
+                    board_states=st_boards,
+                )
+                if verbose and (it % 10 == 0 or it == st_iters):
+                    print(f"  * {st_name}: Iteration {it:3d}/{st_iters} complete ({it*50:,}/{st_count:,} matches)")
+
+        # Phase 5: Evaluation & Balancing (Standard unseeded matches from Turn 1)
+        if verbose:
+            print(f"\n[Evaluation Phase] Simulating {eval_matches:,} unseeded duels across {eval_iters} iterations...")
+        tracker.install_hooks()
+        for it in range(1, eval_iters + 1):
+            simulation.main(
                 dna_path=str(resolved_dna_path),
                 spell_data_path=str(resolved_spell_path),
                 verbose=False,
+                board_states=None,
             )
-
-            if verbose and (iter_num % 20 == 0 or iter_num == total_iterations):
-                elapsed = time.time() - start_wall_time
-                games_played = iter_num * matches_per_main
-                in_eval = "YES" if games_played >= eval_start_game else "NO (warm-up)"
-                print(
-                    f"Iteration {iter_num:4d}/{total_iterations} | "
-                    f"Games: {games_played:6,}/{computed_total_games:,} | "
-                    f"In Eval Window: {in_eval:12s} | "
-                    f"Elapsed: {elapsed:5.1f}s ({(elapsed/iter_num):.3f}s/iter)"
-                )
-
-            if iter_num % sync_interval == 0 and cached_dna_data is not None:
-                tmp_path = resolved_dna_path.with_suffix(".sync.tmp")
-                with open(tmp_path, "w", encoding="utf-8") as f:
-                    orig_json_dump(cached_dna_data, f, indent=2)
-                tmp_path.replace(resolved_dna_path)
+            if verbose and (it % 20 == 0 or it == eval_iters):
+                print(f"  * Eval: Iteration {it:3d}/{eval_iters} complete ({it*50:,}/{eval_matches:,} matches recorded)")
 
     finally:
         project_sorcery.get_registry = orig_get_registry
@@ -1293,16 +1441,16 @@ def run_balance_simulation_suite(
             print(f"\n[Persistence] Writing finalized bot DNA to: {resolved_dna_path}")
             tmp_path = resolved_dna_path.with_suffix(".final.tmp")
             with open(tmp_path, "w", encoding="utf-8") as f:
-                orig_json_dump(cached_dna_data, f, indent=2)
+                orig_json_dump(cached_dna_data, f, separators=(",", ":"))
             tmp_path.replace(resolved_dna_path)
 
     total_sim_time = time.time() - start_wall_time
-    print(f"\n[Simulation Complete] {computed_total_games:,} matches completed in {total_sim_time:.1f}s.")
+    print(f"\n[Simulation Complete] {total_run_matches:,} total matches ({actual_eval_games:,} evaluated) in {total_sim_time:.1f}s.")
 
-    # Compile Telemetry
+    # Compile Telemetry from Evaluation Window
     telemetry = tracker.compute_aggregates()
 
-    # Execute Balancing Algorithms
+    # Execute Balancing Algorithms (A, B, C and status/buff magnitude tuner)
     tuner = SpellBalancingEngine(
         spell_data=spell_data,
         telemetry=telemetry,
@@ -1312,15 +1460,10 @@ def run_balance_simulation_suite(
     tuning_results = tuner.run_all_algorithms()
     changelog = tuning_results["changelog"]
     tuned_spell_data = tuning_results["final_spell_data"]
+    status_buff_knobs = tuning_results.get("status_buff_knobs", {})
 
-    # Persist Tuned Spells to spell_data.json
+    # Persist Tuned Spells to spell_data.json (no backups created)
     if apply_tuning and len(changelog) > 0:
-        if backup:
-            bak_path = resolved_spell_path.with_suffix(".json.bak")
-            print(f"[Backup] Preserving original spell data at: {bak_path}")
-            with open(bak_path, "w", encoding="utf-8") as f:
-                json.dump(spell_data, f, indent=2)
-
         print(f"[Update] Writing {len(changelog)} tuned spells to: {resolved_spell_path}")
         tmp_spell = resolved_spell_path.with_suffix(".tmp.json")
         with open(tmp_spell, "w", encoding="utf-8") as f:
@@ -1328,172 +1471,74 @@ def run_balance_simulation_suite(
         tmp_spell.replace(resolved_spell_path)
         print("[Update] spell_data.json successfully updated with tuned knobs!")
 
-    # Export Reports
-    report_data = {
-        "meta": {
-            "simulation_mode": mode,
-            "total_games": computed_total_games,
-            "eval_games": len(tracker.recorded_duels),
-            "total_iterations": total_iterations,
-            "elapsed_seconds": round(total_sim_time, 2),
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        },
-        "modifications_count": len(changelog),
-        "modifications": changelog,
-        "classes": telemetry["classes"],
-        "synergies": telemetry["synergies"],
-        "top_overtuned_spells": sorted(
-            [s for s in telemetry["per_spell"].values() if s["casts"] >= 15],
-            key=lambda x: x["bayesian_win_rate"],
-            reverse=True,
-        )[:10],
-        "top_undertuned_spells": sorted(
-            [s for s in telemetry["per_spell"].values() if s["casts"] >= 15],
-            key=lambda x: x["bayesian_win_rate"],
-        )[:10],
+    eval_matches_count = len(tracker.recorded_duels)
+    run_meta = {
+        "simulation_mode": "5-phase_curriculum_and_eval",
+        "total_games": eval_matches_count,
+        "eval_games": eval_matches_count,
+        "total_run_matches": total_run_matches,
+        "curriculum_games": total_curriculum_matches,
+        "elapsed_seconds": round(total_sim_time, 2),
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 
-    rep_json = resolve_report_path(report_json_path, "balance_tuning_report.json")
-    with open(rep_json, "w", encoding="utf-8") as f:
-        json.dump(report_data, f, indent=2)
-    print(f"[Report] JSON report exported to: {rep_json}")
-
-    rep_md = resolve_report_path(report_md_path, "balance_tuning_report.md")
-    write_markdown_report(rep_md, report_data, changelog)
-    print(f"[Report] Markdown summary exported to: {rep_md}")
-
-    # Append Data Log for this run
-    target_data_log_path = Path(data_log_path).resolve() if data_log_path else (resolved_spell_path.parent / "data_log.json")
-    run_spell_metrics = tracker.compute_run_spell_metrics()
+    # Append Data Log for this run (strictly CSV format only, looking exclusively at post-training evaluation matches)
+    target_data_log_path = Path(data_log_path).resolve() if data_log_path else (resolved_spell_path.parent / "data_log.csv")
+    eval_spell_metrics = telemetry["per_spell"]
     saved_log_path = append_data_log(
         log_path=target_data_log_path,
-        run_meta=report_data["meta"],
-        run_spell_metrics=run_spell_metrics,
-        eval_spell_metrics=telemetry["per_spell"],
+        run_meta=run_meta,
+        spell_metrics=eval_spell_metrics,
+        eval_spell_metrics=eval_spell_metrics,
     )
 
-    # Ensure SCRIPT_DIR also receives the data log if different from resolved_spell_path.parent and no custom path provided
     if not data_log_path and SCRIPT_DIR != resolved_spell_path.parent:
         try:
             append_data_log(
-                log_path=(SCRIPT_DIR / "data_log.json"),
-                run_meta=report_data["meta"],
-                run_spell_metrics=run_spell_metrics,
-                eval_spell_metrics=telemetry["per_spell"],
+                log_path=(SCRIPT_DIR / "data_log.csv"),
+                run_meta=run_meta,
+                spell_metrics=eval_spell_metrics,
+                eval_spell_metrics=eval_spell_metrics,
             )
         except Exception:
             pass
 
     return {
         "status": "success",
-        "total_games": computed_total_games,
+        "total_games": total_run_matches,
         "eval_games": len(tracker.recorded_duels),
-        "tuning_modifications": len(changelog),
-        "report_json": str(rep_json),
-        "report_md": str(rep_md),
-        "data_log": str(saved_log_path),
+        "curriculum_games": total_curriculum_matches,
+        "modifications_count": len(changelog),
+        "changelog": changelog,
+        "status_buff_knobs": status_buff_knobs,
+        "elapsed_seconds": total_sim_time,
     }
 
 
 def append_data_log(
     log_path: Path,
     run_meta: Dict[str, Any],
-    run_spell_metrics: Dict[str, Dict[str, Any]],
+    spell_metrics: Optional[Dict[str, Dict[str, Any]]] = None,
+    run_spell_metrics: Optional[Dict[str, Dict[str, Any]]] = None,
     eval_spell_metrics: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Path:
     """
-    Appends telemetry data points for each spell from the completed run to the data log.
+    Appends telemetry data points for each spell from the post-training evaluation matches
+    (e.g., the 5,000 post-training matches) to the CSV data log.
+    Strictly outputs ONLY a .csv file (no .json, .jsonl, or .log files).
+    Does NOT evaluate all matches across curriculum training, only the post-training matches.
+
     Data points recorded per spell:
-    1. The amount of times each spell was cast during the run.
-    2. The amount of damage each spell did during the run.
-    3. The amount of times each conditional spell was cast while its conditions were met during the run.
-    4. The winrate of each spell.
+    1. The amount of times each spell was cast during post-training evaluation.
+    2. The amount of damage each spell did during post-training evaluation.
+    3. The amount of times each conditional spell was cast while its conditions were met during post-training evaluation.
+    4. The winrate of each spell during post-training evaluation.
     """
-    log_path = Path(log_path).resolve()
-    log_path.parent.mkdir(parents=True, exist_ok=True)
+    csv_path = Path(log_path).resolve()
+    if csv_path.suffix != ".csv":
+        csv_path = csv_path.with_suffix(".csv")
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
 
-    spells_dict: Dict[str, Dict[str, Any]] = {}
-    spell_records: List[Dict[str, Any]] = []
-
-    for recipe, sp in run_spell_metrics.items():
-        is_cond = sp.get("is_conditional", False)
-        cond_trigs = sp.get("conditional_casts_met", sp.get("condition_triggers", 0)) if is_cond else 0
-        casts = sp.get("casts", 0)
-        damage = round(float(sp.get("total_damage", sp.get("damage", 0.0))), 2)
-        winrate = round(float(sp.get("winrate", sp.get("raw_win_rate", 0.0))), 4)
-        raw_wr = round(float(sp.get("raw_win_rate", winrate)), 4)
-        bayesian_wr = round(float(sp.get("bayesian_win_rate", winrate)), 4)
-        wins = int(sp.get("wins", sp.get("caster_wins", 0)))
-        losses = int(sp.get("losses", sp.get("caster_losses", 0)))
-
-        spell_stat = {
-            "recipe": recipe,
-            "spell": recipe,
-            "class": sp.get("class", "Unknown"),
-            "category": sp.get("category", "Unknown"),
-            "is_conditional": is_cond,
-            "condition_required": sp.get("condition_required", "None"),
-            # 1. The amount of times each spell was cast during the run
-            "casts": casts,
-            "cast_count": casts,
-            "times_cast": casts,
-            # 2. The amount of damage each spell did during the run
-            "damage": damage,
-            "total_damage": damage,
-            # 3. The amount of times each conditional spell was cast while its conditions were met during the run
-            "conditional_casts_met": cond_trigs,
-            "condition_met_casts": cond_trigs,
-            "condition_triggers": cond_trigs,
-            "times_condition_met": cond_trigs,
-            "conditional_casts_while_conditions_met": cond_trigs,
-            # 4. The winrate of each spell
-            "winrate": winrate,
-            "win_rate": winrate,
-            "raw_win_rate": raw_wr,
-            "bayesian_win_rate": bayesian_wr,
-            "wins": wins,
-            "losses": losses,
-        }
-        spells_dict[recipe] = spell_stat
-        spell_records.append(spell_stat)
-
-    # 1. JSON Data Log (array of run entries)
-    json_path = log_path if log_path.suffix == ".json" else log_path.with_suffix(".json")
-    existing_entries: List[Dict[str, Any]] = []
-    if json_path.exists():
-        try:
-            with open(json_path, "r", encoding="utf-8") as f:
-                content = json.load(f)
-                if isinstance(content, list):
-                    existing_entries = content
-                elif isinstance(content, dict) and "runs" in content:
-                    existing_entries = content["runs"]
-                else:
-                    existing_entries = [content]
-        except Exception:
-            existing_entries = []
-
-    run_id = len(existing_entries) + 1
-    run_entry = {
-        "run_id": run_id,
-        "timestamp": run_meta.get("timestamp", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
-        "total_games": run_meta.get("total_games", 0),
-        "total_iterations": run_meta.get("total_iterations", 0),
-        "mode": run_meta.get("simulation_mode", "games"),
-        "elapsed_seconds": run_meta.get("elapsed_seconds", 0.0),
-        "total_spells_tracked": len(spells_dict),
-        "spells": spells_dict,
-        "spell_list": spell_records,
-    }
-    existing_entries.append(run_entry)
-
-    tmp_json = json_path.with_suffix(".tmp.json")
-    with open(tmp_json, "w", encoding="utf-8") as f:
-        json.dump(existing_entries, f, indent=2)
-    tmp_json.replace(json_path)
-
-    # 2. CSV Data Log (appends rows for this run)
-    csv_path = json_path.with_suffix(".csv")
     csv_exists = csv_path.exists()
     csv_headers = [
         "run_id",
@@ -1510,136 +1555,59 @@ def append_data_log(
         "wins",
         "losses",
     ]
+
+    run_id = 1
+    if csv_exists:
+        try:
+            with open(csv_path, "r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                rows = [r for r in reader if r]
+                if len(rows) > 1:
+                    last_run_id = int(rows[-1][0])
+                    run_id = last_run_id + 1
+        except Exception:
+            run_id = 1
+
+    timestamp = run_meta.get("timestamp", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+    # Use the count of post-training evaluation matches (e.g., 5000), not total matches
+    total_games = run_meta.get("eval_games", run_meta.get("total_games", 5000))
+
+    # Target exclusively the post-training evaluation metrics
+    target_metrics = eval_spell_metrics or spell_metrics or run_spell_metrics
+    if target_metrics is None:
+        raise ValueError("No spell metrics provided to append_data_log")
+
     with open(csv_path, "a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         if not csv_exists:
             writer.writerow(csv_headers)
-        for s in spell_records:
+        for recipe, sp in sorted(target_metrics.items()):
+            is_cond = sp.get("is_conditional", False)
+            cond_trigs = sp.get("conditional_casts_met", sp.get("condition_triggers", 0)) if is_cond else 0
+            casts = sp.get("casts", 0)
+            damage = round(float(sp.get("total_damage", sp.get("damage", 0.0))), 2)
+            winrate = round(float(sp.get("winrate", sp.get("raw_win_rate", 0.0))), 4)
+            wins = int(sp.get("wins", sp.get("caster_wins", 0)))
+            losses = int(sp.get("losses", sp.get("caster_losses", 0)))
+
             writer.writerow([
                 run_id,
-                run_entry["timestamp"],
-                run_entry["total_games"],
-                s["recipe"],
-                s["class"],
-                s["category"],
-                s["is_conditional"],
-                s["casts"],
-                s["total_damage"],
-                s["conditional_casts_met"],
-                s["winrate"],
-                s["wins"],
-                s["losses"],
+                timestamp,
+                total_games,
+                recipe,
+                sp.get("class", "Unknown"),
+                sp.get("category", "Unknown"),
+                is_cond,
+                casts,
+                damage,
+                cond_trigs,
+                winrate,
+                wins,
+                losses,
             ])
 
-    # 3. JSONL Data Log (one line per run)
-    jsonl_path = json_path.with_suffix(".jsonl")
-    with open(jsonl_path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(run_entry) + "\n")
-
-    # 4. Text Data Log (.log)
-    txt_log_path = json_path.with_suffix(".log")
-    with open(txt_log_path, "a", encoding="utf-8") as f:
-        f.write(f"\n{'='*75}\n")
-        f.write(f"PROJECT SORCERY RUN #{run_id} DATA LOG | {run_entry['timestamp']}\n")
-        f.write(f"Total Games: {run_entry['total_games']} | Elapsed: {run_entry['elapsed_seconds']}s\n")
-        f.write(f"{'-'*75}\n")
-        f.write(f"{'Spell':<6} {'Class':<12} {'Conditional?':<14} {'Casts':<8} {'Damage':<10} {'Cond. Met':<10} {'Win Rate':<10}\n")
-        f.write(f"{'-'*75}\n")
-        for s in sorted(spell_records, key=lambda x: x['recipe']):
-            is_c_str = 'YES' if s['is_conditional'] else 'NO'
-            f.write(f"{s['recipe']:<6} {s['class']:<12} {is_c_str:<14} {s['casts']:<8} {s['total_damage']:<10.1f} {s['conditional_casts_met']:<10} {s['winrate']*100:<9.2f}%\n")
-        f.write(f"{'='*75}\n")
-
-    print(f"[Data Log] Successfully appended run #{run_id} to data log: {json_path}")
-    print(f"[Data Log] Also synchronized: {csv_path}, {jsonl_path}, {txt_log_path}")
-    return json_path
-
-
-def resolve_report_path(user_path: Optional[str], default_name: str) -> Path:
-    if user_path:
-        return Path(user_path).resolve()
-    return (SCRIPT_DIR / default_name).resolve()
-
-
-def write_markdown_report(filepath: Path, report: Dict[str, Any], changelog: List[Dict[str, Any]]) -> None:
-    """Generates an executive Markdown report detailing telemetry and algorithmic tuning."""
-    meta = report["meta"]
-    lines = [
-        "# Project Sorcery - Simulation & Dynamic Spell Balancing Report",
-        "",
-        f"**Date:** {meta['timestamp']}  ",
-        f"**Simulation Mode:** {meta['simulation_mode']}  ",
-        f"**Total Games Simulated:** {meta['total_games']:,}  ",
-        f"**Evaluated Games Window:** {meta['eval_games']:,} matches  ",
-        f"**Simulation Runtime:** {meta['elapsed_seconds']:.1f}s  ",
-        f"**Total Spells Tuned:** {len(changelog)} / 125  ",
-        "",
-        "## Executive Summary",
-        "",
-        "The automated balancing suite simulated Project Sorcery games, recording granular combat telemetry",
-        f"over the final {meta['eval_games']:,} games to evaluate the stabilized neuroevolutionary meta. Three primary algorithms analyzed",
-        "the resulting telemetry:",
-        "",
-        "1. **Conditional Payoff & Setup Engine:** Identified conditional spells where payoffs were under-triggered, widening",
-        "   the spread between the unconditional base factor (`b`) and payoff multiplier (`n`) to heavily reward proactive setup.",
-        "2. **Group Synergy & Archetype Engine:** Evaluated all 15 spell classes and key synergy loops (e.g., *Frosty* appliers",
-        "   vs beneficiaries, *Sunny* weather setups vs payoffs), dampening over-performing archetypes and boosting tempo-loss setups.",
-        "3. **Individual Outlier Engine:** Regressed statistical outliers back toward the 50.0% win-rate baseline.",
-        "",
-        "---",
-        "",
-        "## Class Performance Summary",
-        "",
-        "| Class | Casts | Win Rate (Smoothed) | Raw Win Rate | Avg Damage/Cast | Status |",
-        "| :--- | :---: | :---: | :---: | :---: | :--- |",
-    ]
-
-    for cls_name, cs in sorted(report["classes"].items(), key=lambda x: x[1]["bayesian_win_rate"], reverse=True):
-        wr_b = cs["bayesian_win_rate"] * 100
-        wr_r = cs["win_rate"] * 100
-        status = "Overtuned ⚠️" if wr_b > 53.5 else ("Undertuned ⚠️" if wr_b < 46.5 else "Balanced ✅")
-        lines.append(f"| **{cls_name}** | {cs['total_casts']:,} | {wr_b:.1f}% | {wr_r:.1f}% | {cs['avg_damage_per_cast']:.1f} | {status} |")
-
-    lines.extend([
-        "",
-        "---",
-        "",
-        "## Key Status & Weather Synergy Loops",
-        "",
-        "| Synergy Group | Applier Casts (WR) | Beneficiary Casts (WR) | Trigger Rate | Synergy Pipeline Health |",
-        "| :--- | :---: | :---: | :---: | :--- |",
-    ])
-
-    for syn_key in ["status_Frosty", "weather_Sunny", "status_Burning", "status_Bleeding", "status_Stunned", "status_Entangled", "weather_Raining"]:
-        if syn_key in report["synergies"]:
-            syn = report["synergies"][syn_key]
-            app = syn["appliers"]
-            ben = syn["beneficiaries"]
-            app_str = f"{app['casts']:,} ({app['bayesian_win_rate']*100:.1f}%)" if app['casts'] > 0 else "0 (N/A)"
-            ben_str = f"{ben['casts']:,} ({ben['bayesian_win_rate']*100:.1f}%)" if ben['casts'] > 0 else "0 (N/A)"
-            trig_str = f"{ben['trigger_rate']*100:.1f}%" if ben['casts'] > 0 else "N/A"
-            health = "Healthy ✅" if ben['trigger_rate'] >= 0.30 else "Under-Triggered ⚠️ (Spread Widened)"
-            lines.append(f"| **{syn['name']}** ({syn['kind']}) | {app_str} | {ben_str} | {trig_str} | {health} |")
-
-    lines.extend([
-        "",
-        "---",
-        "",
-        "## Detailed Spell Knob Adjustments (Changelog)",
-        "",
-        "| Spell | Class | Category | b (Old -> New) | n (Old -> New) | Max Pot. (Old -> New) | Primary Balancing Rationale |",
-        "| :---: | :--- | :--- | :---: | :---: | :---: | :--- |",
-    ])
-
-    for ch in changelog:
-        b_str = f"{ch['b_old']:.1f} -> **{ch['b_new']:.1f}** ({ch['b_delta_pct']:+.1f}%)"
-        n_str = f"{ch['n_old']:.1f} -> **{ch['n_new']:.1f}**" if ch['n_old'] > 0 else "-"
-        mp_str = f"{ch['max_potential_old']:.1f} -> **{ch['max_potential_new']:.1f}**"
-        reason_summary = "; ".join(ch["reasons"][:2])
-        lines.append(f"| `{ch['recipe']}` | {ch['class']} | {ch['category']} | {b_str} | {n_str} | {mp_str} | {reason_summary} |")
-
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
+    print(f"[Data Log] Successfully appended run #{run_id} to CSV log: {csv_path}")
+    return csv_path
 
 
 # =============================================================================
@@ -1648,7 +1616,48 @@ def write_markdown_report(filepath: Path, report: Dict[str, Any], changelog: Lis
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Project Sorcery 10,000 Run Simulation & Advanced Spell Balancing Engine"
+        description="Project Sorcery 5-Phase Curriculum Simulation & Spell Balancing Engine"
+    )
+    parser.add_argument(
+        "--stage1-matches",
+        type=int,
+        default=2000,
+        help="Stage 1 training matches (default: 2000)",
+    )
+    parser.add_argument(
+        "--stage2-matches",
+        type=int,
+        default=2000,
+        help="Stage 2 training matches (default: 2000)",
+    )
+    parser.add_argument(
+        "--stage3-matches",
+        type=int,
+        default=2000,
+        help="Stage 3 training matches (default: 2000)",
+    )
+    parser.add_argument(
+        "--stage4-matches",
+        type=int,
+        default=2000,
+        help="Stage 4 training matches (default: 2000)",
+    )
+    parser.add_argument(
+        "--eval-matches",
+        type=int,
+        default=5000,
+        help="Unseeded evaluation matches (default: 5000)",
+    )
+    parser.add_argument(
+        "--curriculum",
+        type=str,
+        default=None,
+        help="Path to curriculum_board_states.json",
+    )
+    parser.add_argument(
+        "--quick",
+        action="store_true",
+        help="Quick run mode for testing (50 matches per stage, 100 eval matches)",
     )
     parser.add_argument(
         "--mode",
@@ -1699,27 +1708,10 @@ def main():
         help="Do not apply modifications to spell_data.json (dry run telemetry only)",
     )
     parser.add_argument(
-        "--no-backup",
-        action="store_true",
-        help="Do not create spell_data.json.bak before writing",
-    )
-    parser.add_argument(
-        "--report-json",
-        type=str,
-        default=None,
-        help="Custom path for JSON telemetry report",
-    )
-    parser.add_argument(
-        "--report-md",
-        type=str,
-        default=None,
-        help="Custom path for Markdown report",
-    )
-    parser.add_argument(
         "--data-log",
         type=str,
         default=None,
-        help="Custom path for data log file (default: data_log.json in simulation directory)",
+        help="Custom path for CSV data log file (default: data_log.csv in simulation directory)",
     )
     parser.add_argument(
         "--sync-interval",
@@ -1745,16 +1737,22 @@ def main():
             print("#" * 75)
             print()
 
+        s1 = 50 if args.quick else args.stage1_matches
+        s2 = 50 if args.quick else args.stage2_matches
+        s3 = 50 if args.quick else args.stage3_matches
+        s4 = 50 if args.quick else args.stage4_matches
+        ev = 100 if args.quick else args.eval_matches
+
         run_balance_simulation_suite(
-            total_games=total_runs,
-            eval_games=args.eval_games,
-            mode=args.mode,
+            stage1_matches=s1,
+            stage2_matches=s2,
+            stage3_matches=s3,
+            stage4_matches=s4,
+            eval_matches=ev,
+            curriculum_path=args.curriculum,
             spell_data_path=args.spells,
             dna_path=args.dna,
             apply_tuning=not args.no_tuning,
-            backup=(not args.no_backup) if cycle_num == 1 else False,
-            report_json_path=args.report_json,
-            report_md_path=args.report_md,
             data_log_path=args.data_log,
             sync_interval=args.sync_interval,
             verbose=not args.quiet,

@@ -110,31 +110,70 @@ def get_spell_class(recipe: str) -> SpellClass:
 # Buff Definitions
 # Name, Associated Stat/Element, Base Magnitude (%), Duration (Turns)
 BUFF_CONFIGS = {
-    "Charged": {"stat": "potency", "magnitude": 0.25, "duration": 5, "desc": "Increases Potency by 25% for 5 rounds."},
-    "Honed": {"stat": "luck", "magnitude": 0.25, "duration": 5, "desc": "Increases Luck by 25% for 5 rounds."},
-    "Shielded": {"stat": "defense", "magnitude": 0.25, "duration": 5, "desc": "Increases Defense by 25% and grants immunity to negative status effects for 5 rounds."},
-    "Quickened": {"stat": "speed", "magnitude": 0.30, "duration": 5, "desc": "Increases Speed by 30% for 5 rounds."},
-    "Invisible": {"stat": "invulnerable", "magnitude": 0.50, "duration": 1, "desc": "Invulnerable to direct damage & increases Potency by 50% for 1 round."},
-    "Blessed": {"stat": "all", "magnitude": 0.20, "duration": 5, "desc": "Increases all stats by 20% and heals 5% max health each turn for 5 rounds."},
+    "Charged": {"stat": "potency", "magnitude": 0.25, "duration": 6, "desc": "Increases Potency by 25% for 6 rounds."},
+    "Honed": {"stat": "luck", "magnitude": 0.25, "duration": 6, "desc": "Increases Luck by 25% for 6 rounds."},
+    "Shielded": {"stat": "defense", "magnitude": 0.25, "duration": 6, "desc": "Increases Defense by 25% for 6 rounds."},
+    "Quickened": {"stat": "speed", "magnitude": 0.30, "duration": 6, "desc": "Increases Speed by 30% for 6 rounds."},
+    "Invisible": {"stat": "invulnerable", "magnitude": 0.50, "duration": 2, "desc": "Invulnerable to direct damage & increases Potency by 50% for 2 rounds."},
+    "Blessed": {"stat": "all", "magnitude": 0.20, "duration": 6, "desc": "Increases all stats by 20% and heals 5% max health each turn for 6 rounds."},
 }
 
 # Negative Status Effect (Debuff) Definitions
 STATUS_CONFIGS = {
-    "Burning": {"category": "DoT", "magnitude": 0.05, "duration": 5, "desc": "Deals 5% of target's Current Health each turn for 5 rounds."},
-    "Poisoned": {"category": "Escalating DoT", "magnitude": 0.03, "duration": -1, "desc": "Deals 3% of target's Maximum Health, increasing by +2% each turn active (Until cleansed)."},
-    "Cursed": {"category": "Stat Debuff", "magnitude": 0.15, "duration": 5, "desc": "Decreases all stats by 15% for 5 rounds."},
-    "Slowed": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 5, "desc": "Decreases Speed by 25% for 5 rounds."},
-    "Vulnerable": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 5, "desc": "Decreases Defense by 25% for 5 rounds (amplifies incoming damage)."},
-    "Weakened": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 5, "desc": "Decreases Potency by 25% for 5 rounds."},
-    "Blinded": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 5, "desc": "Decreases Luck by 25% for 5 rounds."},
-    "Bleeding": {"category": "DoT", "magnitude": 0.06, "duration": 5, "desc": "Deals 6% of target's Maximum Health each turn for 5 rounds."},
-    "Entangled": {"category": "Crowd Control", "magnitude": 0.30, "duration": 5, "desc": "Decreases Speed by 30% and prevents turn priority for 5 rounds."},
-    "Frosty": {"category": "Dual Debuff", "magnitude": 0.15, "duration": 5, "desc": "Decreases Speed and Potency each by 15% for 5 rounds."},
-    "Stunned": {"category": "Hard CC", "magnitude": 0.25, "duration": 1, "desc": "Skips turn; incoming damage increased by 25%."},
-    "Asleep": {"category": "Hard CC", "magnitude": 0.30, "duration": 1, "desc": "Skips turn; decreases Defense by 30%; breaks upon taking damage."},
-    "Polymorphed": {"category": "Hard CC", "magnitude": 0.25, "duration": 1, "desc": "Skips turn; removes all active buffs and status effects; incoming damage increased by 25%."},
+    "Burning": {"category": "DoT", "magnitude": 0.05, "duration": 6, "desc": "Deals 5% of target's Current Health each turn for 6 rounds."},
+    "Poisoned": {"category": "Escalating DoT", "magnitude": 0.03, "duration": 6, "desc": "Deals 3% of target's Maximum Health, increasing by +2% each turn active (Lasts 6 rounds)."},
+    "Cursed": {"category": "Stat Debuff", "magnitude": 0.15, "duration": 6, "desc": "Decreases all stats by 15% for 6 rounds."},
+    "Slowed": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 6, "desc": "Decreases Speed by 25% for 6 rounds."},
+    "Vulnerable": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 6, "desc": "Decreases Defense by 25% for 6 rounds (amplifies incoming damage)."},
+    "Weakened": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 6, "desc": "Decreases Potency by 25% for 6 rounds."},
+    "Blinded": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 6, "desc": "Decreases Luck by 25% for 6 rounds."},
+    "Bleeding": {"category": "DoT", "magnitude": 0.06, "duration": 6, "desc": "Deals 6% of target's Maximum Health each turn for 6 rounds."},
+    "Entangled": {"category": "Crowd Control", "magnitude": 0.30, "duration": 6, "desc": "Decreases Speed by 30% and prevents turn priority for 6 rounds."},
+    "Frosty": {"category": "Dual Debuff", "magnitude": 0.15, "duration": 6, "desc": "Decreases Speed and Potency each by 15% for 6 rounds."},
+    "Stunned": {"category": "Hard CC", "magnitude": 0.25, "duration": 2, "desc": "Skips turn; incoming damage increased by 25% for 2 rounds."},
+    "Asleep": {"category": "Hard CC", "magnitude": 0.30, "duration": 2, "desc": "Skips turn; decreases Defense by 30% for 2 rounds."},
+    "Polymorphed": {"category": "Hard CC", "magnitude": 0.25, "duration": 2, "desc": "Skips turn; removes all active buffs and status effects; incoming damage increased by 25% for 2 rounds."},
     "Infected": {"category": "Severe DoT", "magnitude": 0.05, "duration": -1, "desc": "Overrides Poisoned; deals 5% of target's Maximum Health, increasing by +3% each turn, halts all stat growth."},
 }
+
+def load_status_buff_knobs(path: Optional[Union[str, Path]] = None) -> bool:
+    """Dynamically loads status and buff magnitude adjustments if status_buff_knobs.json exists."""
+    global STATUS_CONFIGS, BUFF_CONFIGS
+    candidate_paths = [
+        Path(path).resolve() if path else None,
+        Path("status_buff_knobs.json").resolve(),
+        Path(__file__).resolve().parent / "status_buff_knobs.json",
+        Path.cwd() / "status_buff_knobs.json",
+    ]
+    target_path = None
+    for p in candidate_paths:
+        if p and p.exists():
+            target_path = p
+            break
+    if not target_path:
+        return False
+    try:
+        with open(target_path, "r", encoding="utf-8") as f:
+            knobs = json.load(f)
+        if "buffs" in knobs:
+            for b_name, mag in knobs["buffs"].items():
+                if b_name in BUFF_CONFIGS:
+                    BUFF_CONFIGS[b_name]["magnitude"] = float(mag)
+        if "statuses" in knobs:
+            for s_name, mag in knobs["statuses"].items():
+                if s_name in STATUS_CONFIGS:
+                    STATUS_CONFIGS[s_name]["magnitude"] = float(mag)
+        for k, v in knobs.items():
+            if k in BUFF_CONFIGS and isinstance(v, (int, float)):
+                BUFF_CONFIGS[k]["magnitude"] = float(v)
+            elif k in STATUS_CONFIGS and isinstance(v, (int, float)):
+                STATUS_CONFIGS[k]["magnitude"] = float(v)
+        return True
+    except Exception:
+        return False
+
+# Attempt dynamic load of tuned magnitudes
+load_status_buff_knobs()
 
 
 class Weather(str, Enum):
@@ -482,11 +521,8 @@ class Wizard:
     def apply_debuff(self, debuff_name: str, duration: Optional[int] = None) -> bool:
         """
         Applies a negative status effect to the wizard.
-        Respects Shielded immunity: 'Shielded grants immunity to negative status effects'.
+        Note: Shielded provides defense buff and retaliation, but no longer grants status immunity.
         """
-        if "Shielded" in self.buffs:
-            # Target is immune to negative status effects
-            return False
 
         if debuff_name not in STATUS_CONFIGS:
             return False
@@ -561,7 +597,7 @@ class Wizard:
         - If Invisible and damage is direct: damage is 0.
         - If Stunned: incoming damage is increased by 25%.
         - If Polymorphed: incoming damage is increased by 25%.
-        - If Asleep: waking occurs upon taking damage (Asleep breaks).
+        - If Asleep: skips turn; Defense decreased by 30% for 2 rounds.
         - If wdw_retaliation_active: attacker is afflicted with Frosty.
         """
         if amount <= 0.0 or not self.is_alive:
@@ -578,9 +614,7 @@ class Wizard:
         if "Polymorphed" in self.debuffs:
             actual_damage *= 1.25
 
-        # Asleep breaks upon taking damage
-        if "Asleep" in self.debuffs:
-            self.remove_debuff("Asleep")
+
 
         # Shielded retaliatory effect (WDW): while active, applies Frosty to attacker on hit
         if self.wdw_retaliation_active and attacker is not None and attacker is not self:
@@ -1642,19 +1676,19 @@ class SpellResolver:
             log["effects_applied"].append("Caster and Target Asleep")
 
         elif recipe == "LWE":
-            caster.apply_buff("Invisible", duration=1)
-            log["effects_applied"].append("Caster Invisible for 1 round")
+            caster.apply_buff("Invisible")
+            log["effects_applied"].append("Caster Invisible for 2 rounds")
 
         elif recipe == "LWL":
-            target.apply_debuff("Polymorphed", duration=1)
-            log["effects_applied"].append("Target Polymorphed for 1 round")
+            target.apply_debuff("Polymorphed")
+            log["effects_applied"].append("Target Polymorphed for 2 rounds")
 
         elif recipe == "LWD":
             deal_damage(1.0 * b)
             if "Polymorphed" in target.debuffs:
                 target.remove_debuff("Polymorphed")
-                caster.apply_buff("Invisible", duration=1)
-                log["effects_applied"].append("Consumed Polymorphed -> Caster Invisible for 1 round")
+                caster.apply_buff("Invisible")
+                log["effects_applied"].append("Consumed Polymorphed -> Caster Invisible for 2 rounds")
 
         # ---------------------------------------------------------------------
         # CLASS: ICE (WDF, WDW, WDE, WDL, WDD, DWF, DWW, DWE, DWL, DWD)
@@ -1663,7 +1697,7 @@ class SpellResolver:
             deal_damage(1.0 * b)
             if env.weather == Weather.RAINING:
                 env.set_weather(Weather.SNOWING, b)
-                target.apply_debuff("Stunned", 1)
+                target.apply_debuff("Stunned")
                 mult = round(1.0 + (b / 400.0), 4)
                 self._apply_secondary_class_multiplier(caster, [SpellClass.ICE], mult)
                 log["effects_applied"].append(f"Weather changed to Snowing, Target Stunned, +{mult:.3f}x Ice multiplier")
@@ -1957,30 +1991,117 @@ class ProjectSorceryGame:
         self.winner: Optional[str] = None
         self.combat_logs: List[Dict[str, Any]] = []
         self.turn_history: List[Dict[str, Any]] = []
+        self.gamma: float = 0.99
+        self._prev_phi_p1: float = 0.0
+        self._prev_phi_p2: float = 0.0
+        self._is_initial_turn: bool = True
 
-    def reset(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        """Resets the match to initial state, starting with random weather and location."""
+    def reset(self, initial_board_state: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        Resets the match to initial state.
+        When initial_board_state is provided, instantiates the match directly with
+        the specified HP, rune pools, buffs, debuffs, weather, and location.
+        """
         self.player1.reset()
         self.player2.reset()
         self.env = Environment()
 
-        # Start match with a random non-default weather and location
-        non_default_weathers = [w for w in Weather if w != Weather.CLEAR]
-        non_default_locations = [l for l in Location if l != Location.NONE]
-        self.env.set_weather(random.choice(non_default_weathers))
-        self.env.set_location(random.choice(non_default_locations))
-        self.env.weather_turns_active = 0
-        self.env.location_turns_active = 0
+        if initial_board_state is not None:
+            # Weather
+            w_val = initial_board_state.get("weather")
+            if w_val:
+                if isinstance(w_val, Weather):
+                    self.env.set_weather(w_val)
+                elif isinstance(w_val, str):
+                    for w in Weather:
+                        if w.value.lower() == w_val.lower():
+                            self.env.set_weather(w)
+                            break
 
-        # Initialize rune pools at Turn 1 (3 runes each)
-        self.player1.rune_pool = random.choices(ALL_RUNES, k=3)
-        self.player2.rune_pool = random.choices(ALL_RUNES, k=3)
+            # Location
+            l_val = initial_board_state.get("location")
+            if l_val:
+                if isinstance(l_val, Location):
+                    self.env.set_location(l_val)
+                elif isinstance(l_val, str):
+                    for loc in Location:
+                        if loc.value.lower() == l_val.lower():
+                            self.env.set_location(loc)
+                            break
 
-        self.current_turn = 0
+            # Seedling status
+            if initial_board_state.get("seedling_active"):
+                self.env.seedling_active = True
+            if initial_board_state.get("seedling_rained_on"):
+                self.env.seedling_rained_on = True
+            if initial_board_state.get("seedling_sunny_on"):
+                self.env.seedling_sunny_on = True
+
+            # Player 1 configuration
+            p1_state = initial_board_state.get("player1", {})
+            if "max_health" in p1_state:
+                self.player1.max_health = float(p1_state["max_health"])
+            if "current_health" in p1_state:
+                self.player1.current_health = float(p1_state["current_health"])
+            if "rune_pool" in p1_state:
+                self.player1.rune_pool = list(p1_state["rune_pool"])
+            else:
+                self.player1.rune_pool = random.choices(ALL_RUNES, k=3)
+            if "buffs" in p1_state:
+                self.player1.buffs = dict(p1_state["buffs"])
+            if "debuffs" in p1_state:
+                self.player1.debuffs = dict(p1_state["debuffs"])
+            if "class_multipliers" in p1_state:
+                for k, v in p1_state["class_multipliers"].items():
+                    self.player1.class_multipliers[k] = float(v)
+
+            # Player 2 configuration
+            p2_state = initial_board_state.get("player2", {})
+            if "max_health" in p2_state:
+                self.player2.max_health = float(p2_state["max_health"])
+            if "current_health" in p2_state:
+                self.player2.current_health = float(p2_state["current_health"])
+            if "rune_pool" in p2_state:
+                self.player2.rune_pool = list(p2_state["rune_pool"])
+            else:
+                self.player2.rune_pool = random.choices(ALL_RUNES, k=3)
+            if "buffs" in p2_state:
+                self.player2.buffs = dict(p2_state["buffs"])
+            if "debuffs" in p2_state:
+                self.player2.debuffs = dict(p2_state["debuffs"])
+            if "class_multipliers" in p2_state:
+                for k, v in p2_state["class_multipliers"].items():
+                    self.player2.class_multipliers[k] = float(v)
+
+            self.env.weather_turns_active = initial_board_state.get("weather_turns_active", 0)
+            self.env.location_turns_active = initial_board_state.get("location_turns_active", 0)
+
+        else:
+            # Start match with a random non-default weather and location
+            non_default_weathers = [w for w in Weather if w != Weather.CLEAR]
+            non_default_locations = [l for l in Location if l != Location.NONE]
+            self.env.set_weather(random.choice(non_default_weathers))
+            self.env.set_location(random.choice(non_default_locations))
+            self.env.weather_turns_active = 0
+            self.env.location_turns_active = 0
+
+            # Initialize rune pools at Turn 1 (3 runes each)
+            self.player1.rune_pool = random.choices(ALL_RUNES, k=3)
+            self.player2.rune_pool = random.choices(ALL_RUNES, k=3)
+
+        assumed_turn = int(initial_board_state.get("turn", 1)) if initial_board_state is not None else 1
+        self.current_turn = assumed_turn
+        self.env.current_turn = assumed_turn
+        self._is_initial_turn = True
         self.is_over = False
         self.winner = None
         self.combat_logs.clear()
         self.turn_history.clear()
+
+        # Initialize PBRS potentials
+        self._prev_phi_p1 = self._calculate_potential(self.player1, self.player2)
+        self._prev_phi_p2 = self._calculate_potential(self.player2, self.player1)
+
         return self.get_state(0), self.get_state(1)
 
     def determine_initiative(self) -> Tuple[Wizard, Wizard]:
@@ -2044,8 +2165,11 @@ class ProjectSorceryGame:
         if self.is_over:
             raise RuntimeError("Match is already over. Call reset() to start a new match.")
 
-        self.current_turn += 1
-        self.env.current_turn = self.current_turn
+        if self._is_initial_turn:
+            self._is_initial_turn = False
+        else:
+            self.current_turn += 1
+            self.env.current_turn = self.current_turn
         self.player1.turns_survived += 1
         self.player2.turns_survived += 1
 
@@ -2233,7 +2357,7 @@ class ProjectSorceryGame:
             if wiz.buffs[buff] <= 0:
                 wiz.remove_buff(buff)
 
-        # Debuffs (duration -1 means until cleansed, e.g. Poisoned & Infected)
+        # Debuffs (duration -1 means until cleansed, e.g. Infected)
         for debuff in list(wiz.debuffs.keys()):
             if wiz.debuffs[debuff] > 0:
                 wiz.debuffs[debuff] -= 1
@@ -2263,8 +2387,16 @@ class ProjectSorceryGame:
         self.is_over = True
         self.winner = winner
 
+    def _calculate_potential(self, caster: Wizard, target: Wizard) -> float:
+        """
+        Computes potential Phi(s) as the fraction of conditions met
+        toward active synergy goals on the opponent.
+        """
+        scores = [evaluate_multi_condition_score(r, caster, target, self.env) for r in MULTI_CONDITION_REQUIREMENTS]
+        return max(scores) if scores else 0.0
+
     def _calculate_rewards(self) -> Tuple[float, float]:
-        """Reward function suitable for Genetic Algorithm fitness or RL training."""
+        """Reward function suitable for Genetic Algorithm fitness or RL training with PBRS."""
         p1_hp_ratio = self.player1.current_health / self.player1.max_health
         p2_hp_ratio = self.player2.current_health / self.player2.max_health
 
@@ -2279,7 +2411,18 @@ class ProjectSorceryGame:
                 base_r1 -= 10.0
                 base_r2 += 10.0
 
-        return base_r1, base_r2
+        # Turn-level Potential-Based Reward Shaping (PBRS):
+        # R_shaping = gamma * Phi(s_{t+1}) - Phi(s_t)
+        phi_p1 = self._calculate_potential(self.player1, self.player2)
+        phi_p2 = self._calculate_potential(self.player2, self.player1)
+
+        r_shaping_p1 = self.gamma * phi_p1 - self._prev_phi_p1
+        r_shaping_p2 = self.gamma * phi_p2 - self._prev_phi_p2
+
+        self._prev_phi_p1 = phi_p1
+        self._prev_phi_p2 = phi_p2
+
+        return base_r1 + r_shaping_p1, base_r2 + r_shaping_p2
 
     # -------------------------------------------------------------------------
     # State & Neural Network Observation Vector Extraction
@@ -2359,7 +2502,7 @@ class ProjectSorceryGame:
     def get_observation_vector(self, player_idx: int) -> List[float]:
         """
         Vectorized numerical representation of the game state for Neural Networks.
-        Length: 54 normalized float features.
+        Length: 80 normalized float features (75 tactical + 5 normalized rune counts).
         """
         me = self.player1 if player_idx == 0 else self.player2
         opp = self.player2 if player_idx == 0 else self.player1
@@ -2431,6 +2574,10 @@ class ProjectSorceryGame:
         vec.append(1.0 if self.env.seedling_active else 0.0)
         vec.append(1.0 if self.env.seedling_rained_on else 0.0)
         vec.append(1.0 if self.env.seedling_sunny_on else 0.0)
+
+        # 9. Player normalized rune pool counts (5 features: F, W, E, L, D)
+        for r_val in ["F", "W", "E", "L", "D"]:
+            vec.append(me.rune_pool.count(r_val) / 8.0)
 
         return vec
 
