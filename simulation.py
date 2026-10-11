@@ -1,3 +1,4 @@
+import math
 #!/usr/bin/env python3
 """
 Project Sorcery - AI Bot Evolution & 1v1 Tournament Simulation
@@ -400,23 +401,6 @@ def play_duel(
                 s_outcome_b = 1.0
             result_type = "tiebreaker_draw_resolved"
 
-    # Multi-Objective Fitness Evaluation
-    # 1. Match Outcome: +1.0 for Win, -1.0 for Loss (w_outcome = 1.0)
-    w_outcome = 1.0
-
-    # 2. Max Combo Prerequisites Active: +0.25 per active condition at peak setup (w_combo = 1.0)
-    w_combo = 1.0
-    s_combo_a = 0.25 * float(peak_conditions_a)
-    s_combo_b = 0.25 * float(peak_conditions_b)
-
-    # 3. Net Damage Differential: (Damage Dealt - Damage Taken) / 1000.0 (w_damage = 0.5)
-    w_damage = 0.5
-    s_damage_a = (wiz_a.damage_dealt - wiz_a.damage_taken) / 1000.0
-    s_damage_b = (wiz_b.damage_dealt - wiz_b.damage_taken) / 1000.0
-
-    fitness_a = round(w_outcome * s_outcome_a + w_combo * s_combo_a + w_damage * s_damage_a, 4)
-    fitness_b = round(w_outcome * s_outcome_b + w_combo * s_combo_b + w_damage * s_damage_b, 4)
-
     # Track spell and class usage from combat logs
     spells_cast_a: Dict[str, int] = {}
     spells_cast_b: Dict[str, int] = {}
@@ -436,6 +420,40 @@ def play_duel(
             elif actor == wiz_b.name:
                 spells_cast_b[recipe] = spells_cast_b.get(recipe, 0) + 1
                 classes_used_b[spell_cls] = classes_used_b.get(spell_cls, 0) + 1
+
+    # Multi-Objective Fitness Evaluation with Spell Diversity Entropy Bonus:
+    # 1. Match Outcome: +1.0 for Win, -1.0 for Loss (w_outcome = 1.0)
+    w_outcome = 1.0
+
+    # 2. Max Combo Prerequisites Active: +0.25 per active condition at peak setup (w_combo = 1.0)
+    w_combo = 1.0
+    s_combo_a = 0.25 * float(peak_conditions_a)
+    s_combo_b = 0.25 * float(peak_conditions_b)
+
+    # 3. Net Damage Differential: (Damage Dealt - Damage Taken) / 1000.0 (w_damage = 0.5)
+    w_damage = 0.5
+    s_damage_a = (wiz_a.damage_dealt - wiz_a.damage_taken) / 1000.0
+    s_damage_b = (wiz_b.damage_dealt - wiz_b.damage_taken) / 1000.0
+
+    # 4. Spell Diversity Entropy Bonus: Rewards exploring diverse spells, preventing policy collapse
+    w_entropy = 0.30
+
+    def _calc_spell_entropy(spells_dict: Dict[str, int]) -> float:
+        total = sum(spells_dict.values())
+        if total <= 1:
+            return 0.0
+        ent = 0.0
+        for cnt in spells_dict.values():
+            p = cnt / float(total)
+            if p > 0:
+                ent -= p * math.log(p)
+        return ent
+
+    s_entropy_a = _calc_spell_entropy(spells_cast_a)
+    s_entropy_b = _calc_spell_entropy(spells_cast_b)
+
+    fitness_a = round(w_outcome * s_outcome_a + w_combo * s_combo_a + w_damage * s_damage_a + w_entropy * s_entropy_a, 4)
+    fitness_b = round(w_outcome * s_outcome_b + w_combo * s_combo_b + w_damage * s_damage_b + w_entropy * s_entropy_b, 4)
 
     # Update Performance Trackers
     def update_bot_stats(

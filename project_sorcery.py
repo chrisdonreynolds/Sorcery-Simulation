@@ -120,20 +120,20 @@ BUFF_CONFIGS = {
 
 # Negative Status Effect (Debuff) Definitions
 STATUS_CONFIGS = {
-    "Burning": {"category": "DoT", "magnitude": 0.05, "duration": 6, "desc": "Deals 5% of target's Current Health each turn for 6 rounds."},
-    "Poisoned": {"category": "Escalating DoT", "magnitude": 0.03, "duration": 6, "desc": "Deals 3% of target's Maximum Health, increasing by +2% each turn active (Lasts 6 rounds)."},
+    "Burning": {"category": "DoT", "magnitude": 0.04, "duration": 6, "desc": "Deals 4% of target's Current Health each turn for 6 rounds."},
+    "Poisoned": {"category": "Escalating DoT", "magnitude": 0.02, "escalation_rate": 0.01, "duration": 6, "desc": "Deals 2% of target's Maximum Health, increasing by +1% each turn active (Lasts 6 rounds)."},
     "Cursed": {"category": "Stat Debuff", "magnitude": 0.15, "duration": 6, "desc": "Decreases all stats by 15% for 6 rounds."},
-    "Slowed": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 6, "desc": "Decreases Speed by 25% for 6 rounds."},
-    "Vulnerable": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 6, "desc": "Decreases Defense by 25% for 6 rounds (amplifies incoming damage)."},
-    "Weakened": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 6, "desc": "Decreases Potency by 25% for 6 rounds."},
-    "Blinded": {"category": "Stat Debuff", "magnitude": 0.25, "duration": 6, "desc": "Decreases Luck by 25% for 6 rounds."},
-    "Bleeding": {"category": "DoT", "magnitude": 0.06, "duration": 6, "desc": "Deals 6% of target's Maximum Health each turn for 6 rounds."},
-    "Entangled": {"category": "Crowd Control", "magnitude": 0.30, "duration": 6, "desc": "Decreases Speed by 30% and prevents turn priority for 6 rounds."},
+    "Slowed": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Speed by 20% for 6 rounds."},
+    "Vulnerable": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Defense by 20% for 6 rounds (amplifies incoming damage)."},
+    "Weakened": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Potency by 20% for 6 rounds."},
+    "Blinded": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Luck by 20% for 6 rounds."},
+    "Bleeding": {"category": "DoT", "magnitude": 0.035, "duration": 6, "desc": "Deals 3.5% of target's Maximum Health each turn for 6 rounds."},
+    "Entangled": {"category": "Crowd Control", "magnitude": 0.25, "duration": 6, "desc": "Decreases Speed by 25% and prevents turn priority for 6 rounds."},
     "Frosty": {"category": "Dual Debuff", "magnitude": 0.15, "duration": 6, "desc": "Decreases Speed and Potency each by 15% for 6 rounds."},
     "Stunned": {"category": "Hard CC", "magnitude": 0.25, "duration": 2, "desc": "Skips turn; incoming damage increased by 25% for 2 rounds."},
-    "Asleep": {"category": "Hard CC", "magnitude": 0.30, "duration": 2, "desc": "Skips turn; decreases Defense by 30% for 2 rounds."},
+    "Asleep": {"category": "Hard CC", "magnitude": 0.25, "duration": 2, "desc": "Skips turn; decreases Defense by 25% for 2 rounds."},
     "Polymorphed": {"category": "Hard CC", "magnitude": 0.25, "duration": 2, "desc": "Skips turn; removes all active buffs and status effects; incoming damage increased by 25% for 2 rounds."},
-    "Infected": {"category": "Severe DoT", "magnitude": 0.05, "duration": -1, "desc": "Overrides Poisoned; deals 5% of target's Maximum Health, increasing by +3% each turn, halts all stat growth."},
+    "Infected": {"category": "Severe DoT", "magnitude": 0.03, "escalation_rate": 0.015, "duration": -1, "desc": "Overrides Poisoned; deals 3% of target's Maximum Health, increasing by +1.5% each turn, halts all stat growth."},
 }
 
 def load_status_buff_knobs(path: Optional[Union[str, Path]] = None) -> bool:
@@ -160,14 +160,26 @@ def load_status_buff_knobs(path: Optional[Union[str, Path]] = None) -> bool:
                 if b_name in BUFF_CONFIGS:
                     BUFF_CONFIGS[b_name]["magnitude"] = float(mag)
         if "statuses" in knobs:
-            for s_name, mag in knobs["statuses"].items():
+            for s_name, val in knobs["statuses"].items():
                 if s_name in STATUS_CONFIGS:
-                    STATUS_CONFIGS[s_name]["magnitude"] = float(mag)
+                    if isinstance(val, dict):
+                        if "magnitude" in val:
+                            STATUS_CONFIGS[s_name]["magnitude"] = float(val["magnitude"])
+                        if "escalation_rate" in val:
+                            STATUS_CONFIGS[s_name]["escalation_rate"] = float(val["escalation_rate"])
+                    elif isinstance(val, (int, float)):
+                        STATUS_CONFIGS[s_name]["magnitude"] = float(val)
         for k, v in knobs.items():
             if k in BUFF_CONFIGS and isinstance(v, (int, float)):
                 BUFF_CONFIGS[k]["magnitude"] = float(v)
-            elif k in STATUS_CONFIGS and isinstance(v, (int, float)):
-                STATUS_CONFIGS[k]["magnitude"] = float(v)
+            elif k in STATUS_CONFIGS:
+                if isinstance(v, dict):
+                    if "magnitude" in v:
+                        STATUS_CONFIGS[k]["magnitude"] = float(v["magnitude"])
+                    if "escalation_rate" in v:
+                        STATUS_CONFIGS[k]["escalation_rate"] = float(v["escalation_rate"])
+                elif isinstance(v, (int, float)):
+                    STATUS_CONFIGS[k]["magnitude"] = float(v)
         return True
     except Exception:
         return False
@@ -1049,44 +1061,50 @@ class SpellResolver:
         b: float,
         assoc_classes: List[SpellClass],
         current_turn: int,
-        log: Dict[str, Any]
+        log: Dict[str, Any],
+        spell_class: Optional[SpellClass] = None,
     ) -> None:
         """
         14 weather and location only setup spells:
         Checks if current environment (besides default) has been active for at least 3 turns (unless current turn < 3).
-        If yes: acts as normal and grants match-long multiplier tuned by b (1.0 + b/400.0).
+        If yes: acts as normal and grants caster a match-long multiplier tuned by b (1.0 + b/400.0).
         If no: environment remains unchanged, but secondary multiplier is slightly increased (1.0 + b/400.0 * 1.5).
+        Caster-only benefit: the spell's class and associated classes receive this permanent match-long boost.
         """
         base_mult = round(1.0 + (b / 400.0), 4)
+        boost_classes = list(assoc_classes)
+        if spell_class and spell_class not in boost_classes:
+            boost_classes.append(spell_class)
+
         if env_type == "weather":
             is_default = (env.weather == Weather.CLEAR)
             can_change = is_default or env.weather_turns_active >= 3 or current_turn < 3
             if can_change:
-                env.set_weather(target_val, b)
-                self._apply_secondary_class_multiplier(caster, assoc_classes, base_mult)
+                env.set_weather(target_val)
+                self._apply_secondary_class_multiplier(caster, boost_classes, base_mult)
                 log["effects_applied"].append(
-                    f"Weather changed to {target_val.value} (potency {b}%). Match multiplier {base_mult:.3f}x granted for {[c.value for c in assoc_classes]}."
+                    f"Weather changed to {target_val.value}. Caster granted match-long {base_mult:.3f}x damage multiplier for {[c.value for c in boost_classes]}."
                 )
             else:
                 boosted_mult = round(1.0 + (b / 400.0) * 1.5, 4)
-                self._apply_secondary_class_multiplier(caster, assoc_classes, boosted_mult)
+                self._apply_secondary_class_multiplier(caster, boost_classes, boosted_mult)
                 log["effects_applied"].append(
-                    f"Weather unchanged ({env.weather.value} active {env.weather_turns_active} turns < 3). Match multiplier boosted to {boosted_mult:.3f}x for {[c.value for c in assoc_classes]}."
+                    f"Weather unchanged ({env.weather.value} active {env.weather_turns_active} turns < 3). Caster match multiplier boosted to {boosted_mult:.3f}x for {[c.value for c in boost_classes]}."
                 )
         elif env_type == "location":
             is_default = (env.location == Location.NONE)
             can_change = is_default or env.location_turns_active >= 3 or current_turn < 3
             if can_change:
-                env.set_location(target_val, b)
-                self._apply_secondary_class_multiplier(caster, assoc_classes, base_mult)
+                env.set_location(target_val)
+                self._apply_secondary_class_multiplier(caster, boost_classes, base_mult)
                 log["effects_applied"].append(
-                    f"Location changed to {target_val.value} (potency {b}%). Match multiplier {base_mult:.3f}x granted for {[c.value for c in assoc_classes]}."
+                    f"Location changed to {target_val.value}. Caster granted match-long {base_mult:.3f}x damage multiplier for {[c.value for c in boost_classes]}."
                 )
             else:
                 boosted_mult = round(1.0 + (b / 400.0) * 1.5, 4)
-                self._apply_secondary_class_multiplier(caster, assoc_classes, boosted_mult)
+                self._apply_secondary_class_multiplier(caster, boost_classes, boosted_mult)
                 log["effects_applied"].append(
-                    f"Location unchanged ({env.location.value} active {env.location_turns_active} turns < 3). Match multiplier boosted to {boosted_mult:.3f}x for {[c.value for c in assoc_classes]}."
+                    f"Location unchanged ({env.location.value} active {env.location_turns_active} turns < 3). Caster match multiplier boosted to {boosted_mult:.3f}x for {[c.value for c in boost_classes]}."
                 )
 
     def resolve(
@@ -1195,7 +1213,7 @@ class SpellResolver:
             log["effects_applied"].append("Cleansed all status effects")
 
         elif recipe == "WWE":
-            self._resolve_env_setup(env, caster, "weather", Weather.RAINING, b, [SpellClass.WATER, SpellClass.PLANTS], cur_turn, log)
+            self._resolve_env_setup(env, caster, "weather", Weather.RAINING, b, [SpellClass.WATER, SpellClass.PLANTS], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "WWL":
             deal_damage(1.0 * b)
@@ -1275,7 +1293,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Blinded")
 
         elif recipe == "LLE":
-            self._resolve_env_setup(env, caster, "weather", Weather.SUNNY, b, [SpellClass.FIRE, SpellClass.LIGHT, SpellClass.PLANTS], cur_turn, log)
+            self._resolve_env_setup(env, caster, "weather", Weather.SUNNY, b, [SpellClass.FIRE, SpellClass.LIGHT, SpellClass.PLANTS], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "LLL":
             do_heal(caster, 1.0 * b)
@@ -1311,7 +1329,7 @@ class SpellResolver:
             log["effects_applied"].append("Caster Weakened")
 
         elif recipe == "DDE":
-            self._resolve_env_setup(env, caster, "weather", Weather.DARKNESS, b, [SpellClass.DARK, SpellClass.FEY], cur_turn, log)
+            self._resolve_env_setup(env, caster, "weather", Weather.DARKNESS, b, [SpellClass.DARK, SpellClass.FEY], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "DDL":
             deal_damage(1.0 * b)
@@ -1339,7 +1357,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Cursed")
 
         elif recipe == "FWE":
-            self._resolve_env_setup(env, caster, "location", Location.GRAVEYARD, b, [SpellClass.GHOSTFIRE, SpellClass.DARK], cur_turn, log)
+            self._resolve_env_setup(env, caster, "location", Location.GRAVEYARD, b, [SpellClass.GHOSTFIRE, SpellClass.DARK], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "FWL":
             deal_damage(1.0 * b)
@@ -1481,7 +1499,7 @@ class SpellResolver:
                 log["effects_applied"].append("Stunned applied (Luck roll)")
 
         elif recipe == "FLE":
-            self._resolve_env_setup(env, caster, "weather", Weather.STORMING, b, [SpellClass.LIGHTNING, SpellClass.WATER], cur_turn, log)
+            self._resolve_env_setup(env, caster, "weather", Weather.STORMING, b, [SpellClass.LIGHTNING, SpellClass.WATER], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "FLL":
             caster.apply_buff("Quickened")
@@ -1546,7 +1564,7 @@ class SpellResolver:
             deal_self_damage(1.0 * b)
 
         elif recipe == "FDE":
-            self._resolve_env_setup(env, caster, "weather", Weather.BLOOD_RAIN, b, [SpellClass.BLOOD, SpellClass.GHOSTFIRE], cur_turn, log)
+            self._resolve_env_setup(env, caster, "weather", Weather.BLOOD_RAIN, b, [SpellClass.BLOOD, SpellClass.GHOSTFIRE], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "FDL":
             deal_damage(1.0 * b)
@@ -1616,7 +1634,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Asleep")
 
         elif recipe == "WEE":
-            self._resolve_env_setup(env, caster, "location", Location.JUNGLE, b, [SpellClass.BEASTS, SpellClass.PLANTS], cur_turn, log)
+            self._resolve_env_setup(env, caster, "location", Location.JUNGLE, b, [SpellClass.BEASTS, SpellClass.PLANTS], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "WEL":
             deal_damage(1.0 * b)
@@ -1676,7 +1694,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Cursed")
 
         elif recipe == "WLE":
-            self._resolve_env_setup(env, caster, "location", Location.ENCHANTED_FOREST, b, [SpellClass.FEY], cur_turn, log)
+            self._resolve_env_setup(env, caster, "location", Location.ENCHANTED_FOREST, b, [SpellClass.FEY], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "WLL":
             deal_damage(1.0 * b)
@@ -1740,7 +1758,7 @@ class SpellResolver:
             log["effects_applied"].append("Shielded applied with Frosty retaliation on hit")
 
         elif recipe == "WDE":
-            self._resolve_env_setup(env, caster, "weather", Weather.SNOWING, b, [SpellClass.ICE], cur_turn, log)
+            self._resolve_env_setup(env, caster, "weather", Weather.SNOWING, b, [SpellClass.ICE], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "WDL":
             deal_damage(1.0 * b)
@@ -1774,7 +1792,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Slowed")
 
         elif recipe == "DWE":
-            self._resolve_env_setup(env, caster, "location", Location.TUNDRA, b, [SpellClass.ICE], cur_turn, log)
+            self._resolve_env_setup(env, caster, "location", Location.TUNDRA, b, [SpellClass.ICE], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "DWL":
             deal_damage(1.0 * b)
@@ -1809,7 +1827,7 @@ class SpellResolver:
             log["effects_applied"].append("Target Slowed")
 
         elif recipe == "ELE":
-            self._resolve_env_setup(env, caster, "weather", Weather.WINDY, b, [SpellClass.WIND], cur_turn, log)
+            self._resolve_env_setup(env, caster, "weather", Weather.WINDY, b, [SpellClass.WIND], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "ELL":
             caster.apply_buff("Quickened")
@@ -1835,7 +1853,7 @@ class SpellResolver:
             log["effects_applied"].append("Reset durations of all debuffs on target")
 
         elif recipe == "LEE":
-            self._resolve_env_setup(env, caster, "weather", Weather.SANDSTORM, b, [SpellClass.EARTH, SpellClass.WIND], cur_turn, log)
+            self._resolve_env_setup(env, caster, "weather", Weather.SANDSTORM, b, [SpellClass.EARTH, SpellClass.WIND], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "LEL":
             caster.apply_buff("Quickened")
@@ -1861,7 +1879,7 @@ class SpellResolver:
             log["effects_applied"].append(f"Target Potency & Defense -{b:.1f}")
 
         elif recipe == "EDE":
-            self._resolve_env_setup(env, caster, "location", Location.SWAMP, b, [SpellClass.POISON], cur_turn, log)
+            self._resolve_env_setup(env, caster, "location", Location.SWAMP, b, [SpellClass.POISON], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "EDL":
             deal_damage(1.0 * b)
@@ -1930,7 +1948,7 @@ class SpellResolver:
                 log["effects_applied"].append("Target Stunned (Luck roll)")
 
         elif recipe == "LDE":
-            self._resolve_env_setup(env, caster, "location", Location.SPACE, b, [SpellClass.COSMIC], cur_turn, log)
+            self._resolve_env_setup(env, caster, "location", Location.SPACE, b, [SpellClass.COSMIC], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "LDL":
             bonus = (n * b if n > 0 else 2.0 * b) if "Blinded" in target.debuffs else 0.0
@@ -2388,8 +2406,9 @@ class ProjectSorceryGame:
 
             # Escalating DoT: Poisoned (scaled dynamically from STATUS_CONFIGS)
             if "Poisoned" in wiz.debuffs:
-                base_pct = STATUS_CONFIGS.get("Poisoned", {}).get("magnitude", 0.03)
-                pct = base_pct + (0.02 * wiz.poison_turns_active)
+                base_pct = STATUS_CONFIGS.get("Poisoned", {}).get("magnitude", 0.02)
+                esc_rate = STATUS_CONFIGS.get("Poisoned", {}).get("escalation_rate", 0.01)
+                pct = base_pct + (esc_rate * wiz.poison_turns_active)
                 poison_dmg = pct * wiz.max_health
                 actual_poison = wiz.take_damage(poison_dmg, is_direct=False)
                 wiz.poison_turns_active += 1
@@ -2397,8 +2416,9 @@ class ProjectSorceryGame:
 
             # Severe Escalating DoT: Infected (scaled dynamically from STATUS_CONFIGS)
             if "Infected" in wiz.debuffs:
-                base_pct = STATUS_CONFIGS.get("Infected", {}).get("magnitude", 0.05)
-                pct = base_pct + (0.03 * wiz.infected_turns_active)
+                base_pct = STATUS_CONFIGS.get("Infected", {}).get("magnitude", 0.03)
+                inf_esc = STATUS_CONFIGS.get("Infected", {}).get("escalation_rate", 0.015)
+                pct = base_pct + (inf_esc * wiz.infected_turns_active)
                 inf_dmg = pct * wiz.max_health
                 actual_inf = wiz.take_damage(inf_dmg, is_direct=False)
                 wiz.infected_turns_active += 1

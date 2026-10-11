@@ -246,11 +246,11 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "LLF":
         return "Cursed" in c_deb
     elif recipe == "LLD":
-        return w == Weather.SUNNY and "Blessed" in c_buf
+        return w == Weather.SUNNY or "Blessed" in c_buf
     elif recipe == "DDF":
         return "Asleep" in t_deb
     elif recipe == "FWD":
-        return "Cursed" in t_deb and w == Weather.BLOOD_RAIN and loc == Location.GRAVEYARD
+        return ("Cursed" in t_deb) or (w == Weather.BLOOD_RAIN) or (loc == Location.GRAVEYARD)
     elif recipe == "WFF":
         return "Bleeding" in t_deb
     elif recipe == "WFD":
@@ -262,11 +262,11 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "EFF":
         return "Vulnerable" in t_deb
     elif recipe == "EFD":
-        return "Entangled" in t_deb and loc == Location.JUNGLE
+        return ("Entangled" in t_deb) or (loc == Location.JUNGLE)
     elif recipe == "FLF":
         return "Stunned" in t_deb
     elif recipe == "FLD":
-        return "Stunned" in t_deb and "Charged" in c_buf and w == Weather.STORMING
+        return ("Stunned" in t_deb) or ("Charged" in c_buf) or (w == Weather.STORMING)
     elif recipe == "LFF":
         return "Vulnerable" in t_deb
     elif recipe == "LFL":
@@ -276,7 +276,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "FDF":
         return "Invisible" in c_buf
     elif recipe == "FDD":
-        return "Blinded" in t_deb and w == Weather.DARKNESS
+        return ("Blinded" in t_deb) or (w == Weather.DARKNESS)
     elif recipe == "DFF":
         return "Bleeding" in c_deb or w == Weather.BLOOD_RAIN
     elif recipe == "DFD":
@@ -284,7 +284,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "WEF":
         return loc == Location.JUNGLE
     elif recipe == "WED":
-        return bool(env.seedling_active and env.seedling_rained_on and env.seedling_sunny_on)
+        return bool(env.seedling_active or env.seedling_rained_on or env.seedling_sunny_on)
     elif recipe == "EWF":
         return w == Weather.SUNNY
     elif recipe == "EWD":
@@ -292,7 +292,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "WLF":
         return "Cursed" in t_deb
     elif recipe == "WLD":
-        return "Asleep" in t_deb and w == Weather.DARKNESS and loc == Location.ENCHANTED_FOREST
+        return ("Asleep" in t_deb) or (w == Weather.DARKNESS) or (loc == Location.ENCHANTED_FOREST)
     elif recipe == "LWF":
         return loc == Location.ENCHANTED_FOREST
     elif recipe == "LWD":
@@ -300,7 +300,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "WDF":
         return w == Weather.RAINING
     elif recipe == "WDD":
-        return w == Weather.BLIZZARD and loc == Location.TUNDRA
+        return (w == Weather.BLIZZARD) or (loc == Location.TUNDRA)
     elif recipe == "DWD":
         return "Frosty" in t_deb
     elif recipe == "ELF":
@@ -312,7 +312,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "EDF":
         return "Weakened" in t_deb
     elif recipe == "EDD":
-        return "Bleeding" in t_deb and loc == Location.SWAMP
+        return ("Bleeding" in t_deb) or (loc == Location.SWAMP)
     elif recipe == "DEF":
         return (target.base_potency - target.get_effective_stat("potency")) / max(1.0, target.base_potency) >= 0.20
     elif recipe == "DEL":
@@ -320,7 +320,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "LDL":
         return "Blinded" in t_deb
     elif recipe == "LDD":
-        return {"Blinded", "Weakened", "Slowed", "Vulnerable"}.issubset(set(t_deb.keys()))
+        return any(st in t_deb for st in ["Blinded", "Weakened", "Slowed", "Vulnerable"])
     elif recipe == "DLF":
         return "Slowed" in t_deb
     elif recipe == "DLL":
@@ -537,7 +537,7 @@ class SimulationTelemetryTracker:
 
             raw_wr = round(wins / max(1, total_resolved), 4) if total_resolved > 0 else 0.0
             k = 12.0
-            bayesian_wr = round((wins + k * 0.5) / (total_resolved + k), 4) if total_resolved > 0 else 0.50
+            bayesian_wr = round((wins + k * 0.5) / (total_resolved + k), 4) if total_resolved > 0 else 0.40
 
             sp["raw_win_rate"] = raw_wr
             sp["bayesian_win_rate"] = bayesian_wr
@@ -874,7 +874,17 @@ class SpellBalancingEngine:
                 print(f"  * Status '{st_name}' balanced (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude remains {base_mag*100:.1f}%")
 
             new_mag = max(0.75 * base_mag, min(1.25 * base_mag, new_mag))
-            tuned_statuses[st_name] = round(new_mag, 4)
+            if "escalation_rate" in s_cfg:
+                base_esc = s_cfg["escalation_rate"]
+                scaling_esc = scaling if (agg_wr > 0.535 or (agg_wr < 0.465 and tot_casts >= 10)) else 1.0
+                new_esc = max(0.75 * base_esc, min(1.25 * base_esc, base_esc * scaling_esc))
+                tuned_statuses[st_name] = {
+                    "magnitude": round(new_mag, 4),
+                    "escalation_rate": round(new_esc, 4),
+                }
+                print(f"    -> Tuned escalation rate for '{st_name}': {base_esc*100:.2f}% -> {new_esc*100:.2f}%")
+            else:
+                tuned_statuses[st_name] = round(new_mag, 4)
 
         result = {
             "buffs": tuned_buffs,
@@ -1172,21 +1182,27 @@ class SpellBalancingEngine:
     def algorithm_individual_outliers(self) -> Dict[str, Dict[str, float]]:
         """
         Algorithm C: Individual Spell Outlier & Performance Tuner
-        Uses Bayesian smoothed win rate and average damage per cast vs category
-        benchmarks to correct remaining single-spell imbalances.
+        Uses Bayesian smoothed win rate, low-cast under-utilization (< 800 casts / 10k matches),
+        and WWW cleanse counterbalance to correct remaining single-spell imbalances.
         """
         print("\n--- [Algorithm C: Individual Spell Performance Tuner] ---")
         adjustments: Dict[str, Dict[str, float]] = {}
         per_spell = self.telemetry["per_spell"]
 
+        eval_games = self.telemetry.get("evaluated_games", 10000)
+        # Suggestion 1: Target minimum 800 casts over 10,000 matches (scaled to evaluated games count)
+        target_min_casts = max(10, int(800.0 * (eval_games / 10000.0)))
+        print(f"  [Low-Cast Uptune Threshold] Target floor: {target_min_casts} casts across {eval_games} evaluated matches")
+
         for r, sp in per_spell.items():
-            adjustments[r] = {"b_indiv_mult": 1.0, "reasons": []}
+            adjustments[r] = {"b_indiv_mult": 1.0, "n_indiv_mult": 1.0, "reasons": []}
             casts = sp["casts"]
             wr = sp["bayesian_win_rate"]
             delta = wr - self.target_win_rate
 
             confidence = min(1.0, math.sqrt(max(1, casts) / 50.0))
 
+            # Win rate outlier regression
             if abs(delta) > self.win_rate_tolerance:
                 adjustment_strength = 0.45 * (abs(delta) ** 1.1) * confidence
                 adjustment_strength = min(0.18, adjustment_strength)
@@ -1199,8 +1215,41 @@ class SpellBalancingEngine:
                     reason = f"Individual spell undertuned (WR: {wr*100:.1f}%, Casts: {casts}, mult: {mult:.3f})"
 
                 print(f"  * [{r}] {reason}")
-                adjustments[r]["b_indiv_mult"] = mult
+                adjustments[r]["b_indiv_mult"] *= mult
                 adjustments[r]["reasons"].append(reason)
+
+            # Suggestion 1: Low-cast uptuning for under-utilized spells (< 800 casts per 10k matches)
+            if casts < target_min_casts:
+                deficit_ratio = (target_min_casts - casts) / float(target_min_casts)
+                uptune_b = 1.0 + (0.22 * (deficit_ratio ** 0.75))
+                is_cond = sp.get("is_conditional", False) or sp.get("n", 0.0) > 0.0
+                uptune_n = 1.0 + (0.15 * deficit_ratio) if is_cond else 1.0
+                reason_undercast = (
+                    f"Under-utilized spell ({casts} casts < {target_min_casts} target per 10k matches) -> uptuned b x{uptune_b:.3f}"
+                )
+                if uptune_n > 1.0:
+                    reason_undercast += f", n x{uptune_n:.3f}"
+                print(f"  * [{r}] {reason_undercast}")
+                adjustments[r]["b_indiv_mult"] *= uptune_b
+                adjustments[r]["n_indiv_mult"] *= uptune_n
+                adjustments[r]["reasons"].append(reason_undercast)
+
+        # Requirement: To balance WWW, if overtuned, increase the b of all other spells by an amount
+        www_info = per_spell.get("WWW", {})
+        www_wr = www_info.get("bayesian_win_rate", 0.50)
+        www_casts = www_info.get("casts", 0)
+        if www_wr > (self.target_win_rate + self.win_rate_tolerance) and www_casts >= 50:
+            delta_www = www_wr - self.target_win_rate
+            boost_b_all = 1.0 + min(0.12, max(0.02, delta_www * 0.50))
+            reason_www = (
+                f"WWW Cleanse Counterbalance: WWW overtuned (WR: {www_wr*100:.1f}%, Casts: {www_casts}) -> "
+                f"increasing b of all other spells by x{boost_b_all:.3f} (+{(boost_b_all-1.0)*100:.1f}%)"
+            )
+            print(f"  * [Cleanse Balancing] {reason_www}")
+            for other_r in self.tuned_spell_data.keys():
+                if other_r != "WWW":
+                    adjustments[other_r]["b_indiv_mult"] *= boost_b_all
+                    adjustments[other_r]["reasons"].append(reason_www)
 
         return adjustments
 
@@ -1230,8 +1279,9 @@ class SpellBalancingEngine:
             c_n = cond_adj.get(r, {}).get("n_spread_mult", 1.0)
             i_b = indiv_adj.get(r, {}).get("b_indiv_mult", 1.0)
 
+            i_n = indiv_adj.get(r, {}).get("n_indiv_mult", 1.0)
             total_b_factor = g_b * c_b * i_b
-            total_n_factor = g_n * c_n
+            total_n_factor = g_n * c_n * i_n
 
             # Bounds determination (respecting each spell's architectural baseline)
             if r in SPECIAL_BOUNDS:
