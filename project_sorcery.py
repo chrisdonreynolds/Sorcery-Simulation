@@ -980,7 +980,8 @@ def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, ca
 
         # Debuff setups
         if sp in ["FFW", "FFL", "FWF"]: proj_target_debuffs.add("Burning")
-        if sp in ["FLW", "LFE", "EEF", "WDF", "LDW"]: proj_target_debuffs.add("Stunned")
+        if sp in ["FLW", "EEF", "WDF", "LDW"]: proj_target_debuffs.add("Stunned")
+        if sp == "LFE" and proj_weather == Weather.STORMING: proj_target_debuffs.add("Stunned")
         if sp in ["FWW", "WLW"]: proj_target_debuffs.add("Cursed")
         if sp in ["WEL"]: proj_target_debuffs.add("Entangled")
         if sp in ["FDL", "DFW", "EWD", "WFE"]: proj_target_debuffs.add("Bleeding")
@@ -1191,9 +1192,7 @@ class SpellResolver:
 
         elif recipe == "WWW":
             caster.cleanse_all_debuffs()
-            caster.rune_pool.append("W")
-            caster.extra_pool_capacity_next_turn += 1
-            log["effects_applied"].append("Cleansed all status effects, +1 Water rune to pool (next turn capacity +1)")
+            log["effects_applied"].append("Cleansed all status effects")
 
         elif recipe == "WWE":
             self._resolve_env_setup(env, caster, "weather", Weather.RAINING, b, [SpellClass.WATER, SpellClass.PLANTS], cur_turn, log)
@@ -1516,11 +1515,9 @@ class SpellResolver:
 
         elif recipe == "LFE":
             deal_damage(1.0 * b)
-            target.apply_debuff("Stunned")
-            log["effects_applied"].append("Target Stunned")
             if env.weather == Weather.STORMING:
-                caster.apply_debuff("Stunned")
-                log["effects_applied"].append("Caster Stunned (Storming effect)")
+                target.apply_debuff("Stunned")
+                log["effects_applied"].append("Target Stunned (Storming effect)")
 
         elif recipe == "LFL":
             deal_damage(1.0 * b)
