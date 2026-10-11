@@ -113,6 +113,8 @@ def generate_board_state_for_spell(
     # Defaults
     weather = random.choice(NON_DEFAULT_WEATHERS).value
     location = random.choice(NON_DEFAULT_LOCATIONS).value
+    p1_hp = 1000.0
+    p2_hp = 1000.0
     p1_buffs: Dict[str, int] = {}
     p1_debuffs: Dict[str, int] = {}
     p1_class_mults: Dict[str, float] = {}
@@ -167,6 +169,8 @@ def generate_board_state_for_spell(
             num_to_meet = max(1, int(round(n_reqs * 0.75)))
             chosen_reqs = reqs[:num_to_meet]
 
+            weather = fav_weather.value
+            location = fav_location.value
             for req_type, req_val in chosen_reqs:
                 if req_type == "weather":
                     weather = req_val.value if hasattr(req_val, "value") else str(req_val)
@@ -231,10 +235,24 @@ def generate_board_state_for_spell(
                     applied_cond = True
                     break
             for loc in Location:
-                if loc.value.lower() in cond_text:
+                if loc != Location.NONE and loc.value.lower() in cond_text:
                     location = loc.value
                     applied_cond = True
                     break
+
+            # Special setups for implicit conditional spells
+            if recipe == "WFD":
+                p1_buffs.clear()
+                p1_buffs["Shielded"] = 6
+                p1_buffs["Honed"] = 6
+            elif recipe == "LLF":
+                p1_debuffs["Cursed"] = 6
+            elif recipe == "DFD":
+                p1_hp = 400.0
+            elif recipe == "DLD":
+                p2_hp = 400.0
+            elif recipe == "DEF":
+                p2_debuffs["Weakened"] = 6
 
             # Add Vulnerable to target if not already present to maximize payoff
             if "Vulnerable" not in p2_debuffs:
@@ -242,7 +260,19 @@ def generate_board_state_for_spell(
 
         elif stage == 2:
             weather = fav_weather.value
+            location = fav_location.value
             p1_buffs["Charged"] = 6
+            if recipe == "WFD":
+                p1_buffs.clear()
+                p1_buffs["Shielded"] = 6
+            elif recipe == "LLF":
+                p1_debuffs["Cursed"] = 6
+            elif recipe == "DFD":
+                p1_hp = 500.0
+            elif recipe == "DLD":
+                p2_hp = 500.0
+            elif recipe == "DEF":
+                p2_debuffs["Weakened"] = 6
             for st in STATUS_CONFIGS:
                 if st.lower() in cond_text:
                     dur = STATUS_CONFIGS[st]["duration"]
@@ -257,12 +287,23 @@ def generate_board_state_for_spell(
                     weather = w.value
                     break
             for loc in Location:
-                if loc.value.lower() in cond_text:
+                if loc != Location.NONE and loc.value.lower() in cond_text:
                     location = loc.value
                     break
 
         elif stage == 3:
             # 1 condition active
+            if recipe == "WFD":
+                p1_buffs.clear()
+                p1_buffs["Shielded"] = 6
+            elif recipe == "LLF":
+                p1_debuffs["Cursed"] = 6
+            elif recipe == "DFD":
+                p1_hp = 700.0
+            elif recipe == "DLD":
+                p2_hp = 700.0
+            elif recipe == "DEF":
+                p2_debuffs["Weakened"] = 6
             for st in STATUS_CONFIGS:
                 if st.lower() in cond_text:
                     dur = STATUS_CONFIGS[st]["duration"]
@@ -271,6 +312,10 @@ def generate_board_state_for_spell(
             for bf in BUFF_CONFIGS:
                 if bf.lower() in cond_text:
                     p1_buffs[bf] = BUFF_CONFIGS[bf]["duration"]
+                    break
+            for loc in Location:
+                if loc != Location.NONE and loc.value.lower() in cond_text:
+                    location = loc.value
                     break
 
     else:
@@ -285,6 +330,7 @@ def generate_board_state_for_spell(
 
         elif stage == 2:
             weather = fav_weather.value
+            location = fav_location.value
             p2_debuffs["Vulnerable"] = 6
             p1_buffs["Charged"] = 6
 
@@ -304,7 +350,7 @@ def generate_board_state_for_spell(
         "seedling_rained_on": seedling_rained_on,
         "seedling_sunny_on": seedling_sunny_on,
         "player1": {
-            "current_health": 1000.0,
+            "current_health": p1_hp,
             "max_health": 1000.0,
             "rune_pool": p1_rune_pool,
             "buffs": p1_buffs,
@@ -312,7 +358,7 @@ def generate_board_state_for_spell(
             "class_multipliers": p1_class_mults,
         },
         "player2": {
-            "current_health": 1000.0,
+            "current_health": p2_hp,
             "max_health": 1000.0,
             "rune_pool": p2_rune_pool,
             "buffs": p2_buffs,

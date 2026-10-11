@@ -595,11 +595,12 @@ class Wizard:
             # Halts all stat growth
             return
 
-        if stat_name in self.match_stat_mods:
-            self.match_stat_mods[stat_name] += amount
-        elif stat_name == "health":
+        if stat_name == "health":
             self.max_health = max(1.0, self.max_health + amount)
             self.current_health = min(self.max_health, self.current_health + amount)
+            self.match_stat_mods["health"] += amount
+        elif stat_name in self.match_stat_mods:
+            self.match_stat_mods[stat_name] += amount
 
     # -------------------------------------------------------------------------
     # Direct Damage, Healing, and Hard CC Action Checks
@@ -804,7 +805,7 @@ class CombatMath:
     def check_luck_chance(caster: Wizard, base_chance: float = 0.50) -> bool:
         """
         Calculates chance-based rolls scaling with Luck.
-        Base chance (50% at 50 Luck). Scales linearly: chance = min(1.0, base_chance * (Luck / 50.0)).
+        Base chance (50% at 100 Luck). Scales linearly: chance = min(1.0, base_chance * (Luck / 100.0)).
         """
         eff_luck = caster.get_effective_stat("luck")
         scaling = eff_luck / 100.0
@@ -968,22 +969,25 @@ def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, ca
         elif sp == "LDE": proj_location = Location.SPACE
 
         # Buff setups
-        if sp in ["FEE", "DLL"]: proj_caster_buffs.add("Charged")
+        if sp in ["FEE", "LFW", "DFE"]: proj_caster_buffs.add("Charged")
+        if sp == "DLL" and proj_weather == Weather.DARKNESS: proj_caster_buffs.add("Charged")
         if sp in ["LLF"]: proj_caster_buffs.add("Blessed")
         if sp in ["EEW", "EFW", "WDW"]: proj_caster_buffs.add("Shielded")
         if sp in ["WFL", "FEL", "DFE", "EFF"]: proj_caster_buffs.add("Honed")
-        if sp in ["LEL", "DLL", "FLL", "ELL", "EWL", "EFF"]: proj_caster_buffs.add("Quickened")
-        if sp in ["FDF", "LWE", "LWD"]: proj_caster_buffs.add("Invisible")
+        if sp in ["LEL", "FLL", "ELL", "EWL", "EFF"]: proj_caster_buffs.add("Quickened")
+        if sp == "DLL" and proj_weather == Weather.DARKNESS: proj_caster_buffs.add("Quickened")
+        if sp in ["LWE", "LWD"]: proj_caster_buffs.add("Invisible")
 
         # Debuff setups
         if sp in ["FFW", "FFL", "FWF"]: proj_target_debuffs.add("Burning")
         if sp in ["FLW", "LFE", "EEF", "WDF", "LDW"]: proj_target_debuffs.add("Stunned")
-        if sp in ["FWW", "FWL", "WLW"]: proj_target_debuffs.add("Cursed")
+        if sp in ["FWW", "WLW"]: proj_target_debuffs.add("Cursed")
         if sp in ["WEL"]: proj_target_debuffs.add("Entangled")
         if sp in ["FDL", "DFW", "EWD", "WFE"]: proj_target_debuffs.add("Bleeding")
         if sp in ["LLW", "LFL", "LDF"]: proj_target_debuffs.add("Blinded")
-        if sp in ["DDW", "DDL", "DEE"]: proj_target_debuffs.add("Weakened")
-        if sp in ["DWW", "ELW", "LEL", "DLL", "DFW"]: proj_target_debuffs.add("Slowed")
+        if sp in ["DDL", "DEE"]: proj_target_debuffs.add("Weakened")
+        if sp in ["DWW", "ELW", "LEL", "DFW"]: proj_target_debuffs.add("Slowed")
+        if sp == "DLL" and proj_weather == Weather.DARKNESS: proj_target_debuffs.add("Slowed")
         if sp in ["FEF", "LWF", "DWD"]: proj_target_debuffs.add("Vulnerable")
         if sp in ["WEW", "LWW"]: proj_target_debuffs.add("Asleep")
         if sp in ["EDL", "EWW", "EFL"]: proj_target_debuffs.add("Poisoned")
@@ -991,7 +995,8 @@ def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, ca
         if sp in ["DEL"]: proj_target_debuffs.add("Infected")
 
         # Seedling
-        if sp in ["EWE", "EWL"]: proj_seedling_active = True
+        if sp == "EWE": proj_seedling_active = True
+        elif sp == "EWL": proj_seedling_active = False
         if proj_seedling_active and proj_weather == Weather.RAINING: proj_seedling_rained = True
         if proj_seedling_active and proj_weather == Weather.SUNNY: proj_seedling_sunny = True
 
@@ -1388,7 +1393,7 @@ class SpellResolver:
                 log["notes"] += "Consumed Shielded for Defense-scaled bonus. "
             if "Honed" in caster.buffs:
                 caster.remove_buff("Honed")
-                bonus += cond_scale * (caster.get_effective_stat("luck") / 50.0)
+                bonus += cond_scale * (caster.get_effective_stat("luck") / 100.0)
                 log["notes"] += "Consumed Honed for Luck-scaled bonus. "
             deal_damage(1.0 * b + bonus)
 
@@ -2211,39 +2216,40 @@ class ProjectSorceryGame:
         recipe1 = self._parse_action(action_p1)
         recipe2 = self._parse_action(action_p2)
 
-        # Deduct drafted runes from rune pool & increase base stat by 1 per rune spent
+        # Deduct drafted runes from rune pool & increase base stat by 1 per rune spent (if not Infected)
         for ch in recipe1:
             if ch in self.player1.rune_pool:
                 self.player1.rune_pool.remove(ch)
-            # Increase associated base stat for this match
-            stat_name = RUNE_TO_STAT.get(Rune(ch)) if ch in ALL_RUNES else None
-            if stat_name == "potency":
-                self.player1.base_potency += 1.0
-            elif stat_name == "defense":
-                self.player1.base_defense += 1.0
-            elif stat_name == "health":
-                self.player1.max_health += 1.0
-                self.player1.current_health += 1.0
-            elif stat_name == "luck":
-                self.player1.base_luck += 1.0
-            elif stat_name == "speed":
-                self.player1.base_speed += 1.0
+            if "Infected" not in self.player1.debuffs:
+                stat_name = RUNE_TO_STAT.get(Rune(ch)) if ch in ALL_RUNES else None
+                if stat_name == "potency":
+                    self.player1.base_potency += 1.0
+                elif stat_name == "defense":
+                    self.player1.base_defense += 1.0
+                elif stat_name == "health":
+                    self.player1.max_health += 1.0
+                    self.player1.current_health += 1.0
+                elif stat_name == "luck":
+                    self.player1.base_luck += 1.0
+                elif stat_name == "speed":
+                    self.player1.base_speed += 1.0
 
         for ch in recipe2:
             if ch in self.player2.rune_pool:
                 self.player2.rune_pool.remove(ch)
-            stat_name = RUNE_TO_STAT.get(Rune(ch)) if ch in ALL_RUNES else None
-            if stat_name == "potency":
-                self.player2.base_potency += 1.0
-            elif stat_name == "defense":
-                self.player2.base_defense += 1.0
-            elif stat_name == "health":
-                self.player2.max_health += 1.0
-                self.player2.current_health += 1.0
-            elif stat_name == "luck":
-                self.player2.base_luck += 1.0
-            elif stat_name == "speed":
-                self.player2.base_speed += 1.0
+            if "Infected" not in self.player2.debuffs:
+                stat_name = RUNE_TO_STAT.get(Rune(ch)) if ch in ALL_RUNES else None
+                if stat_name == "potency":
+                    self.player2.base_potency += 1.0
+                elif stat_name == "defense":
+                    self.player2.base_defense += 1.0
+                elif stat_name == "health":
+                    self.player2.max_health += 1.0
+                    self.player2.current_health += 1.0
+                elif stat_name == "luck":
+                    self.player2.base_luck += 1.0
+                elif stat_name == "speed":
+                    self.player2.base_speed += 1.0
 
         turn_log = {
             "turn": self.current_turn,

@@ -57,6 +57,7 @@ for search_dir in [
 try:
     import simulation
     import project_sorcery
+    import generate_board_states
     from project_sorcery import (
         Location,
         ProjectSorceryGame,
@@ -134,49 +135,89 @@ def tag_spell_synergies(recipe: str, spell_data: Dict[str, Any]) -> Dict[str, An
         "benefits_buff": [],
     }
 
+    desc_lower = desc.lower()
+    cond_lower = cond.lower()
+
     # Status parsing
     for st in STATUS_EFFECTS:
-        if any(w in desc for w in [
-            f"applies {st}", f"afflicts {st}", f"inflicts {st}",
-            f"target is now {st}", f"{st} to the target", f"{st} to both"
-        ]):
-            tags["applies_status"].append(st)
+        st_low = st.lower()
+        is_recoil_only = (
+            f"{st_low} to the caster" in desc_lower
+            or f"{st_low} to caster" in desc_lower
+            or f"caster {st_low}" in desc_lower
+        ) and not (
+            f"{st_low} to both" in desc_lower
+            or f"caster and the target" in desc_lower
+            or f"caster and target" in desc_lower
+            or ("target" in desc_lower and (f"applies {st_low}" in desc_lower or f"afflicts {st_low}" in desc_lower))
+        )
+
+        if not is_recoil_only:
+            if any(w in desc_lower for w in [
+                f"applies {st_low}", f"afflicts {st_low}", f"inflicts {st_low}",
+                f"target is now {st_low}", f"{st_low} to the target", f"{st_low} to target",
+                f"{st_low} on target", f"{st_low} to both", f"apply {st_low}"
+            ]):
+                tags["applies_status"].append(st)
+
         if (
-            st.lower() in cond.lower()
-            or f"target is {st}" in desc
-            or f"target is {st.lower()}" in desc
-            or f"if target has {st}" in desc
-            or f"if the target is {st}" in desc
+            st_low in cond_lower
+            or f"target is {st_low}" in desc_lower
+            or f"if target has {st_low}" in desc_lower
+            or f"if the target is {st_low}" in desc_lower
+            or f"if {st_low}" in desc_lower
         ):
-            tags["benefits_status"].append(st)
+            if st == "Bleeding" and ("caster is bleeding" in desc_lower or "caster is bleeding" in cond_lower):
+                tags["benefits_status"].append(st)
+            elif not (f"caster is {st_low}" in desc_lower and "target is" not in desc_lower):
+                tags["benefits_status"].append(st)
 
     # Weather parsing
     for w in WEATHERS:
+        w_low = w.lower()
         if (
-            f"weather condition to {w}" in desc
-            or f"weather to {w}" in desc
-            or (f"to {w}" in desc and "weather" in desc)
+            f"weather condition to {w_low}" in desc_lower
+            or f"weather to {w_low}" in desc_lower
+            or (f"to {w_low}" in desc_lower and "weather" in desc_lower)
         ):
             tags["applies_weather"].append(w)
         if (
-            w.lower() in cond.lower()
-            or f"weather is {w}" in desc.lower()
-            or f"weather is {w.lower()}" in desc.lower()
+            w_low in cond_lower
+            or f"weather is {w_low}" in desc_lower
+            or f"weather condition is {w_low}" in desc_lower
         ):
             tags["benefits_weather"].append(w)
 
     # Location parsing
     for loc in LOCATIONS:
-        if f"location to {loc}" in desc or (f"location is {loc}" in desc and "Changes the location" in desc):
+        loc_low = loc.lower()
+        if f"location to {loc_low}" in desc_lower or (f"location is {loc_low}" in desc_lower and "changes the location" in desc_lower):
             tags["applies_location"].append(loc)
-        if loc.lower() in cond.lower() or f"location is {loc}" in desc.lower():
+        if loc_low in cond_lower or f"location is {loc_low}" in desc_lower:
             tags["benefits_location"].append(loc)
 
     # Buff parsing
     for bf in BUFFS:
-        if any(w in desc for w in [f"grants the caster the {bf}", f"grants the {bf}", f"caster gains {bf}"]):
-            tags["applies_buff"].append(bf)
-        if bf.lower() in cond.lower() or f"caster is {bf}" in desc or f"if caster is {bf}" in desc:
+        bf_low = bf.lower()
+        if any(w in desc_lower for w in [
+            f"grants the caster the {bf_low}", f"grants the caster {bf_low}",
+            f"grant the caster the {bf_low}", f"grant the caster {bf_low}",
+            f"grants the {bf_low}", f"caster gains {bf_low}",
+            f"gives the caster {bf_low}", f"gives the caster the {bf_low}",
+            f"caster {bf_low}", f"granted {bf_low}", f"{bf_low} buff"
+        ]) or (bf_low == "honed" and "charged and honed" in desc_lower) or (bf_low == "quickened" and ("charged and quickened" in desc_lower or "honed and quickened" in desc_lower)):
+            if not (f"if the caster is {bf_low}" in desc_lower or f"if caster is {bf_low}" in desc_lower or f"caster {bf_low}," in desc_lower):
+                tags["applies_buff"].append(bf)
+
+        if recipe == "WFD" and bf in ["Shielded", "Honed"]:
+            tags["benefits_buff"].append(bf)
+        elif recipe != "WWF" and (
+            (bf_low in cond_lower and "target is" not in cond_lower)
+            or f"caster is {bf_low}" in desc_lower
+            or f"if caster is {bf_low}" in desc_lower
+            or f"if the caster is {bf_low}" in desc_lower
+            or f"caster {bf_low}," in desc_lower
+        ):
             tags["benefits_buff"].append(bf)
 
     return tags
@@ -201,7 +242,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "EEF":
         return "Frosty" in t_deb
     elif recipe == "EEE":
-        return target.current_health < target.max_health
+        return False
     elif recipe == "LLF":
         return "Cursed" in c_deb
     elif recipe == "LLD":
@@ -237,9 +278,9 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "FDD":
         return "Blinded" in t_deb and w == Weather.DARKNESS
     elif recipe == "DFF":
-        return "Bleeding" in c_deb
+        return "Bleeding" in c_deb or w == Weather.BLOOD_RAIN
     elif recipe == "DFD":
-        return caster.current_health < caster.max_health
+        return (caster.max_health - caster.current_health) / max(1.0, caster.max_health) >= 0.20
     elif recipe == "WEF":
         return loc == Location.JUNGLE
     elif recipe == "WED":
@@ -273,7 +314,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "EDD":
         return "Bleeding" in t_deb and loc == Location.SWAMP
     elif recipe == "DEF":
-        return target.get_effective_stat("potency") < target.base_potency
+        return (target.base_potency - target.get_effective_stat("potency")) / max(1.0, target.base_potency) >= 0.20
     elif recipe == "DEL":
         return "Bleeding" in t_deb
     elif recipe == "LDL":
@@ -285,7 +326,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "DLL":
         return w == Weather.DARKNESS
     elif recipe == "DLD":
-        return target.current_health < target.max_health
+        return (target.max_health - target.current_health) / max(1.0, target.max_health) >= 0.20
 
     return False
 
@@ -409,7 +450,7 @@ class SimulationTelemetryTracker:
         """
         per_spell: Dict[str, Dict[str, Any]] = {}
         for r, data in self.spell_data.items():
-            is_cond = (float(data.get("n", 0.0)) > 0.0) or (data.get("condition_required", "None") != "None") or (data.get("category") in ("Conditional Strike", "Ultimate"))
+            is_cond = ((float(data.get("n", 0.0)) > 0.0) or (data.get("condition_required", "None") != "None") or (data.get("category") in ("Conditional Strike", "Ultimate"))) and r != "EEE"
             per_spell[r] = {
                 "recipe": r,
                 "spell": r,
@@ -1300,6 +1341,7 @@ def run_balance_simulation_suite(
     total_games: Optional[int] = None,
     eval_games: Optional[int] = None,
     mode: str = "games",
+    iterations: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Restructured 5-Phase Iteration Workflow:
@@ -1342,6 +1384,27 @@ def run_balance_simulation_suite(
     stage3_states = list(curriculum_data[2].values()) if len(curriculum_data) > 2 else []
     stage4_states = list(curriculum_data[3].values()) if len(curriculum_data) > 3 else []
 
+    if eval_games is not None:
+        eval_matches = eval_games
+
+    target_total = None
+    if mode == "iterations":
+        if iterations is not None:
+            target_total = iterations
+        elif total_games is not None:
+            target_total = total_games
+    elif total_games is not None:
+        target_total = total_games
+
+    if target_total is not None:
+        if eval_games is None and target_total < eval_matches:
+            eval_matches = max(50, target_total // 2)
+        rem = max(0, target_total - eval_matches)
+        stage1_matches = rem // 4
+        stage2_matches = rem // 4
+        stage3_matches = rem // 4
+        stage4_matches = rem - (stage1_matches + stage2_matches + stage3_matches)
+
     total_curriculum_matches = stage1_matches + stage2_matches + stage3_matches + stage4_matches
     total_run_matches = total_curriculum_matches + eval_matches
 
@@ -1365,10 +1428,11 @@ def run_balance_simulation_suite(
     orig_get_registry = project_sorcery.get_registry
     project_sorcery.get_registry = lambda path=None: cached_registry
 
-    # Fast In-Memory DNA Cache during Batch Loop
+    # Fast In-Memory DNA Cache during Batch Loop with safe disk sync
     cached_dna_data = None
     orig_json_dump = json.dump
     orig_json_load = json.load
+    iteration_count = 0
 
     def fast_json_load(fp, *args, **kwargs):
         nonlocal cached_dna_data
@@ -1380,15 +1444,28 @@ def run_balance_simulation_suite(
         return data
 
     def fast_json_dump(obj, fp, *args, **kwargs):
-        nonlocal cached_dna_data
+        nonlocal cached_dna_data, iteration_count
         if "tmp.json" in getattr(fp, "name", ""):
             cached_dna_data = obj
-            fp.write("{}")
+            iteration_count += 1
+            if sync_interval > 0 and iteration_count % sync_interval == 0:
+                orig_json_dump(obj, fp, separators=(",", ":"))
             return
         return orig_json_dump(obj, fp, *args, **kwargs)
 
+    orig_replace = Path.replace
+    def safe_replace(self, target):
+        if "tmp.json" in str(self) and "ai_bots_dna" in str(target):
+            if self.exists() and self.stat().st_size > 2:
+                orig_replace(self, target)
+            elif self.exists():
+                self.unlink()
+            return target
+        return orig_replace(self, target)
+
     json.load = fast_json_load
     json.dump = fast_json_dump
+    Path.replace = safe_replace
 
     start_wall_time = time.time()
 
@@ -1444,6 +1521,7 @@ def run_balance_simulation_suite(
         project_sorcery.get_registry = orig_get_registry
         json.load = orig_json_load
         json.dump = orig_json_dump
+        Path.replace = orig_replace
         tracker.remove_hooks()
 
         if cached_dna_data is not None:
@@ -1678,19 +1756,19 @@ def main():
     parser.add_argument(
         "--total-games",
         type=int,
-        default=10000,
+        default=None,
         help="Total games to simulate in 'games' mode (default: 10000)",
     )
     parser.add_argument(
         "--eval-games",
         type=int,
-        default=5000,
+        default=None,
         help="Number of games at end to collect aggregate telemetry from (default: 5000)",
     )
     parser.add_argument(
         "--iterations",
         type=int,
-        default=10000,
+        default=None,
         help="Number of iterations if mode is 'iterations' (default: 10000)",
     )
     parser.add_argument(
@@ -1746,11 +1824,46 @@ def main():
             print("#" * 75)
             print()
 
-        s1 = 50 if args.quick else args.stage1_matches
-        s2 = 50 if args.quick else args.stage2_matches
-        s3 = 50 if args.quick else args.stage3_matches
-        s4 = 50 if args.quick else args.stage4_matches
-        ev = 100 if args.quick else args.eval_matches
+        if args.quick:
+            s1, s2, s3, s4, ev = 50, 50, 50, 50, 100
+        elif args.mode == "iterations" or args.iterations is not None:
+            target_total = args.iterations if args.iterations is not None else (args.total_games if args.total_games is not None else 10000)
+            if args.eval_games is not None:
+                ev = args.eval_games
+            elif args.eval_matches != 5000:
+                ev = args.eval_matches
+            else:
+                ev = min(5000, target_total // 2) if target_total < 10000 else 5000
+            rem = max(0, target_total - ev)
+            s1 = rem // 4
+            s2 = rem // 4
+            s3 = rem // 4
+            s4 = rem - (s1 + s2 + s3)
+        elif args.total_games is not None:
+            target_total = args.total_games
+            if args.eval_games is not None:
+                ev = args.eval_games
+            elif args.eval_matches != 5000:
+                ev = args.eval_matches
+            else:
+                ev = min(5000, target_total // 2) if target_total < 10000 else 5000
+            rem = max(0, target_total - ev)
+            s1 = rem // 4
+            s2 = rem // 4
+            s3 = rem // 4
+            s4 = rem - (s1 + s2 + s3)
+        elif args.eval_games is not None:
+            ev = args.eval_games
+            s1 = args.stage1_matches
+            s2 = args.stage2_matches
+            s3 = args.stage3_matches
+            s4 = args.stage4_matches
+        else:
+            s1 = args.stage1_matches
+            s2 = args.stage2_matches
+            s3 = args.stage3_matches
+            s4 = args.stage4_matches
+            ev = args.eval_matches
 
         run_balance_simulation_suite(
             stage1_matches=s1,
@@ -1765,6 +1878,10 @@ def main():
             data_log_path=args.data_log,
             sync_interval=args.sync_interval,
             verbose=not args.quiet,
+            total_games=args.total_games,
+            eval_games=args.eval_games,
+            mode=args.mode,
+            iterations=args.iterations,
         )
 
 
