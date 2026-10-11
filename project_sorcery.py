@@ -342,8 +342,9 @@ class Wizard:
     starting_hp: float = 1000.0
     base_potency: float = 100.0
     base_defense: float = 100.0
-    base_luck: float = 50.0
+    base_luck: float = 100.0
     base_speed: float = 100.0
+    extra_pool_capacity_next_turn: int = 0
 
     # Dynamic match state
     max_health: float = 1000.0
@@ -383,15 +384,27 @@ class Wizard:
     class_multipliers: Dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self):
+        self.initial_potency = float(self.base_potency)
+        self.initial_defense = float(self.base_defense)
+        self.initial_luck = float(self.base_luck)
+        self.initial_speed = float(self.base_speed)
+        self.initial_max_hp = float(self.starting_hp)
         self.max_health = float(self.starting_hp)
         self.current_health = float(self.starting_hp)
+        self.extra_pool_capacity_next_turn = 0
         if not self.class_multipliers:
             self.class_multipliers = {cls.value: 1.0 for cls in SpellClass}
 
     def reset(self):
         """Reset match-specific variables to original starting values."""
-        self.max_health = float(self.starting_hp)
-        self.current_health = float(self.starting_hp)
+        self.base_potency = float(getattr(self, 'initial_potency', 100.0))
+        self.base_defense = float(getattr(self, 'initial_defense', 100.0))
+        self.base_luck = float(getattr(self, 'initial_luck', 100.0))
+        self.base_speed = float(getattr(self, 'initial_speed', 100.0))
+        self.initial_max_hp = float(getattr(self, 'initial_max_hp', self.starting_hp))
+        self.max_health = float(self.initial_max_hp)
+        self.current_health = float(self.initial_max_hp)
+        self.extra_pool_capacity_next_turn = 0
         self.match_stat_mods = {"potency": 0.0, "defense": 0.0, "luck": 0.0, "speed": 0.0, "health": 0.0}
         self.buffs.clear()
         self.debuffs.clear()
@@ -608,11 +621,13 @@ class Wizard:
 
         actual_damage = amount
 
-        # Damage amplification from Hard CCs
+        # Damage amplification from Hard CCs (scaled dynamically from STATUS_CONFIGS)
         if "Stunned" in self.debuffs:
-            actual_damage *= 1.25
+            stun_amp = STATUS_CONFIGS.get("Stunned", {}).get("magnitude", 0.25)
+            actual_damage *= (1.0 + stun_amp)
         if "Polymorphed" in self.debuffs:
-            actual_damage *= 1.25
+            poly_amp = STATUS_CONFIGS.get("Polymorphed", {}).get("magnitude", 0.25)
+            actual_damage *= (1.0 + poly_amp)
 
 
 
@@ -792,7 +807,7 @@ class CombatMath:
         Base chance (50% at 50 Luck). Scales linearly: chance = min(1.0, base_chance * (Luck / 50.0)).
         """
         eff_luck = caster.get_effective_stat("luck")
-        scaling = eff_luck / 50.0
+        scaling = eff_luck / 100.0
         prob = min(1.0, max(0.0, base_chance * scaling))
         return random.random() < prob
 
@@ -953,24 +968,27 @@ def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, ca
         elif sp == "LDE": proj_location = Location.SPACE
 
         # Buff setups
-        if sp in ["FLL", "DLL"]: proj_caster_buffs.add("Charged")
-        if sp in ["LLL", "LLF"]: proj_caster_buffs.add("Blessed")
-        if sp == "EEW": proj_caster_buffs.add("Shielded")
-        if sp in ["WFL"]: proj_caster_buffs.add("Honed")
-        if sp in ["LEL", "DLL"]: proj_caster_buffs.add("Quickened")
-        if sp == "FDF": proj_caster_buffs.add("Invisible")
+        if sp in ["FEE", "DLL"]: proj_caster_buffs.add("Charged")
+        if sp in ["LLF"]: proj_caster_buffs.add("Blessed")
+        if sp in ["EEW", "EFW", "WDW"]: proj_caster_buffs.add("Shielded")
+        if sp in ["WFL", "FEL", "DFE", "EFF"]: proj_caster_buffs.add("Honed")
+        if sp in ["LEL", "DLL", "FLL", "ELL", "EWL", "EFF"]: proj_caster_buffs.add("Quickened")
+        if sp in ["FDF", "LWE", "LWD"]: proj_caster_buffs.add("Invisible")
 
         # Debuff setups
-        if sp in ["FFW", "FFL"]: proj_target_debuffs.add("Burning")
-        if sp in ["FLW", "LFE", "EEF"]: proj_target_debuffs.add("Stunned")
-        if sp in ["FDL", "DDW", "FWW", "FWL"]: proj_target_debuffs.add("Cursed")
-        if sp in ["FEF", "EFE", "EEE"]: proj_target_debuffs.add("Entangled")
-        if sp in ["DFW", "EDL", "EWD"]: proj_target_debuffs.add("Bleeding")
-        if sp in ["LLW", "WFW"]: proj_target_debuffs.add("Blinded")
-        if sp in ["EDF", "DDL"]: proj_target_debuffs.add("Weakened")
-        if sp in ["DLF"]: proj_target_debuffs.add("Slowed")
-        if sp in ["EFF", "LWF"]: proj_target_debuffs.add("Vulnerable")
-        if sp == "DDF": proj_target_debuffs.add("Asleep")
+        if sp in ["FFW", "FFL", "FWF"]: proj_target_debuffs.add("Burning")
+        if sp in ["FLW", "LFE", "EEF", "WDF", "LDW"]: proj_target_debuffs.add("Stunned")
+        if sp in ["FWW", "FWL", "WLW"]: proj_target_debuffs.add("Cursed")
+        if sp in ["WEL"]: proj_target_debuffs.add("Entangled")
+        if sp in ["FDL", "DFW", "EWD", "WFE"]: proj_target_debuffs.add("Bleeding")
+        if sp in ["LLW", "LFL", "LDF"]: proj_target_debuffs.add("Blinded")
+        if sp in ["DDW", "DDL", "DEE"]: proj_target_debuffs.add("Weakened")
+        if sp in ["DWW", "ELW", "LEL", "DLL", "DFW"]: proj_target_debuffs.add("Slowed")
+        if sp in ["FEF", "LWF", "DWD"]: proj_target_debuffs.add("Vulnerable")
+        if sp in ["WEW", "LWW"]: proj_target_debuffs.add("Asleep")
+        if sp in ["EDL", "EWW", "EFL"]: proj_target_debuffs.add("Poisoned")
+        if sp in ["WDL", "DWF", "DWL", "WDW"]: proj_target_debuffs.add("Frosty")
+        if sp in ["DEL"]: proj_target_debuffs.add("Infected")
 
         # Seedling
         if sp in ["EWE", "EWL"]: proj_seedling_active = True
@@ -1143,12 +1161,13 @@ class SpellResolver:
 
         elif recipe == "FFD":
             dmg_amount = 1.0 * b
+            cond_bonus = (n / 2.0 if n > 0 else 2.0) * b
             if "Burning" in target.debuffs:
-                dmg_amount += 2.0 * b
-                log["notes"] += "Target Burning (+2b bonus). "
+                dmg_amount += cond_bonus
+                log["notes"] += f"Target Burning (+{cond_bonus:.1f} bonus). "
             if "Vulnerable" in target.debuffs:
-                dmg_amount += 2.0 * b
-                log["notes"] += "Target Vulnerable (+2b bonus). "
+                dmg_amount += cond_bonus
+                log["notes"] += f"Target Vulnerable (+{cond_bonus:.1f} bonus). "
             deal_damage(dmg_amount)
 
         # ---------------------------------------------------------------------
@@ -1159,15 +1178,17 @@ class SpellResolver:
             target.alter_stat("potency", -(1.0 * b))
             log["effects_applied"].append(f"Target Potency -{b:.1f}")
             if "Charged" in target.buffs or "Burning" in target.debuffs:
-                target.alter_stat("potency", -(2.0 * b))
+                pot_penalty = (n if n > 0 else 2.0) * b
+                target.alter_stat("potency", -pot_penalty)
                 target.remove_buff("Charged")
                 target.remove_debuff("Burning")
-                log["effects_applied"].append(f"Target Charged/Burning consumed, Potency -{2*b:.1f}")
+                log["effects_applied"].append(f"Target Charged/Burning consumed, Potency -{pot_penalty:.1f}")
 
         elif recipe == "WWW":
             caster.cleanse_all_debuffs()
             caster.rune_pool.append("W")
-            log["effects_applied"].append("Cleansed all status effects, +1 Water rune to pool")
+            caster.extra_pool_capacity_next_turn += 1
+            log["effects_applied"].append("Cleansed all status effects, +1 Water rune to pool (next turn capacity +1)")
 
         elif recipe == "WWE":
             self._resolve_env_setup(env, caster, "weather", Weather.RAINING, b, [SpellClass.WATER, SpellClass.PLANTS], cur_turn, log)
@@ -1202,11 +1223,11 @@ class SpellResolver:
         # CLASS: EARTH (EEF, EEW, EEE, EEL, EED)
         # ---------------------------------------------------------------------
         elif recipe == "EEF":
-            bonus = 2.0 * b if "Frosty" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Frosty" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
             if "Frosty" in target.debuffs:
                 target.apply_debuff("Stunned")
-                log["effects_applied"].append("Target Stunned (+2b bonus from Frosty)")
+                log["effects_applied"].append(f"Target Stunned (+{bonus:.1f} bonus from Frosty)")
 
         elif recipe == "EEW":
             caster.apply_buff("Shielded")
@@ -1215,13 +1236,15 @@ class SpellResolver:
             log["effects_applied"].append(f"Shielded applied, Defense +{b:.1f}, Cured Vulnerable")
 
         elif recipe == "EEE":
-            bonus_max_hp = (b / 100.0) * target.max_health
+            hp_factor = (n if n > 0 else 1.0) * (b / 100.0)
+            bonus_max_hp = hp_factor * target.max_health
             deal_damage(1.0 * b + bonus_max_hp)
             log["notes"] += f"Bonus max HP damage: {bonus_max_hp:.1f}. "
 
         elif recipe == "EEL":
             # Deals damage scaling with caster's Health ((1*b) * Health)
-            scaled_dmg = (1.0 * b) * (caster.current_health / 100.0)
+            # Normalized to standard stat scale (100 HP baseline)
+            scaled_dmg = (1.0 * b) * (caster.current_health / 10.0)
             deal_damage(scaled_dmg)
 
         elif recipe == "EED":
@@ -1275,7 +1298,7 @@ class SpellResolver:
         # CLASS: DARK (DDF, DDW, DDE, DDL, DDD)
         # ---------------------------------------------------------------------
         elif recipe == "DDF":
-            bonus = 2.0 * b if "Asleep" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Asleep" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "DDW":
@@ -1335,7 +1358,7 @@ class SpellResolver:
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "WFF":
-            bonus = 2.0 * b if "Bleeding" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Bleeding" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "WFW":
@@ -1358,13 +1381,14 @@ class SpellResolver:
 
         elif recipe == "WFD":
             bonus = 0.0
+            cond_scale = (n / 2.0 if n > 0 else 2.0) * b
             if "Shielded" in caster.buffs:
                 caster.remove_buff("Shielded")
-                bonus += 2.0 * b * (caster.get_effective_stat("defense") / 100.0)
+                bonus += cond_scale * (caster.get_effective_stat("defense") / 100.0)
                 log["notes"] += "Consumed Shielded for Defense-scaled bonus. "
             if "Honed" in caster.buffs:
                 caster.remove_buff("Honed")
-                bonus += 2.0 * b * (caster.get_effective_stat("luck") / 50.0)
+                bonus += cond_scale * (caster.get_effective_stat("luck") / 50.0)
                 log["notes"] += "Consumed Honed for Luck-scaled bonus. "
             deal_damage(1.0 * b + bonus)
 
@@ -1377,18 +1401,20 @@ class SpellResolver:
             log["effects_applied"].append("Target Vulnerable")
 
         elif recipe == "FEW":
-            bonus = 2.0 * b if "Entangled" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Entangled" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "FEE":
             caster.apply_buff("Charged")
             caster.rune_pool.append("F")
-            log["effects_applied"].append("Charged applied, +1 Fire rune")
+            caster.extra_pool_capacity_next_turn += 1
+            log["effects_applied"].append("Charged applied, +1 Fire rune (next turn capacity +1)")
 
         elif recipe == "FEL":
             caster.apply_buff("Honed")
             caster.rune_pool.append("W")
-            log["effects_applied"].append("Honed applied, +1 Water rune")
+            caster.extra_pool_capacity_next_turn += 1
+            log["effects_applied"].append("Honed applied, +1 Water rune (next turn capacity +1)")
 
         elif recipe == "FED":
             x = len(target.debuffs)
@@ -1409,7 +1435,8 @@ class SpellResolver:
         elif recipe == "EFW":
             caster.apply_buff("Shielded")
             caster.rune_pool.append("E")
-            log["effects_applied"].append("Shielded applied, +1 Earth rune")
+            caster.extra_pool_capacity_next_turn += 1
+            log["effects_applied"].append("Shielded applied, +1 Earth rune (next turn capacity +1)")
 
         elif recipe == "EFE":
             deal_damage(1.0 * b)
@@ -1440,7 +1467,7 @@ class SpellResolver:
         # CLASS: LIGHTNING (FLF, FLW, FLE, FLL, FLD, LFF, LFW, LFE, LFL, LFD)
         # ---------------------------------------------------------------------
         elif recipe == "FLF":
-            bonus = 2.0 * b if "Stunned" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Stunned" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "FLW":
@@ -1473,7 +1500,7 @@ class SpellResolver:
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "LFF":
-            bonus = 2.0 * b if "Vulnerable" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Vulnerable" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "LFW":
@@ -1497,16 +1524,19 @@ class SpellResolver:
                 log["effects_applied"].append("Target Blinded (Darkness effect)")
 
         elif recipe == "LFD":
-            dmg = 3.0 * b if "Charged" in caster.buffs else 1.0 * b
-            deal_damage(dmg)
-            caster.apply_debuff("Stunned")
-            log["effects_applied"].append("Caster Stunned")
+            if "Charged" in caster.buffs:
+                dmg = (1.0 + (n if n > 0 else 2.0)) * b
+                deal_damage(dmg)
+                caster.apply_debuff("Stunned")
+                log["effects_applied"].append("Caster Stunned as recoil for Charged burst")
+            else:
+                deal_damage(1.0 * b)
 
         # ---------------------------------------------------------------------
         # CLASS: BLOOD (FDF, FDW, FDE, FDL, FDD, DFF, DFW, DFE, DFL, DFD)
         # ---------------------------------------------------------------------
         elif recipe == "FDF":
-            bonus = 2.0 * b if "Invisible" in caster.buffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Invisible" in caster.buffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "FDW":
@@ -1538,10 +1568,11 @@ class SpellResolver:
 
         elif recipe == "DFF":
             bonus = 0.0
+            cond_scale = (n / 2.0 if n > 0 else 2.0) * b
             if "Bleeding" in caster.debuffs:
-                bonus += 2.0 * b
+                bonus += cond_scale
             if env.weather == Weather.BLOOD_RAIN:
-                bonus += 2.0 * b
+                bonus += cond_scale
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "DFW":
@@ -1572,7 +1603,7 @@ class SpellResolver:
         # CLASS: PLANTS (WEF, WEW, WEE, WEL, WED, EWF, EWW, EWE, EWL, EWD)
         # ---------------------------------------------------------------------
         elif recipe == "WEF":
-            bonus = 2.0 * b if env.location == Location.JUNGLE else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if env.location == Location.JUNGLE else 0.0
             deal_damage(1.0 * b + bonus)
             if env.location == Location.JUNGLE:
                 env.set_location(Location.NONE)
@@ -1591,21 +1622,20 @@ class SpellResolver:
             log["effects_applied"].append("Target Entangled")
 
         elif recipe == "WED":
-            # (3*b) bonus damage if active seedling has been rained on and sunny (Sequential payoffs)
             conds = [env.seedling_active, env.seedling_rained_on, env.seedling_sunny_on]
             m = sum(bool(c) for c in conds)
             if m == 3:
-                bonus = 3.0 * b
-                log["notes"] += "Seedling was rained on and sunny (+3b bonus). "
+                bonus = (n * b if n > 0 else 3.0 * b)
+                log["notes"] += f"Seedling was rained on and sunny (+{bonus:.1f} bonus). "
             elif m > 0:
-                bonus = (m / 3.0) * (1.0 * b)
+                bonus = (m / 3.0) * (0.25 * n * b if n > 0 else 1.0 * b)
                 log["notes"] += f"Seedling sequential payoff ({m}/3 conditions met: +{bonus:.1f}). "
             else:
                 bonus = 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "EWF":
-            bonus_heal = 1.0 * b if env.weather == Weather.SUNNY else 0.0
+            bonus_heal = (n * b if n > 0 else 1.0 * b) if env.weather == Weather.SUNNY else 0.0
             do_heal(caster, 1.0 * b + bonus_heal)
             caster.alter_stat("potency", 1.0 * b)
             log["effects_applied"].append(f"Healed {1.0*b + bonus_heal:.1f}, Potency +{b:.1f}")
@@ -1635,7 +1665,7 @@ class SpellResolver:
         # CLASS: FEY (WLF, WLW, WLE, WLL, WLD, LWF, LWW, LWE, LWL, LWD)
         # ---------------------------------------------------------------------
         elif recipe == "WLF":
-            bonus = 2.0 * b if "Cursed" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Cursed" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "WLW":
@@ -1754,9 +1784,9 @@ class SpellResolver:
             bonus = 0.0
             if "Frosty" in target.debuffs:
                 target.remove_debuff("Frosty")
-                bonus = 2.0 * b
+                bonus = (n * b if n > 0 else 2.0 * b)
                 target.apply_debuff("Vulnerable")
-                log["effects_applied"].append("Consumed Frosty (+2b bonus) -> Target Vulnerable")
+                log["effects_applied"].append(f"Consumed Frosty (+{bonus:.1f} bonus) -> Target Vulnerable")
             deal_damage(1.0 * b + bonus)
 
         # ---------------------------------------------------------------------
@@ -1786,7 +1816,7 @@ class SpellResolver:
             log["effects_applied"].append(f"Quickened applied, Speed +{b:.1f}, Cured Slowed")
 
         elif recipe == "ELD":
-            bonus = 2.0 * b if env.weather == Weather.RAINING else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if env.weather == Weather.RAINING else 0.0
             deal_damage(1.0 * b + bonus)
             env.set_weather(Weather.BLIZZARD, b)
             mult = round(1.0 + (b / 400.0), 4)
@@ -1794,7 +1824,7 @@ class SpellResolver:
             log["effects_applied"].append(f"Weather changed to Blizzard, +{mult:.3f}x Ice multiplier")
 
         elif recipe == "LEF":
-            bonus = 2.0 * b if "Burning" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Burning" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "LEW":
@@ -1813,13 +1843,13 @@ class SpellResolver:
         elif recipe == "LED":
             # Deals damage scaling with caster's Speed ((1*b) * Speed)
             spd = caster.get_effective_stat("speed")
-            deal_damage((1.0 * b) * (spd / 100.0))
+            deal_damage((1.0 * b) * spd)
 
         # ---------------------------------------------------------------------
         # CLASS: POISON (EDF, EDW, EDE, EDL, EDD, DEF, DEW, DEE, DEL, DED)
         # ---------------------------------------------------------------------
         elif recipe == "EDF":
-            bonus = 2.0 * b if "Weakened" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Weakened" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "EDW":
@@ -1901,7 +1931,7 @@ class SpellResolver:
             self._resolve_env_setup(env, caster, "location", Location.SPACE, b, [SpellClass.COSMIC], cur_turn, log)
 
         elif recipe == "LDL":
-            bonus = 2.0 * b if "Blinded" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Blinded" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "LDD":
@@ -1929,14 +1959,15 @@ class SpellResolver:
 
         elif recipe == "DLW":
             deal_damage(1.0 * b)
+            caster.rune_pool.append("D")
+            caster.extra_pool_capacity_next_turn += 1
+            log["effects_applied"].append("Dealt damage, +1 Dark rune to pool (next turn capacity +1)")
 
         elif recipe == "DLE":
-            # Swaps caster and target base Potency and Defense for remainder of match
-            c_pot, c_def = caster.base_potency, caster.base_defense
-            t_pot, t_def = target.base_potency, target.base_defense
-            caster.base_potency, caster.base_defense = t_pot, t_def
-            target.base_potency, target.base_defense = c_pot, c_def
-            log["effects_applied"].append("Swapped base Potency and Defense between Caster and Target")
+            do_heal(caster, 1.0 * b)
+            caster.rune_pool.append("L")
+            caster.extra_pool_capacity_next_turn += 1
+            log["effects_applied"].append(f"Healed {b:.1f}, +1 Light rune to pool (next turn capacity +1)")
 
         elif recipe == "DLL":
             deal_damage(1.0 * b)
@@ -1982,6 +2013,7 @@ class ProjectSorceryGame:
     ):
         self.player1 = player1
         self.player2 = player2
+        load_status_buff_knobs()
         self.registry = get_registry(spell_data_path)
         self.resolver = SpellResolver(self.registry)
         self.env = Environment()
@@ -2108,34 +2140,29 @@ class ProjectSorceryGame:
         """
         Determines which wizard acts first this turn.
         Priority rules:
-        1. 'next_turn_priority' from FLL guarantees first action.
-        2. 'Entangled' status prevents turn priority.
-        3. Higher effective Speed goes first.
-        4. Tie broken randomly.
+        1. 'next_turn_priority' from FLL guarantees first action, provided caster is not Entangled
+           ('Entangled' status prevents turn priority).
+        2. Higher effective Speed goes first (Entangled already reduces effective Speed by 30%).
+        3. Tie broken randomly.
         """
         p1 = self.player1
         p2 = self.player2
 
-        # 1. FLL Priority check
-        if p1.has_next_turn_priority and not p2.has_next_turn_priority:
-            p1.has_next_turn_priority = False
-            return p1, p2
-        elif p2.has_next_turn_priority and not p1.has_next_turn_priority:
-            p2.has_next_turn_priority = False
-            return p2, p1
-        elif p1.has_next_turn_priority and p2.has_next_turn_priority:
-            p1.has_next_turn_priority = False
-            p2.has_next_turn_priority = False
-
-        # 2. Entangled check (Entangled prevents turn priority)
         p1_entangled = "Entangled" in p1.debuffs
         p2_entangled = "Entangled" in p2.debuffs
-        if not p1_entangled and p2_entangled:
+
+        p1_has_prio = p1.has_next_turn_priority and not p1_entangled
+        p2_has_prio = p2.has_next_turn_priority and not p2_entangled
+
+        p1.has_next_turn_priority = False
+        p2.has_next_turn_priority = False
+
+        if p1_has_prio and not p2_has_prio:
             return p1, p2
-        elif p1_entangled and not p2_entangled:
+        elif p2_has_prio and not p1_has_prio:
             return p2, p1
 
-        # 3. Speed check
+        # Speed comparison
         spd1 = p1.get_effective_stat("speed")
         spd2 = p2.get_effective_stat("speed")
 
@@ -2144,7 +2171,6 @@ class ProjectSorceryGame:
         elif spd2 > spd1:
             return p2, p1
         else:
-            # 50/50 tie-breaker
             return (p1, p2) if random.random() < 0.5 else (p2, p1)
 
     def step(
@@ -2185,13 +2211,39 @@ class ProjectSorceryGame:
         recipe1 = self._parse_action(action_p1)
         recipe2 = self._parse_action(action_p2)
 
-        # Deduct drafted runes from rune pool (unused runes stay in pool)
+        # Deduct drafted runes from rune pool & increase base stat by 1 per rune spent
         for ch in recipe1:
             if ch in self.player1.rune_pool:
                 self.player1.rune_pool.remove(ch)
+            # Increase associated base stat for this match
+            stat_name = RUNE_TO_STAT.get(Rune(ch)) if ch in ALL_RUNES else None
+            if stat_name == "potency":
+                self.player1.base_potency += 1.0
+            elif stat_name == "defense":
+                self.player1.base_defense += 1.0
+            elif stat_name == "health":
+                self.player1.max_health += 1.0
+                self.player1.current_health += 1.0
+            elif stat_name == "luck":
+                self.player1.base_luck += 1.0
+            elif stat_name == "speed":
+                self.player1.base_speed += 1.0
+
         for ch in recipe2:
             if ch in self.player2.rune_pool:
                 self.player2.rune_pool.remove(ch)
+            stat_name = RUNE_TO_STAT.get(Rune(ch)) if ch in ALL_RUNES else None
+            if stat_name == "potency":
+                self.player2.base_potency += 1.0
+            elif stat_name == "defense":
+                self.player2.base_defense += 1.0
+            elif stat_name == "health":
+                self.player2.max_health += 1.0
+                self.player2.current_health += 1.0
+            elif stat_name == "luck":
+                self.player2.base_luck += 1.0
+            elif stat_name == "speed":
+                self.player2.base_speed += 1.0
 
         turn_log = {
             "turn": self.current_turn,
@@ -2284,12 +2336,16 @@ class ProjectSorceryGame:
 
         # Replenish rune pools for the upcoming turn (unused runes stay in pool)
         # Progression logic: Turn 1: 3, Turn 2-4: 4, Turn 5-7: 5, Turn 8-11: 6, Turn 12-14: 7, Turn 15+: 8
+        # Rune-granting spells increase build-to target for the next turn, then return to default.
         if not self.is_over:
-            next_turn_target = get_target_rune_pool_size(self.current_turn + 1)
+            next_turn_base = get_target_rune_pool_size(self.current_turn + 1)
             for wiz in (self.player1, self.player2):
-                if len(wiz.rune_pool) < next_turn_target:
-                    needed = next_turn_target - len(wiz.rune_pool)
+                target_runes = next_turn_base + wiz.extra_pool_capacity_next_turn
+                if len(wiz.rune_pool) < target_runes:
+                    needed = target_runes - len(wiz.rune_pool)
                     wiz.rune_pool.extend(random.choices(ALL_RUNES, k=needed))
+                # Reset extra capacity so subsequent turn returns to default
+                wiz.extra_pool_capacity_next_turn = 0
 
         return self.get_state(0), self.get_state(1), r1, r2, self.is_over, {"winner": self.winner}
 
@@ -2305,35 +2361,41 @@ class ProjectSorceryGame:
             if not wiz.is_alive:
                 continue
 
-            # HoT: Blessed (heals 5% max health each turn)
+            # HoT: Blessed (scaled dynamically from BUFF_CONFIGS)
             if "Blessed" in wiz.buffs:
-                heal_amt = 0.05 * wiz.max_health
+                blessed_mag = BUFF_CONFIGS.get("Blessed", {}).get("magnitude", 0.20)
+                heal_pct = blessed_mag * 0.25 if blessed_mag > 0 else 0.05
+                heal_amt = heal_pct * wiz.max_health
                 actual_heal = wiz.heal(heal_amt)
                 turn_log["events"].append({"actor": wiz.name, "effect": "Blessed HoT", "heal": actual_heal})
 
-            # DoT: Burning (5% of Current Health)
+            # DoT: Burning (scaled dynamically from STATUS_CONFIGS)
             if "Burning" in wiz.debuffs:
-                burn_dmg = 0.05 * wiz.current_health
+                burn_pct = STATUS_CONFIGS.get("Burning", {}).get("magnitude", 0.05)
+                burn_dmg = burn_pct * wiz.current_health
                 actual_burn = wiz.take_damage(burn_dmg, is_direct=False)
                 turn_log["events"].append({"actor": wiz.name, "effect": "Burning DoT", "damage": actual_burn})
 
-            # DoT: Bleeding (6% of Maximum Health)
+            # DoT: Bleeding (scaled dynamically from STATUS_CONFIGS)
             if "Bleeding" in wiz.debuffs:
-                bleed_dmg = 0.06 * wiz.max_health
+                bleed_pct = STATUS_CONFIGS.get("Bleeding", {}).get("magnitude", 0.06)
+                bleed_dmg = bleed_pct * wiz.max_health
                 actual_bleed = wiz.take_damage(bleed_dmg, is_direct=False)
                 turn_log["events"].append({"actor": wiz.name, "effect": "Bleeding DoT", "damage": actual_bleed})
 
-            # Escalating DoT: Poisoned (3% max HP + 2% per turn active)
+            # Escalating DoT: Poisoned (scaled dynamically from STATUS_CONFIGS)
             if "Poisoned" in wiz.debuffs:
-                pct = 0.03 + (0.02 * wiz.poison_turns_active)
+                base_pct = STATUS_CONFIGS.get("Poisoned", {}).get("magnitude", 0.03)
+                pct = base_pct + (0.02 * wiz.poison_turns_active)
                 poison_dmg = pct * wiz.max_health
                 actual_poison = wiz.take_damage(poison_dmg, is_direct=False)
                 wiz.poison_turns_active += 1
                 turn_log["events"].append({"actor": wiz.name, "effect": "Poisoned DoT", "damage": actual_poison, "pct": pct})
 
-            # Severe Escalating DoT: Infected (5% max HP + 3% per turn active)
+            # Severe Escalating DoT: Infected (scaled dynamically from STATUS_CONFIGS)
             if "Infected" in wiz.debuffs:
-                pct = 0.05 + (0.03 * wiz.infected_turns_active)
+                base_pct = STATUS_CONFIGS.get("Infected", {}).get("magnitude", 0.05)
+                pct = base_pct + (0.03 * wiz.infected_turns_active)
                 inf_dmg = pct * wiz.max_health
                 actual_inf = wiz.take_damage(inf_dmg, is_direct=False)
                 wiz.infected_turns_active += 1
@@ -2517,7 +2579,7 @@ class ProjectSorceryGame:
         vec.append(me.max_health / 1000.0)
         vec.append(me.get_effective_stat("potency") / 100.0)
         vec.append(me.get_effective_stat("defense") / 100.0)
-        vec.append(me.get_effective_stat("luck") / 50.0)
+        vec.append(me.get_effective_stat("luck") / 100.0)
         vec.append(me.get_effective_stat("speed") / 100.0)
         vec.append(1.0 if me.has_next_turn_priority else 0.0)
 
@@ -2526,7 +2588,7 @@ class ProjectSorceryGame:
         vec.append(opp.max_health / 1000.0)
         vec.append(opp.get_effective_stat("potency") / 100.0)
         vec.append(opp.get_effective_stat("defense") / 100.0)
-        vec.append(opp.get_effective_stat("luck") / 50.0)
+        vec.append(opp.get_effective_stat("luck") / 100.0)
         vec.append(opp.get_effective_stat("speed") / 100.0)
         vec.append(1.0 if opp.has_next_turn_priority else 0.0)
 

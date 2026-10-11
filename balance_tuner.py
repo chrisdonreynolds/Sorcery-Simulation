@@ -81,15 +81,15 @@ except ImportError as e:
 
 STATUS_EFFECTS = [
     "Frosty", "Burning", "Bleeding", "Stunned", "Entangled", "Cursed",
-    "Asleep", "Blinded", "Vulnerable", "Weakened", "Slowed", "Polymorphed", "Poisoned"
+    "Asleep", "Blinded", "Vulnerable", "Weakened", "Slowed", "Polymorphed", "Poisoned", "Infected"
 ]
 
 WEATHERS = [
-    "Sunny", "Raining", "Blizzard", "Darkness", "Storming", "Blood Rain", "Snowing", "Clear"
+    "Sunny", "Raining", "Blizzard", "Darkness", "Storming", "Blood Rain", "Snowing", "Windy", "Sandstorm", "Clear"
 ]
 
 LOCATIONS = [
-    "Jungle", "Enchanted Forest", "Tundra", "Swamp", "Graveyard", "Volcanic"
+    "Jungle", "Enchanted Forest", "Tundra", "Swamp", "Graveyard", "Space"
 ]
 
 BUFFS = [
@@ -570,44 +570,32 @@ class SimulationTelemetryTracker:
 
         # Synergy Groups aggregation
         synergy_groups: Dict[str, Dict[str, Any]] = {}
-        group_specs = [
-            ("Frosty", "status", "Frosty"),
-            ("Sunny", "weather", "Sunny"),
-            ("Burning", "status", "Burning"),
-            ("Bleeding", "status", "Bleeding"),
-            ("Stunned", "status", "Stunned"),
-            ("Entangled", "status", "Entangled"),
-            ("Cursed", "status", "Cursed"),
-            ("Raining", "weather", "Raining"),
-            ("Darkness", "weather", "Darkness"),
-            ("Storming", "weather", "Storming"),
-            ("Blizzard", "weather", "Blizzard"),
-            ("Jungle", "location", "Jungle"),
-            ("Enchanted Forest", "location", "Enchanted Forest"),
-            ("Tundra", "location", "Tundra"),
-            ("Swamp", "location", "Swamp"),
-            ("Graveyard", "location", "Graveyard"),
-        ]
+        group_specs = []
+        for st in STATUS_EFFECTS:
+            group_specs.append((st, "status", st))
+        for wt in WEATHERS:
+            group_specs.append((wt, "weather", wt))
+        for loc in LOCATIONS:
+            group_specs.append((loc, "location", loc))
+        for bf in BUFFS:
+            group_specs.append((bf, "buff", bf))
 
         for name, kind, key in group_specs:
             appliers = []
             beneficiaries = []
             for r, tag in self.synergy_map.items():
                 if kind == "status":
-                    if key in tag["applies_status"]:
-                        appliers.append(r)
-                    if key in tag["benefits_status"]:
-                        beneficiaries.append(r)
+                    if key in tag.get("applies_status", []): appliers.append(r)
+                    if key in tag.get("benefits_status", []): beneficiaries.append(r)
                 elif kind == "weather":
-                    if key in tag["applies_weather"]:
-                        appliers.append(r)
-                    if key in tag["benefits_weather"]:
-                        beneficiaries.append(r)
+                    if key in tag.get("applies_weather", []): appliers.append(r)
+                    if key in tag.get("benefits_weather", []): beneficiaries.append(r)
                 elif kind == "location":
-                    if key in tag["applies_location"]:
-                        appliers.append(r)
-                    if key in tag["benefits_location"]:
-                        beneficiaries.append(r)
+                    if key in tag.get("applies_location", []): appliers.append(r)
+                    if key in tag.get("benefits_location", []): beneficiaries.append(r)
+                elif kind == "buff":
+                    if key in tag.get("applies_buff", []): appliers.append(r)
+                    if key in tag.get("benefits_buff", []): beneficiaries.append(r)
 
             def summarize_group(recipes: List[str]) -> Dict[str, Any]:
                 c_sum = sum(per_spell[rec]["casts"] for rec in recipes)
@@ -1042,6 +1030,27 @@ class SpellBalancingEngine:
                         f"Ultimate payoff under-triggered (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% vs "
                         f"{target_min*100:.0f}% floor, Casts: {casts}). Shifted tuner focus: protected ultimate base floor at {sp['b']} "
                         f"(hard-coded floor >= {ULTIMATE_B_FLOOR}) and buffed appliers/setups ({', '.join(buffed_setups)}) with +15% b tempo."
+                    )
+                    print(f"  * [{r}] {reason}")
+                    adjustments[r]["b_spread_mult"] = b_spread_mult
+                    adjustments[r]["n_spread_mult"] = n_spread_mult
+                    adjustments[r]["reasons"].append(reason)
+
+                elif num_cond >= 2:
+                    # Multi-condition spells: affect spread gently rather than severely
+                    b_reduction = 0.04 + 0.04 * deficit
+                    b_spread_mult = 1.0 - b_reduction
+                    b_initial = float(self.original_spell_data[r].get("b", sp["b"]))
+                    b_floor = 0.70 * b_initial
+                    if sp["b"] * b_spread_mult < b_floor:
+                        b_spread_mult = max(b_spread_mult, b_floor / max(1e-5, sp["b"]))
+
+                    n_increase = 0.06 + 0.08 * deficit
+                    n_spread_mult = 1.0 + n_increase
+
+                    reason = (
+                        f"Multi-condition payoff under-triggered (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% vs "
+                        f"{target_min*100:.0f}% floor, Casts: {casts}). Mild spread adjustment: b -{b_reduction*100:.1f}%, n +{n_increase*100:.1f}%"
                     )
                     print(f"  * [{r}] {reason}")
                     adjustments[r]["b_spread_mult"] = b_spread_mult

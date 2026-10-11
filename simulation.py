@@ -572,7 +572,22 @@ def run_tournament_iteration(
 
         init_state = None
         if board_states:
-            init_state = random.choice(board_states)
+            if isinstance(board_states, dict):
+                if "weather" in board_states and "player1" in board_states:
+                    init_state = board_states
+                else:
+                    init_state = random.choice(list(board_states.values()))
+            elif isinstance(board_states, list) and len(board_states) > 0:
+                first = board_states[0]
+                if isinstance(first, dict):
+                    if "FFF" in first or "WWF" in first or "player1" not in first:
+                        chosen_stage = random.choice(board_states)
+                        if isinstance(chosen_stage, dict):
+                            init_state = random.choice(list(chosen_stage.values()))
+                    else:
+                        init_state = random.choice(board_states)
+                else:
+                    init_state = random.choice(board_states)
 
         result = play_duel(
             bot_a=bot_a,
@@ -680,11 +695,24 @@ if __name__ == "__main__":
     parser.add_argument("--dna", type=str, default=None, help="Path to ai_bots_dna.json")
     parser.add_argument("--spells", type=str, default=None, help="Path to spell_data.json")
     parser.add_argument("--iterations", type=int, default=1, help="Number of 50-match iterations to run (default: 1)")
+    parser.add_argument("--curriculum", type=str, default=None, help="Path to curriculum_board_states.json")
+    parser.add_argument("--stage", type=int, default=None, choices=[1, 2, 3, 4], help="Stage of curriculum to sample from (1..4)")
     parser.add_argument("--quiet", action="store_true", help="Suppress verbose match logging")
 
     args = parser.parse_args()
 
+    board_states_pool = None
+    if args.curriculum:
+        curr_p = resolve_file_path("curriculum_board_states.json", args.curriculum)
+        if curr_p.exists():
+            with open(curr_p, "r", encoding="utf-8") as f:
+                c_data = json.load(f)
+            if args.stage is not None and 1 <= args.stage <= len(c_data):
+                board_states_pool = list(c_data[args.stage - 1].values())
+            else:
+                board_states_pool = c_data
+
     for i in range(args.iterations):
         if args.iterations > 1:
             print(f"\n>>> Running Iteration {i+1} of {args.iterations} <<<")
-        main(dna_path=args.dna, spell_data_path=args.spells, verbose=not args.quiet)
+        main(dna_path=args.dna, spell_data_path=args.spells, verbose=not args.quiet, board_states=board_states_pool)
