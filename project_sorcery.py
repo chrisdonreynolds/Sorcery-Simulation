@@ -111,7 +111,7 @@ def get_spell_class(recipe: str) -> SpellClass:
 # Name, Associated Stat/Element, Base Magnitude (%), Duration (Turns)
 BUFF_CONFIGS = {
     "Charged": {"stat": "potency", "magnitude": 0.25, "duration": 6, "desc": "Increases Potency by 25% for 6 rounds."},
-    "Honed": {"stat": "luck", "magnitude": 0.25, "duration": 6, "desc": "Increases Luck by 25% for 6 rounds."},
+    "Lucky": {"stat": "luck", "magnitude": 0.25, "duration": 6, "desc": "Increases Luck by 25% for 6 rounds."},
     "Shielded": {"stat": "defense", "magnitude": 0.25, "duration": 6, "desc": "Increases Defense by 25% for 6 rounds."},
     "Quickened": {"stat": "speed", "magnitude": 0.30, "duration": 6, "desc": "Increases Speed by 30% for 6 rounds."},
     "Invisible": {"stat": "invulnerable", "magnitude": 0.50, "duration": 2, "desc": "Invulnerable to direct damage & increases Potency by 50% for 2 rounds."},
@@ -126,7 +126,7 @@ STATUS_CONFIGS = {
     "Slowed": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Speed by 20% for 6 rounds."},
     "Vulnerable": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Defense by 20% for 6 rounds (amplifies incoming damage)."},
     "Weakened": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Potency by 20% for 6 rounds."},
-    "Blinded": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Luck by 20% for 6 rounds."},
+    "Jinxed": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Luck by 20% for 6 rounds."},
     "Bleeding": {"category": "DoT", "magnitude": 0.035, "duration": 6, "desc": "Deals 3.5% of target's Maximum Health each turn for 6 rounds."},
     "Entangled": {"category": "Crowd Control", "magnitude": 0.25, "duration": 6, "desc": "Decreases Speed by 25% and prevents turn priority for 6 rounds."},
     "Frosty": {"category": "Dual Debuff", "magnitude": 0.15, "duration": 6, "desc": "Decreases Speed and Potency each by 15% for 6 rounds."},
@@ -134,6 +134,9 @@ STATUS_CONFIGS = {
     "Asleep": {"category": "Hard CC", "magnitude": 0.25, "duration": 2, "desc": "Skips turn; decreases Defense by 25% for 2 rounds."},
     "Polymorphed": {"category": "Hard CC", "magnitude": 0.25, "duration": 2, "desc": "Skips turn; removes all active buffs and status effects; incoming damage increased by 25% for 2 rounds."},
     "Infected": {"category": "Severe DoT", "magnitude": 0.03, "escalation_rate": 0.015, "duration": -1, "desc": "Overrides Poisoned; deals 3% of target's Maximum Health, increasing by +1.5% each turn, halts all stat growth."},
+    "Blinded": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Luck by 20% for 6 rounds."},
+    "Wet": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Increases Lightning vulnerability for 6 rounds."},
+    "Shocked": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Speed by 20% for 6 rounds."},
 }
 
 def load_status_buff_knobs(path: Optional[Union[str, Path]] = None) -> bool:
@@ -507,10 +510,10 @@ class Wizard:
                 multiplier -= STATUS_CONFIGS["Cursed"]["magnitude"]  # -15%
 
         elif stat_name == "luck":
-            if "Honed" in self.buffs:
-                multiplier += BUFF_CONFIGS["Honed"]["magnitude"]  # +25%
-            if "Blinded" in self.debuffs:
-                multiplier -= STATUS_CONFIGS["Blinded"]["magnitude"]  # -25%
+            if "Lucky" in self.buffs:
+                multiplier += BUFF_CONFIGS["Lucky"]["magnitude"]  # +25%
+            if "Jinxed" in self.debuffs:
+                multiplier -= STATUS_CONFIGS["Jinxed"]["magnitude"]  # -25%
             if "Cursed" in self.debuffs:
                 multiplier -= STATUS_CONFIGS["Cursed"]["magnitude"]  # -15%
 
@@ -525,7 +528,7 @@ class Wizard:
         """Applies or refreshes a positive buff."""
         if buff_name not in BUFF_CONFIGS:
             return False
-        dur = duration if duration is not None else BUFF_CONFIGS[buff_name]["duration"]
+        dur = duration if duration is not None else BUFF_CONFIGS.get(buff_name, {}).get("duration", 6)
         self.buffs[buff_name] = dur
         return True
 
@@ -567,7 +570,7 @@ class Wizard:
             # Cannot apply Poisoned if already Infected
             return False
 
-        dur = duration if duration is not None else STATUS_CONFIGS[debuff_name]["duration"]
+        dur = duration if duration is not None else STATUS_CONFIGS.get(debuff_name, {}).get("duration", 6)
         self.debuffs[debuff_name] = dur
         if debuff_name == "Poisoned" and self.poison_turns_active == 0:
             self.poison_turns_active = 0
@@ -594,7 +597,7 @@ class Wizard:
     def reset_debuff_durations(self) -> None:
         """LEW mechanic: re-applies any debuff on the target, effectively resetting its duration."""
         for debuff_name in list(self.debuffs.keys()):
-            default_dur = STATUS_CONFIGS[debuff_name]["duration"]
+            default_dur = STATUS_CONFIGS.get(debuff_name, {}).get("duration", 6)
             self.debuffs[debuff_name] = default_dur
 
     def alter_stat(self, stat_name: str, amount: float) -> None:
@@ -890,7 +893,7 @@ MULTI_CONDITION_REQUIREMENTS: Dict[str, List[Tuple[str, Any]]] = {
         ("weather", Weather.STORMING),
     ],
     "FDD": [
-        ("target_debuff", "Blinded"),
+        ("target_debuff", "Jinxed"),
         ("weather", Weather.DARKNESS),
     ],
     "WLD": [
@@ -907,7 +910,7 @@ MULTI_CONDITION_REQUIREMENTS: Dict[str, List[Tuple[str, Any]]] = {
         ("location", Location.SWAMP),
     ],
     "LDD": [
-        ("target_debuff", "Blinded"),
+        ("target_debuff", "Jinxed"),
         ("target_debuff", "Weakened"),
         ("target_debuff", "Slowed"),
         ("target_debuff", "Vulnerable"),
@@ -985,7 +988,7 @@ def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, ca
         if sp == "DLL" and proj_weather == Weather.DARKNESS: proj_caster_buffs.add("Charged")
         if sp in ["LLF"]: proj_caster_buffs.add("Blessed")
         if sp in ["EEW", "EFW", "WDW"]: proj_caster_buffs.add("Shielded")
-        if sp in ["WFL", "FEL", "DFE", "EFF"]: proj_caster_buffs.add("Honed")
+        if sp in ["WFL", "FEL", "DFE", "EFF"]: proj_caster_buffs.add("Lucky")
         if sp in ["LEL", "FLL", "ELL", "EWL", "EFF"]: proj_caster_buffs.add("Quickened")
         if sp == "DLL" and proj_weather == Weather.DARKNESS: proj_caster_buffs.add("Quickened")
         if sp in ["LWE", "LWD"]: proj_caster_buffs.add("Invisible")
@@ -997,7 +1000,7 @@ def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, ca
         if sp in ["FWW", "WLW"]: proj_target_debuffs.add("Cursed")
         if sp in ["WEL"]: proj_target_debuffs.add("Entangled")
         if sp in ["FDL", "DFW", "EWD", "WFE"]: proj_target_debuffs.add("Bleeding")
-        if sp in ["LLW", "LFL", "LDF"]: proj_target_debuffs.add("Blinded")
+        if sp in ["LLW", "LFL", "LDF"]: proj_target_debuffs.add("Jinxed")
         if sp in ["DDL", "DEE"]: proj_target_debuffs.add("Weakened")
         if sp in ["DWW", "ELW", "LEL", "DFW"]: proj_target_debuffs.add("Slowed")
         if sp == "DLL" and proj_weather == Weather.DARKNESS: proj_target_debuffs.add("Slowed")
@@ -1231,7 +1234,7 @@ class SpellResolver:
             if "Slowed" in target.debuffs:
                 target.alter_stat("speed", -(2.0 * b))
                 debuffs_affected.append("Speed")
-            if "Blinded" in target.debuffs:
+            if "Jinxed" in target.debuffs:
                 target.alter_stat("luck", -(2.0 * b))
                 debuffs_affected.append("Luck")
             if not debuffs_affected:
@@ -1270,8 +1273,8 @@ class SpellResolver:
             deal_damage(scaled_dmg)
 
         elif recipe == "EED":
-            # 10 instances of (1*b) damage
-            total_hits = 10
+            # Deals randomly between 4 and 12 instances of (1*b) damage, scaling with Luck
+            total_hits = 4 + sum(1 for _ in range(8) if CombatMath.check_luck_chance(caster))
             for _ in range(total_hits):
                 deal_damage(1.0 * b)
 
@@ -1289,8 +1292,8 @@ class SpellResolver:
 
         elif recipe == "LLW":
             deal_damage(1.0 * b)
-            target.apply_debuff("Blinded")
-            log["effects_applied"].append("Target Blinded")
+            target.apply_debuff("Jinxed")
+            log["effects_applied"].append("Target Jinxed")
 
         elif recipe == "LLE":
             self._resolve_env_setup(env, caster, "weather", Weather.SUNNY, b, [SpellClass.FIRE, SpellClass.LIGHT, SpellClass.PLANTS], cur_turn, log, spell_class=spell_class)
@@ -1396,10 +1399,10 @@ class SpellResolver:
                 log["effects_applied"].append("Bleeding applied (Luck roll)")
 
         elif recipe == "WFL":
-            caster.apply_buff("Honed")
+            caster.apply_buff("Lucky")
             caster.alter_stat("luck", 1.0 * b)
-            caster.remove_debuff("Blinded")
-            log["effects_applied"].append(f"Honed applied, Luck +{b:.1f}, Cured Blinded")
+            caster.remove_debuff("Jinxed")
+            log["effects_applied"].append(f"Lucky applied, Luck +{b:.1f}, Cured Jinxed")
 
         elif recipe == "WFD":
             bonus = 0.0
@@ -1408,10 +1411,10 @@ class SpellResolver:
                 caster.remove_buff("Shielded")
                 bonus += cond_scale * (caster.get_effective_stat("defense") / 100.0)
                 log["notes"] += "Consumed Shielded for Defense-scaled bonus. "
-            if "Honed" in caster.buffs:
-                caster.remove_buff("Honed")
+            if "Lucky" in caster.buffs:
+                caster.remove_buff("Lucky")
                 bonus += cond_scale * (caster.get_effective_stat("luck") / 100.0)
-                log["notes"] += "Consumed Honed for Luck-scaled bonus. "
+                log["notes"] += "Consumed Lucky for Luck-scaled bonus. "
             deal_damage(1.0 * b + bonus)
 
         # ---------------------------------------------------------------------
@@ -1433,10 +1436,10 @@ class SpellResolver:
             log["effects_applied"].append("Charged applied, +1 Fire rune (next turn capacity +1)")
 
         elif recipe == "FEL":
-            caster.apply_buff("Honed")
+            caster.apply_buff("Lucky")
             caster.rune_pool.append("W")
             caster.extra_pool_capacity_next_turn += 1
-            log["effects_applied"].append("Honed applied, +1 Water rune (next turn capacity +1)")
+            log["effects_applied"].append("Lucky applied, +1 Water rune (next turn capacity +1)")
 
         elif recipe == "FED":
             x = len(target.debuffs)
@@ -1450,9 +1453,9 @@ class SpellResolver:
             log["effects_applied"].append(f"Target Defense -{b:.1f}")
             if "Vulnerable" in target.debuffs:
                 target.remove_debuff("Vulnerable")
-                caster.apply_buff("Honed")
+                caster.apply_buff("Lucky")
                 caster.apply_buff("Quickened")
-                log["effects_applied"].append("Removed Vulnerable -> Granted Honed & Quickened")
+                log["effects_applied"].append("Removed Vulnerable -> Granted Lucky & Quickened")
 
         elif recipe == "EFW":
             caster.apply_buff("Shielded")
@@ -1540,8 +1543,8 @@ class SpellResolver:
         elif recipe == "LFL":
             deal_damage(1.0 * b)
             if env.weather == Weather.DARKNESS:
-                target.apply_debuff("Blinded")
-                log["effects_applied"].append("Target Blinded (Darkness effect)")
+                target.apply_debuff("Jinxed")
+                log["effects_applied"].append("Target Jinxed (Darkness effect)")
 
         elif recipe == "LFD":
             if "Charged" in caster.buffs:
@@ -1572,8 +1575,8 @@ class SpellResolver:
             log["effects_applied"].append("Target Bleeding")
 
         elif recipe == "FDD":
-            # Ultimate: Target Blinded AND Weather Darkness (Sequential payoffs)
-            conds = ["Blinded" in target.debuffs, env.weather == Weather.DARKNESS]
+            # Ultimate: Target Jinxed AND Weather Darkness (Sequential payoffs)
+            conds = ["Jinxed" in target.debuffs, env.weather == Weather.DARKNESS]
             m = sum(bool(c) for c in conds)
             if m == 2:
                 bonus = n * b
@@ -1604,9 +1607,9 @@ class SpellResolver:
         elif recipe == "DFE":
             deal_self_damage(1.0 * b)
             caster.apply_buff("Charged")
-            caster.apply_buff("Honed")
+            caster.apply_buff("Lucky")
             caster.remove_debuff("Asleep")
-            log["effects_applied"].append("Caster Charged & Honed, Cured Asleep")
+            log["effects_applied"].append("Caster Charged & Lucky, Cured Asleep")
 
         elif recipe == "DFL":
             dmg = deal_damage(1.0 * b)
@@ -1938,8 +1941,8 @@ class SpellResolver:
         # ---------------------------------------------------------------------
         elif recipe == "LDF":
             deal_damage(1.0 * b)
-            target.apply_debuff("Blinded")
-            log["effects_applied"].append("Target Blinded")
+            target.apply_debuff("Jinxed")
+            log["effects_applied"].append("Target Jinxed")
 
         elif recipe == "LDW":
             deal_damage(1.0 * b)
@@ -1951,12 +1954,12 @@ class SpellResolver:
             self._resolve_env_setup(env, caster, "location", Location.SPACE, b, [SpellClass.COSMIC], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "LDL":
-            bonus = (n * b if n > 0 else 2.0 * b) if "Blinded" in target.debuffs else 0.0
+            bonus = (n * b if n > 0 else 2.0 * b) if "Jinxed" in target.debuffs else 0.0
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "LDD":
-            # Ultimate: Target has Blinded, Weakened, Slowed, AND Vulnerable (Sequential payoffs)
-            req = ["Blinded", "Weakened", "Slowed", "Vulnerable"]
+            # Ultimate: Target has Jinxed, Weakened, Slowed, AND Vulnerable (Sequential payoffs)
+            req = ["Jinxed", "Weakened", "Slowed", "Vulnerable"]
             conds = [st in target.debuffs for st in req]
             m = sum(bool(c) for c in conds)
             if m == 4:
@@ -2093,40 +2096,118 @@ class ProjectSorceryGame:
             p1_state = initial_board_state.get("player1", {})
             if "max_health" in p1_state:
                 self.player1.max_health = float(p1_state["max_health"])
+            elif "caster_hp" in initial_board_state:
+                self.player1.max_health = max(float(initial_board_state["caster_hp"]), self.player1.max_health)
+
             if "current_health" in p1_state:
                 self.player1.current_health = float(p1_state["current_health"])
+            elif "caster_hp" in initial_board_state:
+                self.player1.current_health = float(initial_board_state["caster_hp"])
+
             if "rune_pool" in p1_state:
                 self.player1.rune_pool = list(p1_state["rune_pool"])
             else:
                 self.player1.rune_pool = random.choices(ALL_RUNES, k=3)
-            if "buffs" in p1_state:
-                self.player1.buffs = dict(p1_state["buffs"])
-            if "debuffs" in p1_state:
-                self.player1.debuffs = dict(p1_state["debuffs"])
+
+            p1_buffs = p1_state.get("buffs", initial_board_state.get("caster_buffs"))
+            if p1_buffs is not None:
+                self.player1.buffs = dict(p1_buffs)
+
+            p1_debuffs = p1_state.get("debuffs", initial_board_state.get("caster_debuffs"))
+            if p1_debuffs is not None:
+                self.player1.debuffs = dict(p1_debuffs)
+
             if "class_multipliers" in p1_state:
                 for k, v in p1_state["class_multipliers"].items():
                     self.player1.class_multipliers[k] = float(v)
+
+            p1_stats = p1_state.get("stats", initial_board_state.get("caster_stats"))
+            if p1_stats:
+                if "potency" in p1_stats:
+                    self.player1.base_potency = float(p1_stats["potency"])
+                    self.player1.initial_potency = float(p1_stats["potency"])
+                if "defense" in p1_stats:
+                    self.player1.base_defense = float(p1_stats["defense"])
+                    self.player1.initial_defense = float(p1_stats["defense"])
+                if "luck" in p1_stats:
+                    self.player1.base_luck = float(p1_stats["luck"])
+                    self.player1.initial_luck = float(p1_stats["luck"])
+                if "speed" in p1_stats:
+                    self.player1.base_speed = float(p1_stats["speed"])
+                    self.player1.initial_speed = float(p1_stats["speed"])
+                if "health" in p1_stats:
+                    self.player1.max_health = float(p1_stats["health"])
+                    self.player1.initial_max_hp = float(p1_stats["health"])
+                    if "current_health" not in p1_state and "caster_hp" not in initial_board_state:
+                        self.player1.current_health = self.player1.max_health
+
+            if "match_stat_mods" in p1_state:
+                self.player1.match_stat_mods.update(p1_state["match_stat_mods"])
+
+            if "Poisoned" in self.player1.debuffs:
+                self.player1.poison_turns_active = int(p1_state.get("poison_turns_active", 1))
+            if "Infected" in self.player1.debuffs:
+                self.player1.infected_turns_active = int(p1_state.get("infected_turns_active", 1))
 
             # Player 2 configuration
             p2_state = initial_board_state.get("player2", {})
             if "max_health" in p2_state:
                 self.player2.max_health = float(p2_state["max_health"])
+            elif "target_hp" in initial_board_state:
+                self.player2.max_health = max(float(initial_board_state["target_hp"]), self.player2.max_health)
+
             if "current_health" in p2_state:
                 self.player2.current_health = float(p2_state["current_health"])
+            elif "target_hp" in initial_board_state:
+                self.player2.current_health = float(initial_board_state["target_hp"])
+
             if "rune_pool" in p2_state:
                 self.player2.rune_pool = list(p2_state["rune_pool"])
             else:
                 self.player2.rune_pool = random.choices(ALL_RUNES, k=3)
-            if "buffs" in p2_state:
-                self.player2.buffs = dict(p2_state["buffs"])
-            if "debuffs" in p2_state:
-                self.player2.debuffs = dict(p2_state["debuffs"])
+
+            p2_buffs = p2_state.get("buffs", initial_board_state.get("target_buffs"))
+            if p2_buffs is not None:
+                self.player2.buffs = dict(p2_buffs)
+
+            p2_debuffs = p2_state.get("debuffs", initial_board_state.get("target_debuffs"))
+            if p2_debuffs is not None:
+                self.player2.debuffs = dict(p2_debuffs)
+
             if "class_multipliers" in p2_state:
                 for k, v in p2_state["class_multipliers"].items():
                     self.player2.class_multipliers[k] = float(v)
 
-            self.env.weather_turns_active = initial_board_state.get("weather_turns_active", 0)
-            self.env.location_turns_active = initial_board_state.get("location_turns_active", 0)
+            p2_stats = p2_state.get("stats", initial_board_state.get("target_stats"))
+            if p2_stats:
+                if "potency" in p2_stats:
+                    self.player2.base_potency = float(p2_stats["potency"])
+                    self.player2.initial_potency = float(p2_stats["potency"])
+                if "defense" in p2_stats:
+                    self.player2.base_defense = float(p2_stats["defense"])
+                    self.player2.initial_defense = float(p2_stats["defense"])
+                if "luck" in p2_stats:
+                    self.player2.base_luck = float(p2_stats["luck"])
+                    self.player2.initial_luck = float(p2_stats["luck"])
+                if "speed" in p2_stats:
+                    self.player2.base_speed = float(p2_stats["speed"])
+                    self.player2.initial_speed = float(p2_stats["speed"])
+                if "health" in p2_stats:
+                    self.player2.max_health = float(p2_stats["health"])
+                    self.player2.initial_max_hp = float(p2_stats["health"])
+                    if "current_health" not in p2_state and "target_hp" not in initial_board_state:
+                        self.player2.current_health = self.player2.max_health
+
+            if "match_stat_mods" in p2_state:
+                self.player2.match_stat_mods.update(p2_state["match_stat_mods"])
+
+            if "Poisoned" in self.player2.debuffs:
+                self.player2.poison_turns_active = int(p2_state.get("poison_turns_active", 1))
+            if "Infected" in self.player2.debuffs:
+                self.player2.infected_turns_active = int(p2_state.get("infected_turns_active", 1))
+
+            self.env.weather_turns_active = int(initial_board_state.get("weather_turns_active", 0))
+            self.env.location_turns_active = int(initial_board_state.get("location_turns_active", 0))
 
         else:
             # Start match with a random non-default weather and location
@@ -2141,7 +2222,7 @@ class ProjectSorceryGame:
             self.player1.rune_pool = random.choices(ALL_RUNES, k=3)
             self.player2.rune_pool = random.choices(ALL_RUNES, k=3)
 
-        assumed_turn = int(initial_board_state.get("turn", 1)) if initial_board_state is not None else 1
+        assumed_turn = int(initial_board_state.get("turn", initial_board_state.get("turn_number", 1))) if initial_board_state is not None else 1
         self.current_turn = assumed_turn
         self.env.current_turn = assumed_turn
         self._is_initial_turn = True
@@ -2616,23 +2697,23 @@ class ProjectSorceryGame:
         vec.append(1.0 if opp.has_next_turn_priority else 0.0)
 
         # 4. Player active buffs (6 flags)
-        for b_name in ["Charged", "Honed", "Shielded", "Quickened", "Invisible", "Blessed"]:
+        for b_name in ["Charged", "Lucky", "Shielded", "Quickened", "Invisible", "Blessed"]:
             vec.append(1.0 if b_name in me.buffs else 0.0)
 
         # 5. Player active debuffs (14 flags)
         for d_name in [
-            "Burning", "Poisoned", "Cursed", "Slowed", "Vulnerable", "Weakened", "Blinded",
+            "Burning", "Poisoned", "Cursed", "Slowed", "Vulnerable", "Weakened", "Jinxed",
             "Bleeding", "Entangled", "Frosty", "Stunned", "Asleep", "Polymorphed", "Infected"
         ]:
             vec.append(1.0 if d_name in me.debuffs else 0.0)
 
         # 6. Opponent active buffs (6 flags)
-        for b_name in ["Charged", "Honed", "Shielded", "Quickened", "Invisible", "Blessed"]:
+        for b_name in ["Charged", "Lucky", "Shielded", "Quickened", "Invisible", "Blessed"]:
             vec.append(1.0 if b_name in opp.buffs else 0.0)
 
         # 7. Opponent active debuffs (14 flags)
         for d_name in [
-            "Burning", "Poisoned", "Cursed", "Slowed", "Vulnerable", "Weakened", "Blinded",
+            "Burning", "Poisoned", "Cursed", "Slowed", "Vulnerable", "Weakened", "Jinxed",
             "Bleeding", "Entangled", "Frosty", "Stunned", "Asleep", "Polymorphed", "Infected"
         ]:
             vec.append(1.0 if d_name in opp.debuffs else 0.0)

@@ -713,20 +713,35 @@ if __name__ == "__main__":
     parser.add_argument("--dna", type=str, default=None, help="Path to ai_bots_dna.json")
     parser.add_argument("--spells", type=str, default=None, help="Path to spell_data.json")
     parser.add_argument("--iterations", type=int, default=1, help="Number of 50-match iterations to run (default: 1)")
-    parser.add_argument("--curriculum", type=str, default=None, help="Path to curriculum_board_states.json")
+    parser.add_argument("--curriculum", type=str, default=None, help="Path to training_stages.json or curriculum_board_states.json")
     parser.add_argument("--stage", type=int, default=None, choices=[1, 2, 3, 4], help="Stage of curriculum to sample from (1..4)")
     parser.add_argument("--quiet", action="store_true", help="Suppress verbose match logging")
 
     args = parser.parse_args()
 
     board_states_pool = None
-    if args.curriculum:
-        curr_p = resolve_file_path("curriculum_board_states.json", args.curriculum)
-        if curr_p.exists():
-            with open(curr_p, "r", encoding="utf-8") as f:
-                c_data = json.load(f)
+    curr_target = args.curriculum
+    if curr_target:
+        curr_p = resolve_file_path("training_stages.json", curr_target)
+        if not curr_p.exists():
+            curr_p = resolve_file_path("curriculum_board_states.json", curr_target)
+    else:
+        curr_p = resolve_file_path("training_stages.json")
+        if not curr_p.exists():
+            curr_p = resolve_file_path("curriculum_board_states.json")
+
+    if curr_p.exists() and (args.curriculum or args.stage is not None):
+        with open(curr_p, "r", encoding="utf-8") as f:
+            c_data = json.load(f)
+        if isinstance(c_data, list):
             if args.stage is not None and 1 <= args.stage <= len(c_data):
                 board_states_pool = list(c_data[args.stage - 1].values())
+            else:
+                board_states_pool = c_data
+        elif isinstance(c_data, dict):
+            if args.stage is not None:
+                st_key = f"stage_{args.stage}" if f"stage_{args.stage}" in c_data else str(args.stage)
+                board_states_pool = list(c_data.get(st_key, {}).values())
             else:
                 board_states_pool = c_data
 

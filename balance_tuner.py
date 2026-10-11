@@ -57,7 +57,6 @@ for search_dir in [
 try:
     import simulation
     import project_sorcery
-    import generate_board_states
     from project_sorcery import (
         Location,
         ProjectSorceryGame,
@@ -82,7 +81,7 @@ except ImportError as e:
 
 STATUS_EFFECTS = [
     "Frosty", "Burning", "Bleeding", "Stunned", "Entangled", "Cursed",
-    "Asleep", "Blinded", "Vulnerable", "Weakened", "Slowed", "Polymorphed", "Poisoned", "Infected"
+    "Asleep", "Jinxed", "Vulnerable", "Weakened", "Slowed", "Polymorphed", "Poisoned", "Infected"
 ]
 
 WEATHERS = [
@@ -94,7 +93,7 @@ LOCATIONS = [
 ]
 
 BUFFS = [
-    "Charged", "Shielded", "Honed", "Quickened", "Invisible", "Blessed"
+    "Charged", "Shielded", "Lucky", "Quickened", "Invisible", "Blessed"
 ]
 
 # Hard-coded floor for b for all ultimate spells
@@ -106,7 +105,7 @@ SPECIAL_BOUNDS: Dict[str, Tuple[float, float, float, float]] = {
     "WWW": (1.0, 1.0, 0.0, 0.0),       # Cleanse utility
     "EEE": (2.0, 10.0, 1.5, 3.5),      # % max health damage
     "EEL": (0.2, 1.5, 0.0, 0.0),       # Health scaling factor
-    "EED": (2.0, 10.0, 0.0, 0.0),      # 10 instances
+    "EED": (2.0, 10.0, 0.0, 0.0),      # 4-12 instances scaling with luck
     "FED": (2.0, 10.0, 1.5, 3.5),      # Multi-hit formula
     "LED": (0.2, 1.5, 0.0, 0.0),       # Speed scaling factor
     "DLD": (20.0, 60.0, 1.5, 3.5),     # Execute missing health scaling
@@ -205,11 +204,11 @@ def tag_spell_synergies(recipe: str, spell_data: Dict[str, Any]) -> Dict[str, An
             f"grants the {bf_low}", f"caster gains {bf_low}",
             f"gives the caster {bf_low}", f"gives the caster the {bf_low}",
             f"caster {bf_low}", f"granted {bf_low}", f"{bf_low} buff"
-        ]) or (bf_low == "honed" and "charged and honed" in desc_lower) or (bf_low == "quickened" and ("charged and quickened" in desc_lower or "honed and quickened" in desc_lower)):
+        ]) or (bf_low == "lucky" and "charged and lucky" in desc_lower) or (bf_low == "quickened" and ("charged and quickened" in desc_lower or "lucky and quickened" in desc_lower)):
             if not (f"if the caster is {bf_low}" in desc_lower or f"if caster is {bf_low}" in desc_lower or f"caster {bf_low}," in desc_lower):
                 tags["applies_buff"].append(bf)
 
-        if recipe == "WFD" and bf in ["Shielded", "Honed"]:
+        if recipe == "WFD" and bf in ["Shielded", "Lucky"]:
             tags["benefits_buff"].append(bf)
         elif recipe != "WWF" and (
             (bf_low in cond_lower and "target is" not in cond_lower)
@@ -254,7 +253,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "WFF":
         return "Bleeding" in t_deb
     elif recipe == "WFD":
-        return "Shielded" in c_buf or "Honed" in c_buf
+        return "Shielded" in c_buf or "Lucky" in c_buf
     elif recipe == "FEW":
         return "Entangled" in t_deb
     elif recipe == "FED":
@@ -276,7 +275,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "FDF":
         return "Invisible" in c_buf
     elif recipe == "FDD":
-        return ("Blinded" in t_deb) or (w == Weather.DARKNESS)
+        return ("Jinxed" in t_deb) or (w == Weather.DARKNESS)
     elif recipe == "DFF":
         return "Bleeding" in c_deb or w == Weather.BLOOD_RAIN
     elif recipe == "DFD":
@@ -318,9 +317,9 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "DEL":
         return "Bleeding" in t_deb
     elif recipe == "LDL":
-        return "Blinded" in t_deb
+        return "Jinxed" in t_deb
     elif recipe == "LDD":
-        return any(st in t_deb for st in ["Blinded", "Weakened", "Slowed", "Vulnerable"])
+        return any(st in t_deb for st in ["Jinxed", "Weakened", "Slowed", "Vulnerable"])
     elif recipe == "DLF":
         return "Slowed" in t_deb
     elif recipe == "DLL":
@@ -691,7 +690,7 @@ def get_spell_condition_complexity(recipe: str, spell_data: Optional[Dict[str, A
     """
     EXPLICIT_COMPLEXITY: Dict[str, int] = {
         # 4 conditions:
-        "LDD": 4,  # Blinded + Weakened + Slowed + Vulnerable
+        "LDD": 4,  # Jinxed + Weakened + Slowed + Vulnerable
         # 3 conditions:
         "FWD": 3,  # Cursed + Blood Rain + Graveyard
         "FLD": 3,  # Stunned + Charged + Storming
@@ -700,7 +699,7 @@ def get_spell_condition_complexity(recipe: str, spell_data: Optional[Dict[str, A
         # 2 conditions:
         "EDD": 2,  # Bleeding + Swamp
         "EFD": 2,  # Entangled + Jungle
-        "FDD": 2,  # Blinded + Darkness
+        "FDD": 2,  # Jinxed + Darkness
         "LLD": 2,  # Sunny + Blessed
         "WDD": 2,  # Blizzard + Tundra
     }
@@ -1417,22 +1416,34 @@ def run_balance_simulation_suite(
     with open(resolved_spell_path, "r", encoding="utf-8") as f:
         spell_data = json.load(f)
 
-    # Resolve Curriculum Board States
-    curr_path = Path(curriculum_path).resolve() if curriculum_path else simulation.resolve_file_path("curriculum_board_states.json")
-    if not curr_path.exists():
-        if generate_board_states is not None:
-            print("[Curriculum] Generating curriculum_board_states.json...")
-            generate_board_states.generate_curriculum(str(resolved_spell_path), str(curr_path))
+    # Resolve Curriculum Board States (checks training_stages.json first, then curriculum_board_states.json)
+    if curriculum_path:
+        curr_path = Path(curriculum_path).resolve()
+    else:
+        ts_p = simulation.resolve_file_path("training_stages.json")
+        if ts_p.exists():
+            curr_path = ts_p
         else:
-            raise FileNotFoundError(f"Curriculum board states not found at: {curr_path}")
+            curr_path = simulation.resolve_file_path("curriculum_board_states.json")
+
+    if not curr_path.exists():
+        raise FileNotFoundError(f"Training stages file not found at: {curr_path}")
 
     with open(curr_path, "r", encoding="utf-8") as f:
         curriculum_data = json.load(f)
 
-    stage1_states = list(curriculum_data[0].values()) if len(curriculum_data) > 0 else []
-    stage2_states = list(curriculum_data[1].values()) if len(curriculum_data) > 1 else []
-    stage3_states = list(curriculum_data[2].values()) if len(curriculum_data) > 2 else []
-    stage4_states = list(curriculum_data[3].values()) if len(curriculum_data) > 3 else []
+    if isinstance(curriculum_data, list):
+        stage1_states = list(curriculum_data[0].values()) if len(curriculum_data) > 0 else []
+        stage2_states = list(curriculum_data[1].values()) if len(curriculum_data) > 1 else []
+        stage3_states = list(curriculum_data[2].values()) if len(curriculum_data) > 2 else []
+        stage4_states = list(curriculum_data[3].values()) if len(curriculum_data) > 3 else []
+    elif isinstance(curriculum_data, dict):
+        stage1_states = list(curriculum_data.get("stage_1", curriculum_data.get("1", curriculum_data.get(1, {}))).values())
+        stage2_states = list(curriculum_data.get("stage_2", curriculum_data.get("2", curriculum_data.get(2, {}))).values())
+        stage3_states = list(curriculum_data.get("stage_3", curriculum_data.get("3", curriculum_data.get(3, {}))).values())
+        stage4_states = list(curriculum_data.get("stage_4", curriculum_data.get("4", curriculum_data.get(4, {}))).values())
+    else:
+        stage1_states, stage2_states, stage3_states, stage4_states = [], [], [], []
 
     if eval_games is not None:
         eval_matches = eval_games
@@ -1789,7 +1800,7 @@ def main():
         "--curriculum",
         type=str,
         default=None,
-        help="Path to curriculum_board_states.json",
+        help="Path to training_stages.json or curriculum_board_states.json",
     )
     parser.add_argument(
         "--quick",
