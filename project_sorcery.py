@@ -167,22 +167,22 @@ def load_status_buff_knobs(path: Optional[Union[str, Path]] = None) -> bool:
                 if s_name in STATUS_CONFIGS:
                     if isinstance(val, dict):
                         if "magnitude" in val:
-                            STATUS_CONFIGS[s_name]["magnitude"] = float(val["magnitude"])
+                            STATUS_CONFIGS[s_name]["magnitude"] = max(0.0, min(0.75, float(val["magnitude"])))
                         if "escalation_rate" in val:
-                            STATUS_CONFIGS[s_name]["escalation_rate"] = float(val["escalation_rate"])
+                            STATUS_CONFIGS[s_name]["escalation_rate"] = max(0.0, min(0.75, float(val["escalation_rate"])))
                     elif isinstance(val, (int, float)):
-                        STATUS_CONFIGS[s_name]["magnitude"] = float(val)
+                        STATUS_CONFIGS[s_name]["magnitude"] = max(0.0, min(0.75, float(val)))
         for k, v in knobs.items():
             if k in BUFF_CONFIGS and isinstance(v, (int, float)):
                 BUFF_CONFIGS[k]["magnitude"] = float(v)
             elif k in STATUS_CONFIGS:
                 if isinstance(v, dict):
                     if "magnitude" in v:
-                        STATUS_CONFIGS[k]["magnitude"] = float(v["magnitude"])
+                        STATUS_CONFIGS[k]["magnitude"] = max(0.0, min(0.75, float(v["magnitude"])))
                     if "escalation_rate" in v:
-                        STATUS_CONFIGS[k]["escalation_rate"] = float(v["escalation_rate"])
+                        STATUS_CONFIGS[k]["escalation_rate"] = max(0.0, min(0.75, float(v["escalation_rate"])))
                 elif isinstance(v, (int, float)):
-                    STATUS_CONFIGS[k]["magnitude"] = float(v)
+                    STATUS_CONFIGS[k]["magnitude"] = max(0.0, min(0.75, float(v)))
         return True
     except Exception:
         return False
@@ -697,10 +697,10 @@ class Environment:
     and active duration for the 3-turn stability rule.
     """
     weather: Weather = Weather.CLEAR
-    weather_potency: float = 0.20  # Default 20% modifier
+    weather_potency: float = 0.20  # Base 20% modifier (locked at 20%)
     weather_turns_active: int = 0
     location: Location = Location.NONE
-    location_potency: float = 0.20  # Default 20% modifier
+    location_potency: float = 0.20  # Base 20% modifier (locked at 20%)
     location_turns_active: int = 0
     current_turn: int = 1
 
@@ -711,20 +711,18 @@ class Environment:
     seedling_turns_alive: int = 0
 
     def set_weather(self, weather: Weather, potency_b: Optional[float] = None) -> None:
-        """Sets weather. Spells use Base Factor (b) to set environment potency."""
+        """Sets weather. Base modifier is locked at 20% (0.20)."""
         if self.weather != weather:
             self.weather = weather
             self.weather_turns_active = 0
-        if potency_b is not None:
-            self.weather_potency = float(potency_b) / 100.0 if potency_b > 1.0 else float(potency_b)
+        self.weather_potency = 0.20
 
     def set_location(self, location: Location, potency_b: Optional[float] = None) -> None:
-        """Sets location/terrain. Spells use Base Factor (b) to set environment potency."""
+        """Sets location/terrain. Base modifier is locked at 20% (0.20)."""
         if self.location != location:
             self.location = location
             self.location_turns_active = 0
-        if potency_b is not None:
-            self.location_potency = float(potency_b) / 100.0 if potency_b > 1.0 else float(potency_b)
+        self.location_potency = 0.20
 
     def plant_seedling(self) -> None:
         self.seedling_active = True
@@ -1188,7 +1186,7 @@ class SpellResolver:
 
         elif recipe == "FFD":
             dmg_amount = 1.0 * b
-            cond_bonus = (n / 2.0 if n > 0 else 2.0) * b
+            cond_bonus = (n if n > 0 else 2.0) * b
             if "Burning" in target.debuffs:
                 dmg_amount += cond_bonus
                 log["notes"] += f"Target Burning (+{cond_bonus:.1f} bonus). "
@@ -1224,25 +1222,26 @@ class SpellResolver:
             log["effects_applied"].append(f"Removed {caster_buffs_removed} buffs from target")
 
         elif recipe == "WWD":
+            stat_penalty = (n if n > 0 else 2.0) * b
             debuffs_affected = []
             if "Weakened" in target.debuffs:
-                target.alter_stat("potency", -(2.0 * b))
+                target.alter_stat("potency", -stat_penalty)
                 debuffs_affected.append("Potency")
             if "Vulnerable" in target.debuffs:
-                target.alter_stat("defense", -(2.0 * b))
+                target.alter_stat("defense", -stat_penalty)
                 debuffs_affected.append("Defense")
             if "Slowed" in target.debuffs:
-                target.alter_stat("speed", -(2.0 * b))
+                target.alter_stat("speed", -stat_penalty)
                 debuffs_affected.append("Speed")
             if "Jinxed" in target.debuffs:
-                target.alter_stat("luck", -(2.0 * b))
+                target.alter_stat("luck", -stat_penalty)
                 debuffs_affected.append("Luck")
             if not debuffs_affected:
                 stat_choice = random.choice(["potency", "defense", "speed", "luck"])
                 target.alter_stat(stat_choice, -(1.0 * b))
                 log["effects_applied"].append(f"Decreased random stat {stat_choice} by {b:.1f}")
             else:
-                log["effects_applied"].append(f"Decreased {', '.join(debuffs_affected)} by {2*b:.1f}")
+                log["effects_applied"].append(f"Decreased {', '.join(debuffs_affected)} by {stat_penalty:.1f}")
 
         # ---------------------------------------------------------------------
         # CLASS: EARTH (EEF, EEW, EEE, EEL, EED)
@@ -1406,7 +1405,7 @@ class SpellResolver:
 
         elif recipe == "WFD":
             bonus = 0.0
-            cond_scale = (n / 2.0 if n > 0 else 2.0) * b
+            cond_scale = (n if n > 0 else 2.0) * b
             if "Shielded" in caster.buffs:
                 caster.remove_buff("Shielded")
                 bonus += cond_scale * (caster.get_effective_stat("defense") / 100.0)
@@ -1443,7 +1442,8 @@ class SpellResolver:
 
         elif recipe == "FED":
             x = len(target.debuffs)
-            hits = (x + 1)**2 if x <= 2 else (4 * x if x <= 6 else x + 18)
+            n_val = int(round(n)) if n > 0 else 2
+            hits = int((x + 1)**n_val if x <= n_val else (4 * x if x <= 6 else x + 18))
             for _ in range(hits):
                 deal_damage(1.0 * b)
             log["notes"] += f"Hit {hits} times based on {x} debuffs. "
@@ -1548,7 +1548,7 @@ class SpellResolver:
 
         elif recipe == "LFD":
             if "Charged" in caster.buffs:
-                dmg = (1.0 + (n if n > 0 else 2.0)) * b
+                dmg = (n if n > 0 else 3.0) * b
                 deal_damage(dmg)
                 caster.apply_debuff("Stunned")
                 log["effects_applied"].append("Caster Stunned as recoil for Charged burst")
@@ -1591,7 +1591,7 @@ class SpellResolver:
 
         elif recipe == "DFF":
             bonus = 0.0
-            cond_scale = (n / 2.0 if n > 0 else 2.0) * b
+            cond_scale = (n if n > 0 else 2.0) * b
             if "Bleeding" in caster.debuffs:
                 bonus += cond_scale
             if env.weather == Weather.BLOOD_RAIN:
@@ -1749,7 +1749,7 @@ class SpellResolver:
         elif recipe == "WDF":
             deal_damage(1.0 * b)
             if env.weather == Weather.RAINING:
-                env.set_weather(Weather.SNOWING, b)
+                env.set_weather(Weather.SNOWING)
                 target.apply_debuff("Stunned")
                 mult = round(1.0 + (b / 400.0), 4)
                 self._apply_secondary_class_multiplier(caster, [SpellClass.ICE], mult)
@@ -1819,7 +1819,7 @@ class SpellResolver:
             deal_damage(1.0 * b)
             if "Bleeding" in caster.debuffs:
                 caster.remove_debuff("Bleeding")
-                env.set_weather(Weather.BLOOD_RAIN, b)
+                env.set_weather(Weather.BLOOD_RAIN)
                 mult = round(1.0 + (b / 400.0), 4)
                 self._apply_secondary_class_multiplier(caster, [SpellClass.BLOOD, SpellClass.GHOSTFIRE], mult)
                 log["effects_applied"].append(f"Removed Bleeding -> Weather changed to Blood Rain, +{mult:.3f}x Blood/Ghostfire multiplier")
@@ -1841,7 +1841,7 @@ class SpellResolver:
         elif recipe == "ELD":
             bonus = (n * b if n > 0 else 2.0 * b) if env.weather == Weather.RAINING else 0.0
             deal_damage(1.0 * b + bonus)
-            env.set_weather(Weather.BLIZZARD, b)
+            env.set_weather(Weather.BLIZZARD)
             mult = round(1.0 + (b / 400.0), 4)
             self._apply_secondary_class_multiplier(caster, [SpellClass.ICE], mult)
             log["effects_applied"].append(f"Weather changed to Blizzard, +{mult:.3f}x Ice multiplier")

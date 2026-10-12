@@ -16,15 +16,16 @@ Key Capabilities:
      Burning, Bleeding), Weather Appliers vs Beneficiaries (e.g. Sunny, Rain),
      and Location synergies.
 3. Algorithms for Spell Balancing:
-   - Conditional Payoff Tuner: Detects when conditional payoffs are not being worked
-     towards/triggered and widens the spread between base factor (b) and payoff (n).
-   - Group-Level Synergy Tuner: Detects over/under-tuned classes and synergy pairs
-     (e.g., "spells that apply Frosty" vs "spells that benefit from Frosty",
-     "spells that benefit from Sunny"), tuning setup floors and payoff ceilings.
-   - Individual Outlier Tuner: Regresses win-rate and combat impact outliers back
-     toward equilibrium (50% win rate) using smooth, non-linear confidence scaling.
-   - Architectural Constraints: Preserves category bounds and recalculates
-     max_potential = (1 + n) * b atomically.
+   - Score-Based Knob Balancing Engine: Each algorithm votes to increase/decrease
+     a knob's buff/nerf score by at most 1 (aggregated score clamped to -3 to +3).
+   - Win Rate Outlier Tuner: Votes +/-1 score for win rate outliers (<46.5% or >53.5%).
+   - Pick Rate Tuner: Votes +1 for low pickrate (<800/10k) and -1 for high pickrate (>7,000/10k).
+     Spells with pick rate < 150 per 10,000 matches are not adjusted.
+   - Cleanse (WWW) Counterbalance: Buffs other spells (+1 score) when WWW is overtuned.
+   - Conditional Payoff Tuner: Adjusts (b, n) spread score (+/-1) for conditional spells.
+   - Score Aggregation & Synthesis: Aggregates scores (max +/-3), applies single 2%, 3%, 5%
+     buff/nerf, and clamps bounds to [0, 200] for b and [0, 20] for n.
+   - Status & Buff Magnitude Tuner: Clamps status effect knobs strictly between 0% and 75%.
 """
 
 import argparse
@@ -238,6 +239,8 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
         return "Burning" in t_deb or "Vulnerable" in t_deb
     elif recipe == "WWF":
         return "Charged" in t_buf or "Burning" in t_deb
+    elif recipe == "WWD":
+        return any(st in t_deb for st in ["Weakened", "Vulnerable", "Slowed", "Jinxed"])
     elif recipe == "EEF":
         return "Frosty" in t_deb
     elif recipe == "EEE":
@@ -270,6 +273,8 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
         return "Vulnerable" in t_deb
     elif recipe == "LFL":
         return w == Weather.DARKNESS
+    elif recipe == "LFE":
+        return w == Weather.STORMING
     elif recipe == "LFD":
         return "Charged" in c_buf
     elif recipe == "FDF":
@@ -408,11 +413,15 @@ class SimulationTelemetryTracker:
             tracker.run_duel_casts = []
             result = tracker.orig_play_duel(bot_a, bot_b, action_catalog, spell_data_path, max_turns, initial_board_state=initial_board_state, **kwargs)
 
+            winner_name = result.get("winner_bot", {}).get("name", result.get("winner_id", ""))
+            p1_name = bot_a.get("name", bot_a["bot_id"])
+            p2_name = bot_b.get("name", bot_b["bot_id"])
+
             # Record duel telemetry for the entire run
             run_duel = DuelTelemetry(
-                p1_name=bot_a["bot_id"],
-                p2_name=bot_b["bot_id"],
-                winner_name=result.get("winner_id", ""),
+                p1_name=p1_name,
+                p2_name=p2_name,
+                winner_name=winner_name,
                 turns=result.get("turns", 0),
                 casts=list(tracker.run_duel_casts),
             )
@@ -420,9 +429,9 @@ class SimulationTelemetryTracker:
 
             if tracker.current_game_index >= tracker.eval_start_game:
                 duel_data = DuelTelemetry(
-                    p1_name=bot_a["bot_id"],
-                    p2_name=bot_b["bot_id"],
-                    winner_name=result.get("winner_id", ""),
+                    p1_name=p1_name,
+                    p2_name=p2_name,
+                    winner_name=winner_name,
                     turns=result.get("turns", 0),
                     casts=list(tracker.current_duel_casts),
                 )
@@ -536,7 +545,7 @@ class SimulationTelemetryTracker:
 
             raw_wr = round(wins / max(1, total_resolved), 4) if total_resolved > 0 else 0.0
             k = 12.0
-            bayesian_wr = round((wins + k * 0.5) / (total_resolved + k), 4) if total_resolved > 0 else 0.40
+            bayesian_wr = round((wins + k * 0.5) / (total_resolved + k), 4) if total_resolved > 0 else 0.50
 
             sp["raw_win_rate"] = raw_wr
             sp["bayesian_win_rate"] = bayesian_wr
@@ -746,10 +755,15 @@ def get_condition_complexity_targets(num_conditions: int) -> Tuple[float, float,
 
 class SpellBalancingEngine:
     """
-    Executes multi-tiered tuning algorithms over aggregate simulation telemetry:
-    1. Conditional Payoff & Setup Engine: Adjusts the (b, n) spread for under-triggered payoffs.
-    2. Group Synergy Tuner: Balances classes, status appliers vs beneficiaries, and weather setups.
-    3. Individual Performance Tuner: Regresses individual win rate and damage outliers.
+    Executes score-based balancing algorithms over aggregate simulation telemetry:
+    1. Status & Buff Magnitude Tuner: Clamps status effect knobs between 0% and 75%.
+    2. Algorithm Win Rate: Votes +/-1 score for win rate outliers (<46.5% or >53.5%).
+    3. Algorithm Pick Rate: Votes +1 for low pick rate (<800/10k) and -1 for high pick rate (>7,000/10k).
+       Excludes spells with <150 casts per 10,000 matches from adjustments.
+    4. Algorithm Cleanse Counterbalance: When WWW is overtuned, nerfs WWW (-1) and buffs other spells (+1).
+    5. Algorithm Conditional Payoff: Adjusts spread for conditional spells (b +/-1, n -/+1).
+    6. Score Aggregation & Synthesis: Aggregates scores clamped to [-3, +3], applies single 2%, 3%, 5%
+       buff/nerf, and clamps bounds to [0, 200] for b and [0, 20] for n.
     """
 
     def __init__(
@@ -767,25 +781,27 @@ class SpellBalancingEngine:
         self.changelog: List[Dict[str, Any]] = []
 
     def run_all_algorithms(self) -> Dict[str, Any]:
-        """Runs the complete suite of balancing algorithms in sequential stages."""
+        """Runs the complete suite of balancing algorithms using score aggregation."""
         print("\n" + "=" * 75)
-        print("EXECUTING ADVANCED SPELL BALANCING ALGORITHMS")
+        print("EXECUTING ADVANCED SPELL BALANCING ALGORITHMS (SCORE-BASED ENGINE)")
         print("=" * 75)
 
-        # Stage 1: Group-Level Synergy & Class Tuning (Algorithm A: Classes & Status/Buff Magnitudes)
-        group_adjustments = self.algorithm_group_tuning()
+        # Stage 1: Status & Buff Magnitude Balancing Module (clamped 0% to 75%)
         status_buff_knobs = self.tune_status_and_buff_magnitudes()
 
-        # Stage 2: Conditional Payoff & Work-Towards Tuning
-        conditional_adjustments = self.algorithm_conditional_payoffs()
+        # Stage 2: Separate algorithms each voting +/-1 score per knob
+        winrate_votes = self.algorithm_winrate()
+        pickrate_votes = self.algorithm_pickrate()
+        cleanse_votes = self.algorithm_cleanse_counterbalance()
+        conditional_votes = self.algorithm_conditional_payoffs()
 
-        # Stage 3: Individual Outlier & Combat Impact Tuning
-        individual_adjustments = self.algorithm_individual_outliers()
-
-        # Stage 4: Unified Multi-Knob Solver & Constraint Enforcement
-        final_modifications = self.apply_unified_adjustments(
-            group_adjustments, conditional_adjustments, individual_adjustments
-        )
+        # Stage 3: Score aggregation (clamped to [-3, +3]) & unified application (2%, 3%, 5%)
+        final_modifications = self.apply_unified_adjustments([
+            winrate_votes,
+            pickrate_votes,
+            cleanse_votes,
+            conditional_votes,
+        ])
 
         return {
             "changelog": self.changelog,
@@ -796,13 +812,14 @@ class SpellBalancingEngine:
 
     def tune_status_and_buff_magnitudes(self, output_path: str = "status_buff_knobs.json") -> Dict[str, Any]:
         """
-        Algorithm A Extension: Status & Buff Magnitude Balancing Module
+        Status & Buff Magnitude Balancing Module:
         Computes aggregate Bayesian winrate across all spells that apply each specific buff or debuff.
-        - If aggregate winrate > 53.5%, damp/reduce baseline magnitude proportionally.
-        - If aggregate winrate < 46.5%, scale magnitude upward proportionally (safety clamp +/- 25%).
+        - If aggregate winrate > 53.5%, scale magnitude downward proportionally.
+        - If aggregate winrate < 46.5%, scale magnitude upward proportionally.
+        Clamps status effect knob values strictly between 0% and 75% (0.0 to 0.75).
         Saves tuned magnitudes to status_buff_knobs.json.
         """
-        print("\n--- [Algorithm A: Status & Buff Magnitude Balancing Module] ---")
+        print("\n--- [Status & Buff Magnitude Balancing Module] ---")
         per_spell = self.telemetry["per_spell"]
         k = 12.0
 
@@ -842,7 +859,7 @@ class SpellBalancingEngine:
             new_mag = max(0.75 * base_mag, min(1.25 * base_mag, new_mag))
             tuned_buffs[buff_name] = round(new_mag, 4)
 
-        # 2. Status Effects
+        # 2. Status Effects (strictly clamped between 0% and 75%)
         for st_name, s_cfg in STATUS_CONFIGS.items():
             base_mag = s_cfg["magnitude"]
             applier_recipes = []
@@ -859,6 +876,7 @@ class SpellBalancingEngine:
             agg_wr = (tot_wins + k * 0.5) / (tot_resolved + k) if tot_resolved > 0 else 0.50
 
             new_mag = base_mag
+            scaling = 1.0
             if agg_wr > 0.535:
                 delta = agg_wr - 0.50
                 scaling = max(0.75, 1.0 - (delta * 2.0))
@@ -872,16 +890,19 @@ class SpellBalancingEngine:
             else:
                 print(f"  * Status '{st_name}' balanced (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude remains {base_mag*100:.1f}%")
 
-            new_mag = max(0.75 * base_mag, min(1.25 * base_mag, new_mag))
+            # Clamp the status effect knob values between 0% and 75%
+            new_mag = max(0.0, min(0.75, new_mag))
+
             if "escalation_rate" in s_cfg:
                 base_esc = s_cfg["escalation_rate"]
                 scaling_esc = scaling if (agg_wr > 0.535 or (agg_wr < 0.465 and tot_casts >= 10)) else 1.0
-                new_esc = max(0.75 * base_esc, min(1.25 * base_esc, base_esc * scaling_esc))
+                new_esc = base_esc * scaling_esc
+                new_esc = max(0.0, min(0.75, new_esc))
                 tuned_statuses[st_name] = {
                     "magnitude": round(new_mag, 4),
                     "escalation_rate": round(new_esc, 4),
                 }
-                print(f"    -> Tuned escalation rate for '{st_name}': {base_esc*100:.2f}% -> {new_esc*100:.2f}%")
+                print(f"    -> Tuned escalation rate for '{st_name}': {base_esc*100:.2f}% -> {new_esc*100:.2f}% (clamped [0%, 75%])")
             else:
                 tuned_statuses[st_name] = round(new_mag, 4)
 
@@ -896,167 +917,207 @@ class SpellBalancingEngine:
         print(f"[Status/Buff Knobs] Exported tuned status & buff magnitudes to: {out_p}")
         return result
 
-    def algorithm_group_tuning(self) -> Dict[str, Dict[str, float]]:
+    def algorithm_winrate(self) -> Dict[str, Dict[str, Any]]:
         """
-        Algorithm A: Group Synergy & Archetype Balancing
-        Evaluates Class performance and Status/Weather synergy pairs:
-        - Detects over-tuned or under-tuned classes (win rate > 53.5% or < 46.5%).
-        - Detects status/weather synergy imbalances (e.g. Frosty appliers vs beneficiaries,
-          Sunny summoners vs beneficiaries).
+        Algorithm 1: Win Rate Outlier Tuner
+        Evaluates Bayesian smoothed win rate for each spell against target equilibrium (50% +/- tolerance).
+        - Low win rate (< 46.5%): +1 score to buff knob b.
+        - High win rate (> 53.5%): -1 score to nerf knob b.
+        - Spells with pick rate < 150 per 10k matches are ignored.
+        Each separate algorithm can only modify a knob score by at most +/-1.
         """
-        print("\n--- [Algorithm A: Group Synergy & Archetype Balancing] ---")
-        adjustments: Dict[str, Dict[str, float]] = {}
-        for r in self.tuned_spell_data.keys():
-            adjustments[r] = {"b_mult": 1.0, "n_mult": 1.0, "reasons": []}
+        print("\n--- [Algorithm 1: Win Rate Outlier Tuner] ---")
+        votes: Dict[str, Dict[str, Any]] = {}
+        per_spell = self.telemetry["per_spell"]
+        eval_games = self.telemetry.get("evaluated_games", 10000)
 
-        # 1. Class Tuning
-        classes = self.telemetry["classes"]
-        for cls_name, cs in classes.items():
-            wr = cs["bayesian_win_rate"]
+        for r in self.original_spell_data.keys():
+            votes[r] = {"b": 0, "n": 0, "reasons": []}
+            sp = per_spell.get(r, {})
+            casts = sp.get("casts", 0)
+            casts_per_10k = casts * (10000.0 / max(1, eval_games))
+
+            # Requirement 8: If pick rate < 150 per 10,000 matches, do not adjust
+            if casts_per_10k < 150:
+                continue
+
+            wr = sp.get("bayesian_win_rate", 0.50)
             delta = wr - self.target_win_rate
 
-            if abs(delta) > self.win_rate_tolerance:
-                damping = 0.40
-                if delta > 0:
-                    class_factor = max(0.88, 1.0 - (delta * damping))
-                    reason = f"Class {cls_name} overtuned (WR: {wr*100:.1f}%, factor: {class_factor:.3f})"
-                else:
-                    class_factor = min(1.14, 1.0 + (abs(delta) * damping))
-                    reason = f"Class {cls_name} undertuned (WR: {wr*100:.1f}%, factor: {class_factor:.3f})"
+            if delta < -self.win_rate_tolerance:
+                votes[r]["b"] = 1
+                reason = f"Win rate undertuned ({wr*100:.1f}% < 46.5%) -> +1 buff score for b"
+                votes[r]["reasons"].append(reason)
+                print(f"  * [Win Rate Tuner] [{r}] {reason}")
+            elif delta > self.win_rate_tolerance:
+                votes[r]["b"] = -1
+                reason = f"Win rate overtuned ({wr*100:.1f}% > 53.5%) -> -1 nerf score for b"
+                votes[r]["reasons"].append(reason)
+                print(f"  * [Win Rate Tuner] [{r}] {reason}")
 
-                print(f"  * {reason}")
-                for rec in cs["spells"]:
-                    adjustments[rec]["b_mult"] *= class_factor
-                    adjustments[rec]["reasons"].append(reason)
+        return votes
 
-        # 2. Synergy Group Tuning (e.g. Frosty, Sunny, Burning, etc.)
-        synergies = self.telemetry["synergies"]
-        for syn_key, syn_info in synergies.items():
-            name = syn_info["name"]
-            kind = syn_info["kind"]
-            appliers = syn_info["appliers"]
-            beneficiaries = syn_info["beneficiaries"]
-
-            # Appliers evaluation
-            if appliers["recipes"] and appliers["casts"] >= 15:
-                app_wr = appliers["bayesian_win_rate"]
-                app_delta = app_wr - self.target_win_rate
-
-                if app_delta > self.win_rate_tolerance:
-                    app_mult = max(0.90, 1.0 - (app_delta * 0.35))
-                    reason = f"{kind.capitalize()} '{name}' appliers overtuned on own (WR: {app_wr*100:.1f}%)"
-                    print(f"  * {reason} -> Appliers nerfed by {app_mult:.3f}")
-                    for r in appliers["recipes"]:
-                        adjustments[r]["b_mult"] *= app_mult
-                        adjustments[r]["reasons"].append(reason)
-
-                elif app_delta < -self.win_rate_tolerance or appliers["casts"] < 30:
-                    app_mult = min(1.12, 1.0 + (abs(app_delta) * 0.35))
-                    reason = f"{kind.capitalize()} '{name}' appliers undertuned (WR: {app_wr*100:.1f}%, casts: {appliers['casts']})"
-                    print(f"  * {reason} -> Appliers buffed by {app_mult:.3f}")
-                    for r in appliers["recipes"]:
-                        adjustments[r]["b_mult"] *= app_mult
-                        adjustments[r]["reasons"].append(reason)
-
-            # Beneficiaries evaluation
-            if beneficiaries["recipes"] and beneficiaries["casts"] >= 15:
-                ben_wr = beneficiaries["bayesian_win_rate"]
-                ben_delta = ben_wr - self.target_win_rate
-
-                if ben_delta > self.win_rate_tolerance:
-                    payoff_nerf = max(0.88, 1.0 - (ben_delta * 0.40))
-                    reason = f"{kind.capitalize()} '{name}' beneficiaries overtuned (WR: {ben_wr*100:.1f}%)"
-                    print(f"  * {reason} -> Beneficiaries payoff adjusted by {payoff_nerf:.3f}")
-                    for r in beneficiaries["recipes"]:
-                        adjustments[r]["n_mult"] *= payoff_nerf
-                        adjustments[r]["reasons"].append(reason)
-
-                elif ben_delta < -self.win_rate_tolerance:
-                    payoff_buff = min(1.15, 1.0 + (abs(ben_delta) * 0.40))
-                    reason = f"{kind.capitalize()} '{name}' beneficiaries undertuned (WR: {ben_wr*100:.1f}%)"
-                    print(f"  * {reason} -> Beneficiaries payoff buffed by {payoff_buff:.3f}")
-                    for r in beneficiaries["recipes"]:
-                        adjustments[r]["n_mult"] *= payoff_buff
-                        adjustments[r]["reasons"].append(reason)
-
-        return adjustments
-
-    def algorithm_conditional_payoffs(self) -> Dict[str, Dict[str, float]]:
+    def algorithm_pickrate(self) -> Dict[str, Dict[str, Any]]:
         """
-        Algorithm B: Conditional Payoff & Work-Towards Tuning
-        Dynamically adjusts the spread between the base factor (b) and payoff multiplier (n)
-        with calibrated, bidirectional triggers based on condition complexity (N_cond):
-
-        1. WIDEN SPREAD (decrease b, increase n):
-           Triggered when conditional spells are under-triggered (trigger_rate < target_min),
-           indicating players are casting the spell unconditionally for raw base stats
-           without respecting or setting up the synergy.
-
-        2. COMPRESS SPREAD (increase b, decrease n):
-           Triggered under three explicit, calibrated scenarios:
-           a) OVER-TRIGGERED / TRIVIALIZED (trigger_rate > target_max):
-              The condition is met too easily for its complexity tier, converting situational
-              burst into routine, unearned baseline damage.
-           b) DEAD-CARD RESCUE (num_conditions >= 2, trigger_rate < target_min, and low casts / low win rate):
-              Multi-condition setups are too difficult to achieve in live combat. Continually
-              slashing 'b' makes the spell an unplayable dead card. Raising 'b' rescues baseline
-              viability while trimming 'n'.
-           c) COMBO WARPING (trigger_rate in range, but high win rate driven heavily by payoff damage):
-              Reins in polarized burst spikes while preserving setup intent.
-
-        3. DO NOTHING (target_min <= trigger_rate <= target_max):
-           The spell operates within its healthy synergy equilibrium window.
+        Algorithm 2: Pick Rate Tuner
+        Evaluates cast frequencies normalized per 10,000 matches.
+        - Requirement 8: If pick rate < 150 per 10k matches, do not adjust values.
+        - Low pick rate (< 800 per 10k matches): +1 score to buff under-utilized spells.
+        - Requirement 7: If cast > 7,000 times in 10,000 matches, lower buff/nerf score by 1 (-1 nerf score).
+        Each separate algorithm can only modify a knob score by at most +/-1.
         """
-        print("\n--- [Algorithm B: Conditional Payoff & Work-Towards Tuner] ---")
-        adjustments: Dict[str, Dict[str, float]] = {}
+        print("\n--- [Algorithm 2: Pick Rate Tuner] ---")
+        votes: Dict[str, Dict[str, Any]] = {}
         per_spell = self.telemetry["per_spell"]
+        eval_games = self.telemetry.get("evaluated_games", 10000)
+
+        for r in self.original_spell_data.keys():
+            votes[r] = {"b": 0, "n": 0, "reasons": []}
+            sp = per_spell.get(r, {})
+            casts = sp.get("casts", 0)
+            casts_per_10k = casts * (10000.0 / max(1, eval_games))
+
+            # Requirement 8: If pick rate < 150 per 10,000 matches, do not adjust
+            if casts_per_10k < 150:
+                continue
+
+            n_val = float(self.original_spell_data[r].get("n", 0.0))
+            is_cond = (n_val > 0.0) or (self.original_spell_data[r].get("condition_required", "None") != "None")
+
+            # Low pick rate: < 800 per 10k matches -> +1 buff score
+            if casts_per_10k < 800:
+                votes[r]["b"] = 1
+                if is_cond and n_val > 0:
+                    votes[r]["n"] = 1
+                reason = f"Low pick rate ({casts_per_10k:.0f} casts per 10k < 800) -> +1 buff score"
+                votes[r]["reasons"].append(reason)
+                print(f"  * [Pick Rate Tuner] [{r}] {reason}")
+
+            # Requirement 7: Inverse low pick rate (> 7,000 per 10k matches) -> -1 nerf score
+            elif casts_per_10k > 7000:
+                votes[r]["b"] = -1
+                if is_cond and n_val > 0:
+                    votes[r]["n"] = -1
+                reason = f"High pick rate ({casts_per_10k:.0f} casts per 10k > 7,000) -> -1 nerf score"
+                votes[r]["reasons"].append(reason)
+                print(f"  * [Pick Rate Tuner] [{r}] {reason}")
+
+        return votes
+
+    def algorithm_cleanse_counterbalance(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Algorithm 3: Cleanse (WWW) Counterbalance Tuner
+        If WWW (cleanse) is overtuned (> 53.5% win rate), nerf WWW (-1 score) and buff all other spells (+1 score to b).
+        If WWW is undertuned (< 46.5% win rate), buff WWW (+1 score).
+        Spells with pick rate < 150 per 10k matches are excluded.
+        Each separate algorithm can only modify a knob score by at most +/-1.
+        """
+        print("\n--- [Algorithm 3: Cleanse Counterbalance Tuner] ---")
+        votes: Dict[str, Dict[str, Any]] = {}
+        for r in self.original_spell_data.keys():
+            votes[r] = {"b": 0, "n": 0, "reasons": []}
+
+        per_spell = self.telemetry["per_spell"]
+        eval_games = self.telemetry.get("evaluated_games", 10000)
+
+        www_info = per_spell.get("WWW", {})
+        www_wr = www_info.get("bayesian_win_rate", 0.50)
+        www_casts = www_info.get("casts", 0)
+        www_casts_per_10k = www_casts * (10000.0 / max(1, eval_games))
+
+        if www_casts_per_10k < 150:
+            return votes
+
+        if www_wr > (self.target_win_rate + self.win_rate_tolerance):
+            reason_www = f"WWW Cleanse Counterbalance: WWW overtuned (WR: {www_wr*100:.1f}%) -> nerf WWW (-1 score) and buff other spells (+1 score)"
+            print(f"  * [Cleanse Counterbalance] {reason_www}")
+            votes["WWW"]["b"] = -1
+            votes["WWW"]["reasons"].append(f"WWW overtuned (WR: {www_wr*100:.1f}%) -> -1 nerf score for WWW")
+
+            for other_r in self.original_spell_data.keys():
+                if other_r != "WWW":
+                    casts = per_spell.get(other_r, {}).get("casts", 0)
+                    casts_per_10k = casts * (10000.0 / max(1, eval_games))
+                    if casts_per_10k >= 150:
+                        votes[other_r]["b"] = 1
+                        votes[other_r]["reasons"].append(f"WWW Cleanse Counterbalance: overtuned WWW -> +1 buff score for b")
+
+        elif www_wr < (self.target_win_rate - self.win_rate_tolerance):
+            reason_www = f"WWW Cleanse Counterbalance: WWW undertuned (WR: {www_wr*100:.1f}%) -> +1 buff score for WWW"
+            print(f"  * [Cleanse Counterbalance] {reason_www}")
+            votes["WWW"]["b"] = 1
+            votes["WWW"]["reasons"].append(reason_www)
+
+        return votes
+
+    def algorithm_conditional_payoffs(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Algorithm 4: Conditional Payoff & Work-Towards Tuner
+        Dynamically adjusts the spread between base factor (b) and payoff multiplier (n) via scores:
+        - Under-triggered: widen spread (b -1 score, n +1 score). For Ultimates, protect b floor (+0) and buff setups (+1 score).
+        - Over-triggered / Dead-card / Combo-warping: compress spread (b +1 score, n -1 score).
+        - In equilibrium: 0 score delta.
+        Spells with pick rate < 150 per 10k matches are excluded.
+        Each separate algorithm can only modify a knob score by at most +/-1.
+        """
+        print("\n--- [Algorithm 4: Conditional Payoff & Work-Towards Tuner] ---")
+        votes: Dict[str, Dict[str, Any]] = {}
+        for r in self.original_spell_data.keys():
+            votes[r] = {"b": 0, "n": 0, "reasons": []}
+
+        per_spell = self.telemetry["per_spell"]
+        eval_games = self.telemetry.get("evaluated_games", 10000)
 
         for r, sp in per_spell.items():
-            adjustments[r] = {"b_spread_mult": 1.0, "n_spread_mult": 1.0, "reasons": []}
-            if sp["n"] <= 0 and sp["condition_required"] == "None":
+            n_orig = float(self.original_spell_data.get(r, {}).get("n", 0.0))
+            cond_req = self.original_spell_data.get(r, {}).get("condition_required", "None")
+            if n_orig <= 0 and cond_req == "None":
+                continue
+
+            casts = sp.get("casts", 0)
+            casts_per_10k = casts * (10000.0 / max(1, eval_games))
+            if casts_per_10k < 150:
                 continue
 
             num_cond = get_spell_condition_complexity(r, sp)
             target_min, target_opt, target_max, min_casts = get_condition_complexity_targets(num_cond)
+            trig_rate = sp.get("trigger_rate", 0.0)
+            wr = sp.get("bayesian_win_rate", 0.50)
 
-            casts = sp["casts"]
-            trig_rate = sp["trigger_rate"]
-            wr = sp["bayesian_win_rate"]
-
-            # Trigger to DECREASE SPREAD: Scenario A (Dead-Card Trap Rescue for multi-condition spells)
+            # Scenario A: Dead-Card Trap Rescue for multi-condition spells
             if num_cond >= 2 and trig_rate < target_min and (casts < min_casts or wr < 0.485):
-                b_increase = 0.08
-                n_reduction = 0.06
-                b_spread_mult = 1.0 + b_increase
-                n_spread_mult = 1.0 - n_reduction
-
+                votes[r]["b"] = 1
+                votes[r]["n"] = -1
                 reason = (
-                    f"Multi-condition setup trap (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% vs "
-                    f"{target_min*100:.0f}% floor, Casts: {casts}, WR: {wr*100:.1f}%). "
-                    f"Compressing spread to rescue baseline floor: b +{b_increase*100:.1f}%, n -{n_reduction*100:.1f}%"
+                    f"Multi-condition setup trap (N={num_cond}, Trig: {trig_rate*100:.1f}% vs {target_min*100:.0f}%, "
+                    f"Casts: {casts}, WR: {wr*100:.1f}%) -> Compress spread: b +1 score, n -1 score"
                 )
-                print(f"  * [{r}] {reason}")
-                adjustments[r]["b_spread_mult"] = b_spread_mult
-                adjustments[r]["n_spread_mult"] = n_spread_mult
-                adjustments[r]["reasons"].append(reason)
+                votes[r]["reasons"].append(reason)
+                print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
 
-            # Trigger to INCREASE SPREAD: Under-triggered condition (incentivize setup)
+            # Scenario B: Under-triggered condition (incentivize setup)
             elif trig_rate < target_min:
-                deficit = max(0.0, min(1.0, (target_min - trig_rate) / target_min))
-                category = sp.get("category", "")
-
+                category = self.original_spell_data.get(r, {}).get("category", "")
                 if category == "Ultimate":
-                    # Hard-coded floor protection: DO NOT cut ultimate base floor
-                    b_spread_mult = 1.0
-                    n_increase = 0.10 + 0.20 * deficit
-                    n_spread_mult = 1.0 + n_increase
+                    # Floor protection: DO NOT cut ultimate base floor
+                    votes[r]["b"] = 0
+                    votes[r]["n"] = 1
+                    reason = (
+                        f"Ultimate payoff under-triggered (N={num_cond}, Trig: {trig_rate*100:.1f}% vs {target_min*100:.0f}%). "
+                        f"Protected base floor (b +0), buffed payoff: n +1 score"
+                    )
+                    votes[r]["reasons"].append(reason)
+                    print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
 
-                    # Shift tuner focus: Buff the appliers / setups for this ultimate
+                    # Buff appliers / setups for this ultimate
                     reqs = MULTI_CONDITION_REQUIREMENTS.get(r, [])
-                    buffed_setups = []
                     for req_type, req_val in reqs:
-                        for setup_r, setup_data in self.telemetry["per_spell"].items():
+                        for setup_r, setup_data in per_spell.items():
                             if setup_r == r:
+                                continue
+                            setup_casts = setup_data.get("casts", 0)
+                            setup_casts_per_10k = setup_casts * (10000.0 / max(1, eval_games))
+                            if setup_casts_per_10k < 150:
                                 continue
                             s_tags = tag_spell_synergies(setup_r, self.original_spell_data.get(setup_r, {}))
                             applies = False
@@ -1069,201 +1130,102 @@ class SpellBalancingEngine:
                             elif req_type == "target_debuff" and req_val in s_tags.get("applies_status", []):
                                 applies = True
                             if applies:
-                                setup_adj = adjustments.setdefault(setup_r, {"b_spread_mult": 1.0, "n_spread_mult": 1.0, "reasons": []})
-                                setup_adj["b_spread_mult"] = max(setup_adj.get("b_spread_mult", 1.0), 1.15)
-                                setup_reason = f"Buffed setup spell [{setup_r}] (+15.0% b tempo) to facilitate under-triggered Ultimate [{r}]"
-                                if setup_reason not in setup_adj["reasons"]:
-                                    setup_adj["reasons"].append(setup_reason)
-                                buffed_setups.append(setup_r)
-
-                    reason = (
-                        f"Ultimate payoff under-triggered (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% vs "
-                        f"{target_min*100:.0f}% floor, Casts: {casts}). Shifted tuner focus: protected ultimate base floor at {sp['b']} "
-                        f"(hard-coded floor >= {ULTIMATE_B_FLOOR}) and buffed appliers/setups ({', '.join(buffed_setups)}) with +15% b tempo."
-                    )
-                    print(f"  * [{r}] {reason}")
-                    adjustments[r]["b_spread_mult"] = b_spread_mult
-                    adjustments[r]["n_spread_mult"] = n_spread_mult
-                    adjustments[r]["reasons"].append(reason)
-
-                elif num_cond >= 2:
-                    # Multi-condition spells: affect spread gently rather than severely
-                    b_reduction = 0.04 + 0.04 * deficit
-                    b_spread_mult = 1.0 - b_reduction
-                    b_initial = float(self.original_spell_data[r].get("b", sp["b"]))
-                    b_floor = 0.70 * b_initial
-                    if sp["b"] * b_spread_mult < b_floor:
-                        b_spread_mult = max(b_spread_mult, b_floor / max(1e-5, sp["b"]))
-
-                    n_increase = 0.06 + 0.08 * deficit
-                    n_spread_mult = 1.0 + n_increase
-
-                    reason = (
-                        f"Multi-condition payoff under-triggered (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% vs "
-                        f"{target_min*100:.0f}% floor, Casts: {casts}). Mild spread adjustment: b -{b_reduction*100:.1f}%, n +{n_increase*100:.1f}%"
-                    )
-                    print(f"  * [{r}] {reason}")
-                    adjustments[r]["b_spread_mult"] = b_spread_mult
-                    adjustments[r]["n_spread_mult"] = n_spread_mult
-                    adjustments[r]["reasons"].append(reason)
+                                votes[setup_r]["b"] = 1
+                                setup_reason = f"Buffed setup spell [{setup_r}] (+1 score to b) for under-triggered Ultimate [{r}]"
+                                if setup_reason not in votes[setup_r]["reasons"]:
+                                    votes[setup_r]["reasons"].append(setup_reason)
 
                 else:
-                    if casts < min_casts and num_cond == 1:
-                        pick_penalty = max(0.0, (min_casts - casts) / min_casts)
-                        deficit = max(deficit, 0.40 + 0.60 * pick_penalty)
-
-                    b_reduction = 0.06 + 0.12 * deficit
-                    b_spread_mult = 1.0 - b_reduction
-
-                    # Algorithm B Hard Floor Constraint: b_min = 0.60 * b_initial
-                    b_initial = float(self.original_spell_data[r].get("b", sp["b"]))
-                    b_floor = 0.60 * b_initial
-                    if sp["b"] * b_spread_mult < b_floor:
-                        b_spread_mult = max(b_spread_mult, b_floor / max(1e-5, sp["b"]))
-
-                    n_increase = 0.12 + 0.25 * deficit
-                    n_spread_mult = 1.0 + n_increase
-
+                    # Widen spread
+                    votes[r]["b"] = -1
+                    votes[r]["n"] = 1
                     reason = (
-                        f"Conditional payoff under-triggered (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% vs "
-                        f"{target_min*100:.0f}% floor, Casts: {casts}). "
-                        f"Increasing spread: b -{b_reduction*100:.1f}%, n +{n_increase*100:.1f}%"
+                        f"Conditional payoff under-triggered (N={num_cond}, Trig: {trig_rate*100:.1f}% vs {target_min*100:.0f}%) -> "
+                        f"Widen spread: b -1 score, n +1 score"
                     )
-                    print(f"  * [{r}] {reason}")
-                    adjustments[r]["b_spread_mult"] = b_spread_mult
-                    adjustments[r]["n_spread_mult"] = n_spread_mult
-                    adjustments[r]["reasons"].append(reason)
+                    votes[r]["reasons"].append(reason)
+                    print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
 
-            # Trigger to DECREASE SPREAD: Scenario B (Over-triggered / Trivialized condition)
+            # Scenario C: Over-triggered / Trivialized condition
             elif trig_rate > target_max:
-                excess = max(0.0, min(1.0, (trig_rate - target_max) / (1.0 - target_max)))
-                wr_amp = max(0.0, (wr - 0.50) * 0.4) if wr > 0.52 else 0.0
-
-                b_increase = 0.05 + 0.10 * excess + wr_amp
-                b_spread_mult = 1.0 + b_increase
-
-                n_reduction = 0.08 + 0.16 * excess + wr_amp
-                n_spread_mult = 1.0 - n_reduction
-
+                votes[r]["b"] = 1
+                votes[r]["n"] = -1
                 reason = (
-                    f"Condition triggers excessively (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% vs "
-                    f"{target_max*100:.0f}% ceiling, WR: {wr*100:.1f}%). "
-                    f"Compressing spread: b +{b_increase*100:.1f}%, n -{n_reduction*100:.1f}%"
+                    f"Condition triggers excessively (N={num_cond}, Trig: {trig_rate*100:.1f}% vs {target_max*100:.0f}%) -> "
+                    f"Compress spread: b +1 score, n -1 score"
                 )
-                print(f"  * [{r}] {reason}")
-                adjustments[r]["b_spread_mult"] = b_spread_mult
-                adjustments[r]["n_spread_mult"] = n_spread_mult
-                adjustments[r]["reasons"].append(reason)
+                votes[r]["reasons"].append(reason)
+                print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
 
-            # Trigger to DECREASE SPREAD: Scenario C (Combo win-rate warping despite normal trigger rate)
+            # Scenario D: Combo win-rate warping
             elif wr > 0.54 and sp.get("payoff_damage_sum", 0) > sp.get("total_damage", 1) * 0.65:
-                b_spread_mult = 1.03
-                n_spread_mult = 0.92
+                votes[r]["b"] = 1
+                votes[r]["n"] = -1
                 reason = (
-                    f"Condition triggers within target window ({trig_rate*100:.1f}%), but combo payoff is "
-                    f"warping win rate ({wr*100:.1f}%). Compressing spread: b +3.0%, n -8.0%"
+                    f"Combo payoff warping win rate ({wr*100:.1f}%) -> Compress spread: b +1 score, n -1 score"
                 )
-                print(f"  * [{r}] {reason}")
-                adjustments[r]["b_spread_mult"] = b_spread_mult
-                adjustments[r]["n_spread_mult"] = n_spread_mult
-                adjustments[r]["reasons"].append(reason)
+                votes[r]["reasons"].append(reason)
+                print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
 
-            # DO NOTHING: Healthy equilibrium
             else:
-                reason = (
-                    f"Conditional payoff in equilibrium (N={num_cond} conditions, Trigger Rate: {trig_rate*100:.1f}% "
-                    f"within [{target_min*100:.0f}%-{target_max*100:.0f}%] target window, WR: {wr*100:.1f}%)."
-                )
-                adjustments[r]["reasons"].append(reason)
+                reason = f"Conditional payoff in equilibrium (N={num_cond}, Trig: {trig_rate*100:.1f}%)"
+                votes[r]["reasons"].append(reason)
 
-        return adjustments
+        # Enforce that no single algorithm increases/decreases any knob score by more than 1
+        for r in votes:
+            votes[r]["b"] = max(-1, min(1, votes[r]["b"]))
+            votes[r]["n"] = max(-1, min(1, votes[r]["n"]))
 
-    def algorithm_individual_outliers(self) -> Dict[str, Dict[str, float]]:
+        return votes
+
+    def algorithm_individual_outliers(self) -> Dict[str, Dict[str, Any]]:
         """
-        Algorithm C: Individual Spell Outlier & Performance Tuner
-        Uses Bayesian smoothed win rate, low-cast under-utilization (< 800 casts / 10k matches),
-        and WWW cleanse counterbalance to correct remaining single-spell imbalances.
+        Legacy wrapper combining winrate, pickrate, and cleanse counterbalance votes.
         """
-        print("\n--- [Algorithm C: Individual Spell Performance Tuner] ---")
-        adjustments: Dict[str, Dict[str, float]] = {}
-        per_spell = self.telemetry["per_spell"]
+        w_votes = self.algorithm_winrate()
+        p_votes = self.algorithm_pickrate()
+        c_votes = self.algorithm_cleanse_counterbalance()
+        combined: Dict[str, Dict[str, Any]] = {}
+        for r in self.original_spell_data.keys():
+            combined[r] = {
+                "b": w_votes.get(r, {}).get("b", 0) + p_votes.get(r, {}).get("b", 0) + c_votes.get(r, {}).get("b", 0),
+                "n": w_votes.get(r, {}).get("n", 0) + p_votes.get(r, {}).get("n", 0) + c_votes.get(r, {}).get("n", 0),
+                "reasons": w_votes.get(r, {}).get("reasons", []) + p_votes.get(r, {}).get("reasons", []) + c_votes.get(r, {}).get("reasons", []),
+            }
+        return combined
+
+    def apply_unified_adjustments(self, *algorithm_votes_args) -> List[Dict[str, Any]]:
+        """
+        Aggregates buff/nerf scores across all algorithms for each knob (clamped to [-3, +3]),
+        applies a single percentage adjustment based on score:
+            +3 -> +5%, +2 -> +3%, +1 -> +2%
+            -3 -> -5%, -2 -> -3%, -1 -> -2%
+             0 -> 0%
+        Clamps each knob to sanity bounds: 0 to 200 for b, 0 to 20 for n.
+        Spells with pick rate < 150 per 10k matches are not adjusted.
+        """
+        algorithm_votes = []
+        for arg in algorithm_votes_args:
+            if isinstance(arg, list):
+                algorithm_votes.extend(arg)
+            elif isinstance(arg, dict):
+                algorithm_votes.append(arg)
+
+        SCORE_TO_PERCENT = {
+            3: 0.05,
+            2: 0.03,
+            1: 0.02,
+            0: 0.00,
+           -1: -0.02,
+           -2: -0.03,
+           -3: -0.05,
+        }
 
         eval_games = self.telemetry.get("evaluated_games", 10000)
-        # Suggestion 1: Target minimum 800 casts over 10,000 matches (scaled to evaluated games count)
-        target_min_casts = max(10, int(800.0 * (eval_games / 10000.0)))
-        print(f"  [Low-Cast Uptune Threshold] Target floor: {target_min_casts} casts across {eval_games} evaluated matches")
-
-        for r, sp in per_spell.items():
-            adjustments[r] = {"b_indiv_mult": 1.0, "n_indiv_mult": 1.0, "reasons": []}
-            casts = sp["casts"]
-            wr = sp["bayesian_win_rate"]
-            delta = wr - self.target_win_rate
-
-            confidence = min(1.0, math.sqrt(max(1, casts) / 50.0))
-
-            # Win rate outlier regression
-            if abs(delta) > self.win_rate_tolerance:
-                adjustment_strength = 0.45 * (abs(delta) ** 1.1) * confidence
-                adjustment_strength = min(0.18, adjustment_strength)
-
-                if delta > 0:
-                    mult = 1.0 - adjustment_strength
-                    reason = f"Individual spell overtuned (WR: {wr*100:.1f}%, Casts: {casts}, mult: {mult:.3f})"
-                else:
-                    mult = 1.0 + adjustment_strength
-                    reason = f"Individual spell undertuned (WR: {wr*100:.1f}%, Casts: {casts}, mult: {mult:.3f})"
-
-                print(f"  * [{r}] {reason}")
-                adjustments[r]["b_indiv_mult"] *= mult
-                adjustments[r]["reasons"].append(reason)
-
-            # Suggestion 1: Low-cast uptuning for under-utilized spells (< 800 casts per 10k matches)
-            if casts < target_min_casts:
-                deficit_ratio = (target_min_casts - casts) / float(target_min_casts)
-                uptune_b = 1.0 + (0.22 * (deficit_ratio ** 0.75))
-                is_cond = sp.get("is_conditional", False) or sp.get("n", 0.0) > 0.0
-                uptune_n = 1.0 + (0.15 * deficit_ratio) if is_cond else 1.0
-                reason_undercast = (
-                    f"Under-utilized spell ({casts} casts < {target_min_casts} target per 10k matches) -> uptuned b x{uptune_b:.3f}"
-                )
-                if uptune_n > 1.0:
-                    reason_undercast += f", n x{uptune_n:.3f}"
-                print(f"  * [{r}] {reason_undercast}")
-                adjustments[r]["b_indiv_mult"] *= uptune_b
-                adjustments[r]["n_indiv_mult"] *= uptune_n
-                adjustments[r]["reasons"].append(reason_undercast)
-
-        # Requirement: To balance WWW, if overtuned, increase the b of all other spells by an amount
-        www_info = per_spell.get("WWW", {})
-        www_wr = www_info.get("bayesian_win_rate", 0.50)
-        www_casts = www_info.get("casts", 0)
-        if www_wr > (self.target_win_rate + self.win_rate_tolerance) and www_casts >= 50:
-            delta_www = www_wr - self.target_win_rate
-            boost_b_all = 1.0 + min(0.12, max(0.02, delta_www * 0.50))
-            reason_www = (
-                f"WWW Cleanse Counterbalance: WWW overtuned (WR: {www_wr*100:.1f}%, Casts: {www_casts}) -> "
-                f"increasing b of all other spells by x{boost_b_all:.3f} (+{(boost_b_all-1.0)*100:.1f}%)"
-            )
-            print(f"  * [Cleanse Balancing] {reason_www}")
-            for other_r in self.tuned_spell_data.keys():
-                if other_r != "WWW":
-                    adjustments[other_r]["b_indiv_mult"] *= boost_b_all
-                    adjustments[other_r]["reasons"].append(reason_www)
-
-        return adjustments
-
-    def apply_unified_adjustments(
-        self,
-        group_adj: Dict[str, Dict[str, float]],
-        cond_adj: Dict[str, Dict[str, float]],
-        indiv_adj: Dict[str, Dict[str, float]],
-    ) -> List[Dict[str, Any]]:
-        """
-        Synthesizes all tuning factors, applies safe clamping bounds,
-        recomputes max_potential, and records an audited changelog.
-        """
-        print("\n--- [Stage 4: Unified Multi-Knob Synthesis & Bounds Enforcement] ---")
+        per_spell = self.telemetry["per_spell"]
         modifications = []
+
+        print("\n--- [Stage 3: Score Aggregation & Bounds Enforcement] ---")
 
         for r, orig_data in self.original_spell_data.items():
             b_orig = float(orig_data.get("b", 0.0))
@@ -1271,80 +1233,68 @@ class SpellBalancingEngine:
             mp_orig = float(orig_data.get("max_potential", 0.0))
             category = orig_data.get("category", "")
 
-            # Combine multipliers
-            g_b = group_adj.get(r, {}).get("b_mult", 1.0)
-            g_n = group_adj.get(r, {}).get("n_mult", 1.0)
-            c_b = cond_adj.get(r, {}).get("b_spread_mult", 1.0)
-            c_n = cond_adj.get(r, {}).get("n_spread_mult", 1.0)
-            i_b = indiv_adj.get(r, {}).get("b_indiv_mult", 1.0)
+            # Requirement 8: If a spell has a pick rate of less than 150 per 10,000 matches, do not adjust its values
+            sp_telem = per_spell.get(r, {})
+            casts = sp_telem.get("casts", 0)
+            casts_per_10k = casts * (10000.0 / max(1, eval_games))
+            if casts_per_10k < 150:
+                continue
 
-            i_n = indiv_adj.get(r, {}).get("n_indiv_mult", 1.0)
-            total_b_factor = g_b * c_b * i_b
-            total_n_factor = g_n * c_n * i_n
+            # Aggregate scores across all algorithms
+            raw_b_score = 0
+            raw_n_score = 0
+            all_reasons = []
 
-            # Bounds determination (respecting each spell's architectural baseline)
+            for algo in algorithm_votes:
+                if r in algo:
+                    raw_b_score += algo[r].get("b", 0)
+                    raw_n_score += algo[r].get("n", 0)
+                    for reason in algo[r].get("reasons", []):
+                        if reason and reason not in all_reasons:
+                            all_reasons.append(reason)
+
+            # Clamp scores between -3 and +3
+            b_score = max(-3, min(3, raw_b_score))
+            n_score = max(-3, min(3, raw_n_score)) if n_orig > 0 else 0
+
+            b_pct = SCORE_TO_PERCENT[b_score]
+            n_pct = SCORE_TO_PERCENT[n_score] if n_orig > 0 else 0.0
+
+            # Apply single buff/nerf percentage
+            b_new = b_orig * (1.0 + b_pct)
+
+            # Requirement 5: Sanity floor and ceiling value clamping
             if r in SPECIAL_BOUNDS:
                 min_b, max_b, min_n, max_n = SPECIAL_BOUNDS[r]
-            else:
-                # b bounds based on category floor and original design scale
-                if category in ["Setup - Weather", "Setup - Location"]:
-                    min_b = min(b_orig * 0.6, 10.0)
-                    max_b = max(b_orig * 1.4, 35.0)
-                elif category == "Ultimate":
-                    min_b = max(ULTIMATE_B_FLOOR, 20.0)
-                    max_b = max(b_orig * 1.4, 45.0)
-                elif category == "Conditional Strike":
-                    min_b = min(b_orig * 0.6, 14.0)
-                    max_b = max(b_orig * 1.4, 48.0)
-                elif category == "Buff / Sustain":
-                    min_b = min(b_orig * 0.6, 15.0)
-                    max_b = max(b_orig * 1.4, 70.0)
-                elif category == "Debuff / Control":
-                    min_b = min(b_orig * 0.6, 10.0)
-                    max_b = max(b_orig * 1.4, 60.0)
-                else:  # Direct Damage
-                    min_b = min(b_orig * 0.6, 20.0)
-                    max_b = max(b_orig * 1.4, 85.0)
-
-                # n bounds: preserve and scale n if spell has an active payoff multiplier
+                b_new = max(min_b, min(max_b, b_new))
+                b_new = round(b_new, 1)
                 if n_orig > 0:
-                    if category == "Ultimate":
-                        min_n = min(n_orig * 0.7, 3.0)
-                        max_n = max(n_orig * 1.6, 8.0)
-                    else:
-                        min_n = min(n_orig * 0.7, 1.5)
-                        max_n = max(n_orig * 1.6, 4.5)
+                    n_new = n_orig * (1.0 + n_pct)
+                    n_new = max(min_n, min(max_n, n_new))
+                    n_new = round(n_new, 1)
                 else:
-                    min_n, max_n = 0.0, 0.0
-
-            b_new = max(min_b, min(max_b, b_orig * total_b_factor))
-            if category == "Ultimate":
-                b_new = max(ULTIMATE_B_FLOOR, b_new)
-            is_conditional = (n_orig > 0) or (orig_data.get("condition_required", "None") != "None")
-            if is_conditional:
-                b_new = max(round(0.60 * b_orig, 1), b_new)
-            b_new = round(b_new, 1)
-
-            if n_orig > 0:
-                n_new = max(min_n, min(max_n, n_orig * total_n_factor))
-                n_new = round(n_new, 1)
+                    n_new = 0.0
             else:
-                n_new = 0.0
+                b_new = max(0.0, min(200.0, b_new))
+                if category == "Ultimate":
+                    b_new = max(ULTIMATE_B_FLOOR, b_new)
+                b_new = round(b_new, 1)
 
-            # Recompute max_potential formula: (1 + n) * b if n > 0 else b
+                if n_orig > 0:
+                    n_new = n_orig * (1.0 + n_pct)
+                    n_new = max(0.0, min(20.0, n_new))
+                    n_new = round(n_new, 1)
+                else:
+                    n_new = 0.0
+
+            # Atomic max_potential calculation: (1 + n) * b if n > 0 else b
             if n_new > 0:
                 mp_new = round((1.0 + n_new) * b_new, 1)
             else:
                 mp_new = round(b_new, 1)
 
             changed = (abs(b_new - b_orig) >= 0.1) or (abs(n_new - n_orig) >= 0.1)
-
             if changed:
-                all_reasons = (
-                    group_adj.get(r, {}).get("reasons", [])
-                    + cond_adj.get(r, {}).get("reasons", [])
-                    + indiv_adj.get(r, {}).get("reasons", [])
-                )
                 entry = {
                     "recipe": r,
                     "class": orig_data.get("class"),
@@ -1357,6 +1307,8 @@ class SpellBalancingEngine:
                     "n_delta_pct": round(((n_new - n_orig) / max(1e-5, n_orig)) * 100, 1) if n_orig > 0 else 0.0,
                     "max_potential_old": mp_orig,
                     "max_potential_new": mp_new,
+                    "b_score": b_score,
+                    "n_score": n_score,
                     "reasons": all_reasons,
                 }
                 modifications.append(entry)
@@ -1366,13 +1318,14 @@ class SpellBalancingEngine:
                 self.tuned_spell_data[r]["n"] = n_new
                 self.tuned_spell_data[r]["max_potential"] = mp_new
 
-        print(f"\n[Synthesis Complete] {len(modifications)} of 125 spells tuned.")
+                print(
+                    f"  * [{r}] Tuning applied: b {b_orig} -> {b_new} (score: {b_score:+d}, {b_pct*100:+.0f}%), "
+                    f"n {n_orig} -> {n_new} (score: {n_score:+d}, {n_pct*100:+.0f}%), max_potential: {mp_orig} -> {mp_new}"
+                )
+
+        print(f"\n[Synthesis Complete] {len(modifications)} of {len(self.original_spell_data)} spells tuned.")
         return modifications
 
-
-# =============================================================================
-# 4. SIMULATION ORCHESTRATOR & BATCH RUNNER
-# =============================================================================
 
 def run_balance_simulation_suite(
     stage1_matches: int = 2000,
@@ -1401,9 +1354,9 @@ def run_balance_simulation_suite(
     ├── Stage 4 Training: 2,000 matches (Random sampling from Stage 4 Board States)
     └── Evaluation & Balancing: 5,000 matches (Standard unseeded matches from Turn 1)
          ├── Evaluate Multi-Objective Fitness & Select Top Performers
-         ├── Run Algorithm A (Classes & Status/Buff Magnitudes)
-         ├── Run Algorithm B (Conditional Spreads with b Floor)
-         ├── Run Algorithm C (Outlier Regressions)
+         ├── Run Status & Buff Magnitude Tuner (Clamped between 0% and 75%)
+         ├── Run Score-Based Balancing Algorithms (Win Rate, Pick Rate, Cleanse, Conditional)
+         ├── Aggregate Scores (-3 to +3) and Apply Single Buff/Nerf (2%, 3%, 5%)
          └── Export updated spell_data.json and status_buff_knobs.json
     """
     resolved_spell_path = simulation.resolve_file_path("spell_data.json", spell_data_path)
@@ -1575,6 +1528,7 @@ def run_balance_simulation_suite(
                 spell_data_path=str(resolved_spell_path),
                 verbose=False,
                 board_states=None,
+                eval_mode=True,
             )
             if verbose and (it % 20 == 0 or it == eval_iters):
                 print(f"  * Eval: Iteration {it:3d}/{eval_iters} complete ({it*50:,}/{eval_matches:,} matches recorded)")
