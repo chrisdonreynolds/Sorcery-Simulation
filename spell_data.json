@@ -3,31 +3,31 @@
     "recipe": "FFF",
     "class": "Fire",
     "category": "Direct Damage",
-    "b": 67.0,
+    "b": 69.4,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage to the target.",
-    "max_potential": 67.0
+    "max_potential": 69.4
   },
   "FFW": {
     "recipe": "FFW",
     "class": "Fire",
     "category": "Debuff / Control",
-    "b": 166.0,
+    "b": 197.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Burning to both the caster and the target.",
-    "max_potential": 166.0
+    "max_potential": 197.1
   },
   "FFE": {
     "recipe": "FFE",
     "class": "Fire",
     "category": "Debuff / Control",
-    "b": 926.1,
+    "b": 1158.7,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and decreases the target's Defense by (1*b) for the match.",
-    "max_potential": 926.1
+    "max_potential": 1158.7
   },
   "FFL": {
     "recipe": "FFL",
@@ -43,21 +43,21 @@
     "recipe": "FFD",
     "class": "Fire",
     "category": "Conditional Strike",
-    "b": 8.3,
-    "n": 18247.4,
+    "b": 7.9,
+    "n": 26207.0,
     "condition_required": "the target is Burning",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the target is Burning, and an additional (2*b) bonus damage if the target is Vulnerable.",
-    "max_potential": 151461.7
+    "max_potential": 207043.2
   },
   "WWF": {
     "recipe": "WWF",
     "class": "Water",
     "category": "Conditional Strike",
-    "b": 29.9,
-    "n": 4747.3,
+    "b": 30.2,
+    "n": 6783.4,
     "condition_required": "the target is Charged or Burning",
     "description": "Deals (1*b) damage and decreases the target's Potency by (1*b) for the match; if the target is Charged or Burning, further decreases their Potency by (2*b) and removes the condition from them.",
-    "max_potential": 141974.2
+    "max_potential": 204888.9
   },
   "WWW": {
     "recipe": "WWW",
@@ -73,51 +73,51 @@
     "recipe": "WWE",
     "class": "Water",
     "category": "Setup - Weather",
-    "b": 494.7,
+    "b": 581.5,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes weather to Raining (buffs Water & Plants by (1*b)%, nerfs Earth & Fire by (1*b)%). Secondary: increases damage of Water & Plant spells by (1.0 + b/400)x for the match. Requires active weather to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps weather and slightly increases secondary multiplier.",
-    "max_potential": 494.7
+    "max_potential": 581.5
   },
   "WWL": {
     "recipe": "WWL",
     "class": "Water",
     "category": "Buff / Sustain",
-    "b": 1685.9,
+    "b": 2134.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and removes all buffs from the target.",
-    "max_potential": 1685.9
+    "max_potential": 2134.8
   },
   "WWD": {
     "recipe": "WWD",
     "class": "Water",
     "category": "Buff / Sustain",
-    "b": 226.8,
+    "b": 288.2,
     "n": 0.0,
     "condition_required": "None",
     "description": "Significantly decreases the target's stats, based on any of their active debuffs, for the match: decreases Potency by (2*b) if Weakened, Defense by (2*b) if Vulnerable, Speed by (2*b) if Slowed, and Luck by (2*b) if Jinxed. If the target has none of these, decreases a random stat by (1*b).",
-    "max_potential": 226.8
+    "max_potential": 288.2
   },
   "EEF": {
     "recipe": "EEF",
     "class": "Earth",
     "category": "Conditional Strike",
-    "b": 35.3,
-    "n": 8.3,
+    "b": 30.3,
+    "n": 10.7,
     "condition_required": "the target is Frosty",
     "description": "Deals (1*b) damage; deals (2*b) bonus damage and applies Stunned to the target if the target is Frosty.",
-    "max_potential": 328.3
+    "max_potential": 354.5
   },
   "EEW": {
     "recipe": "EEW",
     "class": "Earth",
     "category": "Buff / Sustain",
-    "b": 52.9,
+    "b": 56.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Grants the caster the Shielded buff, increases Defense by (1*b) for the match, and cures Vulnerable if afflicted.",
-    "max_potential": 52.9
+    "max_potential": 56.1
   },
   "EEE": {
     "recipe": "EEE",
@@ -154,240 +154,240 @@
     "class": "Light",
     "category": "Conditional Strike",
     "b": 0.4,
-    "n": 842.9,
+    "n": 819.5,
     "condition_required": "None",
     "description": "Grants the caster a random buff and cures Cursed if afflicted; if Cursed was cured, additionally grants the Blessed buff.",
-    "max_potential": 337.6
+    "max_potential": 328.2
   },
   "LLW": {
     "recipe": "LLW",
     "class": "Light",
     "category": "Debuff / Control",
-    "b": 872.7,
+    "b": 1221.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Jinxed to the target.",
-    "max_potential": 872.7
+    "max_potential": 1221.8
   },
   "LLE": {
     "recipe": "LLE",
     "class": "Light",
     "category": "Setup - Weather",
-    "b": 809.9,
+    "b": 1013.3,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes weather to Sunny (buffs Fire, Light, & Plants by (1*b)%, nerfs Dark & Ice by (1*b)%). Secondary: increases damage of Fire, Light, & Plant spells by (1.0 + b/400)x for the match. Requires active weather to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps weather and slightly increases secondary multiplier.",
-    "max_potential": 809.9
+    "max_potential": 1013.3
   },
   "LLL": {
     "recipe": "LLL",
     "class": "Light",
     "category": "Buff / Sustain",
-    "b": 22.6,
+    "b": 23.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Heals the caster for (1*b) and increases all stats by (1*b) for the match.",
-    "max_potential": 22.6
+    "max_potential": 23.1
   },
   "LLD": {
     "recipe": "LLD",
     "class": "Light",
     "category": "Ultimate",
-    "b": 2533.7,
-    "n": 43.5,
+    "b": 3423.6,
+    "n": 47.0,
     "condition_required": "Weather is Sunny AND Caster is Blessed",
     "description": "Deals (1*b) base damage; grants sequential payoff of (0.25*n*b) per condition met, and if Weather is Sunny AND Caster is Blessed, triggers ultimate animation and deals full (n*b) bonus damage.",
-    "max_potential": 112749.6
+    "max_potential": 164332.8
   },
   "DDF": {
     "recipe": "DDF",
     "class": "Dark",
     "category": "Conditional Strike",
-    "b": 4.2,
-    "n": 27866.5,
+    "b": 3.9,
+    "n": 39710.1,
     "condition_required": "the target is Asleep",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the target is Asleep.",
-    "max_potential": 117043.5
+    "max_potential": 154873.3
   },
   "DDW": {
     "recipe": "DDW",
     "class": "Dark",
     "category": "Debuff / Control",
-    "b": 235.7,
+    "b": 290.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Weakened to the caster.",
-    "max_potential": 235.7
+    "max_potential": 290.8
   },
   "DDE": {
     "recipe": "DDE",
     "class": "Dark",
     "category": "Setup - Weather",
-    "b": 1181.2,
+    "b": 1653.7,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes weather to Darkness (buffs Dark & Fey by (1*b)%, nerfs Light by (1*b)%). Secondary: increases damage of Dark & Fey spells by (1.0 + b/400)x for the match. Requires active weather to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps weather and slightly increases secondary multiplier.",
-    "max_potential": 1181.2
+    "max_potential": 1653.7
   },
   "DDL": {
     "recipe": "DDL",
     "class": "Dark",
     "category": "Debuff / Control",
-    "b": 444.3,
+    "b": 467.3,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Weakened to the target.",
-    "max_potential": 444.3
+    "max_potential": 467.3
   },
   "DDD": {
     "recipe": "DDD",
     "class": "Dark",
     "category": "Debuff / Control",
-    "b": 22.7,
+    "b": 22.9,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and decreases all of the target's stats by (1*b) for the match.",
-    "max_potential": 22.7
+    "max_potential": 22.9
   },
   "FWF": {
     "recipe": "FWF",
     "class": "Ghostfire",
     "category": "Debuff / Control",
-    "b": 341.9,
+    "b": 342.9,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage with a chance to apply Burning to the target (chance scales with Luck).",
-    "max_potential": 341.9
+    "max_potential": 342.9
   },
   "FWW": {
     "recipe": "FWW",
     "class": "Ghostfire",
     "category": "Debuff / Control",
-    "b": 289.2,
+    "b": 284.6,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Cursed to the target.",
-    "max_potential": 289.2
+    "max_potential": 284.6
   },
   "FWE": {
     "recipe": "FWE",
     "class": "Ghostfire",
     "category": "Setup - Location",
-    "b": 189.7,
+    "b": 193.6,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes location to Graveyard (buffs Ghostfire & Dark by (1*b)%). Secondary: increases damage of Ghostfire & Dark spells by (1.0 + b/400)x for the match. Requires active location to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps location and slightly increases secondary multiplier.",
-    "max_potential": 189.7
+    "max_potential": 193.6
   },
   "FWL": {
     "recipe": "FWL",
     "class": "Ghostfire",
     "category": "Debuff / Control",
-    "b": 214.0,
+    "b": 282.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Cursed to the caster.",
-    "max_potential": 214.0
+    "max_potential": 282.1
   },
   "FWD": {
     "recipe": "FWD",
     "class": "Ghostfire",
     "category": "Ultimate",
-    "b": 1162.9,
-    "n": 3.2,
+    "b": 1628.1,
+    "n": 2.6,
     "condition_required": "Target is Cursed, Weather is Blood Rain, AND Location is Graveyard",
     "description": "Deals (1*b) base damage; grants sequential payoff of (0.25*n*b*(m/3)) for conditions met (Target Cursed, Weather Blood Rain, Location Graveyard), and deals full (n*b) bonus damage if all 3 are met.",
-    "max_potential": 4884.2
+    "max_potential": 5861.2
   },
   "WFF": {
     "recipe": "WFF",
     "class": "Ghostfire",
     "category": "Conditional Strike",
-    "b": 6.9,
-    "n": 570.6,
+    "b": 7.1,
+    "n": 875.2,
     "condition_required": "the target is Bleeding",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the target is Bleeding.",
-    "max_potential": 3944.0
+    "max_potential": 6221.0
   },
   "WFW": {
     "recipe": "WFW",
     "class": "Ghostfire",
     "category": "Debuff / Control",
-    "b": 29.5,
+    "b": 30.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and decreases the target's Potency and Luck by (1*b) for the match.",
-    "max_potential": 29.5
+    "max_potential": 30.1
   },
   "WFE": {
     "recipe": "WFE",
     "class": "Ghostfire",
     "category": "Debuff / Control",
-    "b": 305.2,
+    "b": 380.5,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage with a chance to apply Bleeding to the target (chance scales with Luck).",
-    "max_potential": 305.2
+    "max_potential": 380.5
   },
   "WFL": {
     "recipe": "WFL",
     "class": "Ghostfire",
     "category": "Buff / Sustain",
-    "b": 522.1,
+    "b": 677.3,
     "n": 0.0,
     "condition_required": "None",
     "description": "Grants the caster the Lucky buff, an increase of (1*b) to Luck for the match, and cures Jinxed if afflicted.",
-    "max_potential": 522.1
+    "max_potential": 677.3
   },
   "WFD": {
     "recipe": "WFD",
     "class": "Ghostfire",
     "category": "Conditional Strike",
-    "b": 12.5,
-    "n": 10702.2,
+    "b": 13.0,
+    "n": 16441.6,
     "condition_required": "None",
     "description": "Deals (1*b) damage; if Shielded, consumes it to deal (2*b) bonus damage scaled from Defense. If Lucky, consumes it to deal (2*b) bonus damage scaled from Luck.",
-    "max_potential": 133790.0
+    "max_potential": 213753.8
   },
   "FEF": {
     "recipe": "FEF",
     "class": "Beasts",
     "category": "Debuff / Control",
-    "b": 224.1,
+    "b": 250.6,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Vulnerable to the target.",
-    "max_potential": 224.1
+    "max_potential": 250.6
   },
   "FEW": {
     "recipe": "FEW",
     "class": "Beasts",
     "category": "Conditional Strike",
-    "b": 6.1,
-    "n": 25000.0,
+    "b": 6.3,
+    "n": 39387.5,
     "condition_required": "the target is Entangled",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the target is Entangled.",
-    "max_potential": 152506.1
+    "max_potential": 248147.5
   },
   "FEE": {
     "recipe": "FEE",
     "class": "Beasts",
     "category": "Buff / Sustain",
-    "b": 645.7,
+    "b": 760.5,
     "n": 0.0,
     "condition_required": "None",
     "description": "Gives the caster Charged and a Fire rune to their rune pool.",
-    "max_potential": 645.7
+    "max_potential": 760.5
   },
   "FEL": {
     "recipe": "FEL",
     "class": "Beasts",
     "category": "Buff / Sustain",
-    "b": 506.7,
+    "b": 557.0,
     "n": 0.0,
     "condition_required": "None",
     "description": "Gives the caster Lucky and a Water rune to their rune pool.",
-    "max_potential": 506.7
+    "max_potential": 557.0
   },
   "FED": {
     "recipe": "FED",
@@ -403,321 +403,321 @@
     "recipe": "EFF",
     "class": "Beasts",
     "category": "Debuff / Control",
-    "b": 8.7,
-    "n": 21535.1,
+    "b": 9.4,
+    "n": 33618.8,
     "condition_required": "the target is Vulnerable",
     "description": "Decreases the target's Defense by (1*b) for the match. If the target is Vulnerable, removes it and gives the caster Lucky and Quickened.",
-    "max_potential": 187364.1
+    "max_potential": 316026.1
   },
   "EFW": {
     "recipe": "EFW",
     "class": "Beasts",
     "category": "Buff / Sustain",
-    "b": 155.2,
+    "b": 164.7,
     "n": 0.0,
     "condition_required": "None",
     "description": "Gives the caster Shielded and an Earth rune to their rune pool.",
-    "max_potential": 155.2
+    "max_potential": 164.7
   },
   "EFE": {
     "recipe": "EFE",
     "class": "Beasts",
     "category": "Buff / Sustain",
-    "b": 720.1,
+    "b": 874.0,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and increases the caster's max health by (1*b) for the match.",
-    "max_potential": 720.1
+    "max_potential": 874.0
   },
   "EFL": {
     "recipe": "EFL",
     "class": "Beasts",
     "category": "Buff / Sustain",
-    "b": 41.6,
+    "b": 42.4,
     "n": 0.0,
     "condition_required": "None",
     "description": "Heals the caster for (1*b) and applies Poisoned to the target.",
-    "max_potential": 41.6
+    "max_potential": 42.4
   },
   "EFD": {
     "recipe": "EFD",
     "class": "Beasts",
     "category": "Ultimate",
-    "b": 276.1,
-    "n": 100.1,
+    "b": 281.7,
+    "n": 123.1,
     "condition_required": "Target is Entangled AND Location is Jungle",
     "description": "Deals (1*b) base damage; grants sequential payoff of (0.25*n*b*(m/2)) for conditions met (Target Entangled, Location Jungle), and deals full (n*b) bonus damage if both are met.",
-    "max_potential": 27913.7
+    "max_potential": 34959.0
   },
   "FLF": {
     "recipe": "FLF",
     "class": "Lightning",
     "category": "Conditional Strike",
-    "b": 5.9,
-    "n": 34087.8,
+    "b": 6.0,
+    "n": 51798.0,
     "condition_required": "the target is Stunned",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the target is Stunned.",
-    "max_potential": 201123.9
+    "max_potential": 310794.0
   },
   "FLW": {
     "recipe": "FLW",
     "class": "Lightning",
     "category": "Debuff / Control",
-    "b": 489.9,
+    "b": 469.6,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage with a chance to apply Stunned to the target (chance scales with Luck).",
-    "max_potential": 489.9
+    "max_potential": 469.6
   },
   "FLE": {
     "recipe": "FLE",
     "class": "Lightning",
     "category": "Setup - Weather",
-    "b": 77.5,
+    "b": 77.3,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes weather to Storming (buffs Lightning & Water by (1*b)%, nerfs Beasts & Light by (1*b)%). Secondary: increases damage of Lightning & Water spells by (1.0 + b/400)x for the match. Requires active weather to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps weather and slightly increases secondary multiplier.",
-    "max_potential": 77.5
+    "max_potential": 77.3
   },
   "FLL": {
     "recipe": "FLL",
     "class": "Lightning",
     "category": "Buff / Sustain",
-    "b": 212.6,
+    "b": 245.7,
     "n": 0.0,
     "condition_required": "None",
     "description": "Grants the caster the Quickened buff and grants priority on the next turn (caster's next spell resolves first regardless of Speed).",
-    "max_potential": 212.6
+    "max_potential": 245.7
   },
   "FLD": {
     "recipe": "FLD",
     "class": "Lightning",
     "category": "Ultimate",
-    "b": 636.7,
-    "n": 75.5,
+    "b": 841.0,
+    "n": 89.1,
     "condition_required": "Target is Stunned, Caster is Charged, AND Weather is Storming",
     "description": "Deals (1*b) base damage; grants sequential payoff of (0.25*n*b*(m/3)) for conditions met (Target Stunned, Caster Charged, Weather Storming), and deals full (n*b) bonus damage if all 3 are met.",
-    "max_potential": 48707.6
+    "max_potential": 75774.1
   },
   "LFF": {
     "recipe": "LFF",
     "class": "Lightning",
     "category": "Conditional Strike",
     "b": 5.6,
-    "n": 26081.5,
+    "n": 41064.6,
     "condition_required": "the target is Vulnerable",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the target is Vulnerable.",
-    "max_potential": 146062.0
+    "max_potential": 229967.4
   },
   "LFW": {
     "recipe": "LFW",
     "class": "Lightning",
     "category": "Buff / Sustain",
-    "b": 464.3,
+    "b": 567.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Grants the caster the Charged buff, increases Potency by (1*b) for the match, and cures Weakened if afflicted.",
-    "max_potential": 464.3
+    "max_potential": 567.8
   },
   "LFE": {
     "recipe": "LFE",
     "class": "Lightning",
     "category": "Debuff / Control",
-    "b": 3.2,
+    "b": 3.1,
     "n": 0.0,
     "condition_required": "the weather is Storming",
     "description": "Deals (1*b) damage; if the weather is Storming, applies Stunned to the target.",
-    "max_potential": 3.2
+    "max_potential": 3.1
   },
   "LFL": {
     "recipe": "LFL",
     "class": "Lightning",
     "category": "Debuff / Control",
-    "b": 204.9,
-    "n": 10690.6,
+    "b": 282.1,
+    "n": 16804.6,
     "condition_required": "the weather is Darkness",
     "description": "Deals (1*b) damage; if the weather is Darkness, applies Jinxed to the target.",
-    "max_potential": 2190708.8
+    "max_potential": 4740859.8
   },
   "LFD": {
     "recipe": "LFD",
     "class": "Lightning",
     "category": "Conditional Strike",
     "b": 5.9,
-    "n": 25981.6,
+    "n": 40943.0,
     "condition_required": "the caster is Charged",
     "description": "Deals (1*b) damage, dealing (3*b) damage if the caster is Charged and then applies Stunned to the caster.",
-    "max_potential": 153297.3
+    "max_potential": 241569.6
   },
   "FDF": {
     "recipe": "FDF",
     "class": "Blood",
     "category": "Conditional Strike",
     "b": 0.2,
-    "n": 4472.6,
+    "n": 6106.2,
     "condition_required": "the caster is Invisible",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the caster is Invisible.",
-    "max_potential": 894.7
+    "max_potential": 1221.4
   },
   "FDW": {
     "recipe": "FDW",
     "class": "Blood",
     "category": "Direct Damage",
-    "b": 1623.9,
+    "b": 2031.7,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage to the caster and target.",
-    "max_potential": 1623.9
+    "max_potential": 2031.7
   },
   "FDE": {
     "recipe": "FDE",
     "class": "Blood",
     "category": "Setup - Weather",
-    "b": 151.4,
+    "b": 193.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes weather to Blood Rain (buffs Blood & Ghostfire by (1*b)%, nerfs Fey by (1*b)%). Secondary: increases damage of Blood & Ghostfire spells by (1.0 + b/400)x for the match. Requires active weather to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps weather and slightly increases secondary multiplier.",
-    "max_potential": 151.4
+    "max_potential": 193.8
   },
   "FDL": {
     "recipe": "FDL",
     "class": "Blood",
     "category": "Debuff / Control",
-    "b": 701.9,
+    "b": 878.2,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Bleeding to the target.",
-    "max_potential": 701.9
+    "max_potential": 878.2
   },
   "FDD": {
     "recipe": "FDD",
     "class": "Blood",
     "category": "Ultimate",
-    "b": 339.5,
-    "n": 44.1,
+    "b": 407.1,
+    "n": 58.2,
     "condition_required": "Target is Jinxed AND Weather is Darkness",
     "description": "Deals (1*b) base damage; grants sequential payoff of (0.25*n*b*(m/2)) for conditions met (Target Jinxed, Weather Darkness), and deals full (n*b) bonus damage if both are met.",
-    "max_potential": 15311.5
+    "max_potential": 24100.3
   },
   "DFF": {
     "recipe": "DFF",
     "class": "Blood",
     "category": "Conditional Strike",
-    "b": 23.3,
-    "n": 477.8,
+    "b": 28.2,
+    "n": 479.3,
     "condition_required": "the caster is Bleeding",
     "description": "Deals (1*b) damage; deals (2*b) bonus damage if the caster is Bleeding, and (2*b) bonus damage if the weather condition is Blood Rain.",
-    "max_potential": 11156.0
+    "max_potential": 13544.5
   },
   "DFW": {
     "recipe": "DFW",
     "class": "Blood",
     "category": "Debuff / Control",
-    "b": 19.4,
+    "b": 19.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Bleeding and Slowed to the target.",
-    "max_potential": 19.4
+    "max_potential": 19.8
   },
   "DFE": {
     "recipe": "DFE",
     "class": "Blood",
     "category": "Buff / Sustain",
-    "b": 200.5,
+    "b": 260.3,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage to the caster, gives the caster Charged and Lucky, and cures Asleep if afflicted.",
-    "max_potential": 200.5
+    "max_potential": 260.3
   },
   "DFL": {
     "recipe": "DFL",
     "class": "Blood",
     "category": "Buff / Sustain",
-    "b": 190.8,
+    "b": 198.7,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and heals the caster for 100 percent of the damage dealt.",
-    "max_potential": 190.8
+    "max_potential": 198.7
   },
   "DFD": {
     "recipe": "DFD",
     "class": "Blood",
     "category": "Conditional Strike",
-    "b": 178.7,
-    "n": 8.0,
+    "b": 182.7,
+    "n": 12.6,
     "condition_required": "None",
     "description": "Deals (1*b) damage to the target, dealing bonus damage scaling with the caster's missing health.",
-    "max_potential": 1608.3
+    "max_potential": 2484.7
   },
   "WEF": {
     "recipe": "WEF",
     "class": "Plants",
     "category": "Conditional Strike",
-    "b": 16.9,
-    "n": 5934.1,
+    "b": 17.3,
+    "n": 9349.2,
     "condition_required": "the location is Jungle",
     "description": "Deals (1*b) damage; if the location is Jungle, deals (2*b) bonus damage and changes the location to none.",
-    "max_potential": 100303.2
+    "max_potential": 161758.5
   },
   "WEW": {
     "recipe": "WEW",
     "class": "Plants",
     "category": "Debuff / Control",
-    "b": 339.0,
+    "b": 332.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Applies Asleep to the target.",
-    "max_potential": 339.0
+    "max_potential": 332.8
   },
   "WEE": {
     "recipe": "WEE",
     "class": "Plants",
     "category": "Setup - Location",
-    "b": 369.4,
+    "b": 462.2,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes location to Jungle (buffs Beasts & Plants by (1*b)%). Secondary: increases damage of Beasts & Plant spells by (1.0 + b/400)x for the match. Requires active location to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps location and slightly increases secondary multiplier.",
-    "max_potential": 369.4
+    "max_potential": 462.2
   },
   "WEL": {
     "recipe": "WEL",
     "class": "Plants",
     "category": "Debuff / Control",
-    "b": 603.4,
+    "b": 735.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Entangled to the target.",
-    "max_potential": 603.4
+    "max_potential": 735.1
   },
   "WED": {
     "recipe": "WED",
     "class": "Plants",
     "category": "Conditional Strike",
-    "b": 445.1,
-    "n": 22.3,
+    "b": 601.4,
+    "n": 24.1,
     "condition_required": "Active seedling conditions met",
     "description": "Deals (1*b) damage; grants sequential payoff of (1.0*b*(m/3)) for conditions met on active seedling, and deals (3*b) bonus damage if active seedling was rained on and sunny.",
-    "max_potential": 10370.8
+    "max_potential": 15095.1
   },
   "EWF": {
     "recipe": "EWF",
     "class": "Plants",
     "category": "Buff / Sustain",
-    "b": 8.1,
-    "n": 20436.5,
+    "b": 8.6,
+    "n": 30446.7,
     "condition_required": "the weather is Sunny",
     "description": "Heals the caster for (1*b) and increases Potency by (1*b) for the match; if the weather is Sunny, heals for an additional (1*b).",
-    "max_potential": 165543.8
+    "max_potential": 261850.2
   },
   "EWW": {
     "recipe": "EWW",
     "class": "Plants",
     "category": "Debuff / Control",
-    "b": 14.3,
+    "b": 16.9,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Poisoned to the target.",
-    "max_potential": 14.3
+    "max_potential": 16.9
   },
   "EWE": {
     "recipe": "EWE",
@@ -733,91 +733,91 @@
     "recipe": "EWL",
     "class": "Plants",
     "category": "Debuff / Control",
-    "b": 437.5,
+    "b": 446.4,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage to the target; if an active seedling is on the battlefield, consumes it to grant the caster Quickened.",
-    "max_potential": 437.5
+    "max_potential": 446.4
   },
   "EWD": {
     "recipe": "EWD",
     "class": "Plants",
     "category": "Conditional Strike",
-    "b": 3.5,
-    "n": 16948.7,
+    "b": 3.6,
+    "n": 26667.8,
     "condition_required": "the target is Entangled",
     "description": "Deals (1*b) damage. If the target is Entangled, additionally applies Bleeding to the target.",
-    "max_potential": 59324.0
+    "max_potential": 96007.7
   },
   "WLF": {
     "recipe": "WLF",
     "class": "Fey",
     "category": "Conditional Strike",
-    "b": 18.5,
-    "n": 13890.8,
+    "b": 20.1,
+    "n": 18933.7,
     "condition_required": "the target is Cursed",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the target is Cursed.",
-    "max_potential": 256998.3
+    "max_potential": 380587.5
   },
   "WLW": {
     "recipe": "WLW",
     "class": "Fey",
     "category": "Debuff / Control",
-    "b": 126.5,
+    "b": 123.4,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Cursed to the target.",
-    "max_potential": 126.5
+    "max_potential": 123.4
   },
   "WLE": {
     "recipe": "WLE",
     "class": "Fey",
     "category": "Setup - Location",
-    "b": 1543.2,
+    "b": 1900.0,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes location to Enchanted Forest (buffs Fey by (1*b)%). Secondary: increases damage of Fey spells by (1.0 + b/400)x for the match. Requires active location to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps location and slightly increases secondary multiplier.",
-    "max_potential": 1543.2
+    "max_potential": 1900.0
   },
   "WLL": {
     "recipe": "WLL",
     "class": "Fey",
     "category": "Direct Damage",
-    "b": 165.3,
+    "b": 196.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage to the target.",
-    "max_potential": 165.3
+    "max_potential": 196.1
   },
   "WLD": {
     "recipe": "WLD",
     "class": "Fey",
     "category": "Ultimate",
-    "b": 1614.0,
-    "n": 36.5,
+    "b": 2212.1,
+    "n": 33.5,
     "condition_required": "Target is Asleep, Weather is Darkness, AND Location is Enchanted Forest",
     "description": "Deals (1*b) base damage; grants sequential payoff of (0.25*n*b*(m/3)) for conditions met (Target Asleep, Weather Darkness, Location Enchanted Forest), and deals full (n*b) bonus damage if all 3 are met.",
-    "max_potential": 60525.0
+    "max_potential": 76317.4
   },
   "LWF": {
     "recipe": "LWF",
     "class": "Fey",
     "category": "Debuff / Control",
-    "b": 47.8,
-    "n": 6054.4,
+    "b": 48.3,
+    "n": 9538.7,
     "condition_required": "the location is Enchanted Forest",
     "description": "Deals (1*b) damage; if the location is Enchanted Forest, additionally applies Vulnerable to the target.",
-    "max_potential": 289448.1
+    "max_potential": 460767.5
   },
   "LWW": {
     "recipe": "LWW",
     "class": "Fey",
     "category": "Debuff / Control",
-    "b": 1244.6,
+    "b": 1493.7,
     "n": 0.0,
     "condition_required": "None",
     "description": "Applies Asleep to both the caster and the target.",
-    "max_potential": 1244.6
+    "max_potential": 1493.7
   },
   "LWE": {
     "recipe": "LWE",
@@ -833,211 +833,211 @@
     "recipe": "LWL",
     "class": "Fey",
     "category": "Debuff / Control",
-    "b": 300.6,
+    "b": 278.4,
     "n": 0.0,
     "condition_required": "None",
     "description": "Applies Polymorphed to the target for 2 rounds.",
-    "max_potential": 300.6
+    "max_potential": 278.4
   },
   "LWD": {
     "recipe": "LWD",
     "class": "Fey",
     "category": "Conditional Strike",
-    "b": 8.1,
-    "n": 30509.6,
+    "b": 6.9,
+    "n": 42436.9,
     "condition_required": "the target is Polymorphed",
     "description": "Deals (1*b) damage; if the target is Polymorphed, consumes the status effect to grant the caster Invisible for 2 rounds.",
-    "max_potential": 247135.9
+    "max_potential": 292821.5
   },
   "WDF": {
     "recipe": "WDF",
     "class": "Ice",
     "category": "Conditional Strike",
-    "b": 9.1,
-    "n": 22010.1,
+    "b": 9.8,
+    "n": 34909.0,
     "condition_required": "the weather is Raining",
     "description": "Deals (1*b) damage; if weather is Raining, changes weather to Snowing, applies Stunned to target, and grants match-long (1.0 + b/400)x damage multiplier to Ice spells.",
-    "max_potential": 200301.0
+    "max_potential": 342118.0
   },
   "WDW": {
     "recipe": "WDW",
     "class": "Ice",
     "category": "Buff / Sustain",
-    "b": 308.4,
+    "b": 381.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Grants the caster the Shielded buff; while active, if the caster takes a new instance of damage, applies Frosty to the attacker.",
-    "max_potential": 308.4
+    "max_potential": 381.1
   },
   "WDE": {
     "recipe": "WDE",
     "class": "Ice",
     "category": "Setup - Weather",
-    "b": 756.7,
+    "b": 980.7,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes weather to Snowing (buffs Ice by (1*b)%, nerfs Fire & Plants by (1*b)%). Secondary: increases damage of Ice spells by (1.0 + b/400)x for the match. Requires active weather to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps weather and slightly increases secondary multiplier.",
-    "max_potential": 756.7
+    "max_potential": 980.7
   },
   "WDL": {
     "recipe": "WDL",
     "class": "Ice",
     "category": "Debuff / Control",
-    "b": 52.5,
+    "b": 59.4,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Frosty to the target.",
-    "max_potential": 52.5
+    "max_potential": 59.4
   },
   "WDD": {
     "recipe": "WDD",
     "class": "Ice",
     "category": "Ultimate",
-    "b": 167.5,
-    "n": 57.1,
+    "b": 190.7,
+    "n": 68.7,
     "condition_required": "Weather is Blizzard AND Location is Tundra",
     "description": "Deals (1*b) base damage; grants sequential payoff of (0.25*n*b*(m/2)) for conditions met (Weather Blizzard, Location Tundra), and deals full (n*b) bonus damage if both are met.",
-    "max_potential": 9731.8
+    "max_potential": 13291.8
   },
   "DWF": {
     "recipe": "DWF",
     "class": "Ice",
     "category": "Debuff / Control",
-    "b": 411.5,
+    "b": 494.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage with a chance to apply Frosty to the target (chance scales with Luck).",
-    "max_potential": 411.5
+    "max_potential": 494.8
   },
   "DWW": {
     "recipe": "DWW",
     "class": "Ice",
     "category": "Debuff / Control",
-    "b": 175.5,
+    "b": 179.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Slowed to the target.",
-    "max_potential": 175.5
+    "max_potential": 179.1
   },
   "DWE": {
     "recipe": "DWE",
     "class": "Ice",
     "category": "Setup - Location",
-    "b": 329.4,
+    "b": 412.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes location to Tundra (buffs Ice by (1*b)%). Secondary: increases damage of Ice spells by (1.0 + b/400)x for the match. Requires active location to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps location and slightly increases secondary multiplier.",
-    "max_potential": 329.4
+    "max_potential": 412.1
   },
   "DWL": {
     "recipe": "DWL",
     "class": "Ice",
     "category": "Debuff / Control",
-    "b": 783.1,
+    "b": 979.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Frosty to the caster and target.",
-    "max_potential": 783.1
+    "max_potential": 979.8
   },
   "DWD": {
     "recipe": "DWD",
     "class": "Ice",
     "category": "Conditional Strike",
-    "b": 34.6,
-    "n": 3185.0,
+    "b": 35.7,
+    "n": 4773.7,
     "condition_required": "the target is Frosty",
     "description": "Deals (1*b) damage; if the target is Frosty, consumes the effect to deal (2*b) bonus damage and apply Vulnerable.",
-    "max_potential": 110235.6
+    "max_potential": 170456.8
   },
   "ELF": {
     "recipe": "ELF",
     "class": "Wind",
     "category": "Conditional Strike",
-    "b": 67.4,
-    "n": 49.8,
+    "b": 65.5,
+    "n": 58.7,
     "condition_required": "the caster is Bleeding",
     "description": "Deals (1*b) damage; if caster is Bleeding, removes it, changes weather to Blood Rain, and grants match-long (1.0 + b/400)x damage multiplier to Blood & Ghostfire spells.",
-    "max_potential": 3423.9
+    "max_potential": 3910.4
   },
   "ELW": {
     "recipe": "ELW",
     "class": "Wind",
     "category": "Debuff / Control",
-    "b": 206.8,
+    "b": 259.2,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Slowed to the target.",
-    "max_potential": 206.8
+    "max_potential": 259.2
   },
   "ELE": {
     "recipe": "ELE",
     "class": "Wind",
     "category": "Setup - Weather",
-    "b": 114.8,
+    "b": 142.2,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes weather to Windy (buffs Wind by (1*b)%, nerfs Earth by (1*b)%). Secondary: increases damage of Wind spells by (1.0 + b/400)x for the match. Requires active weather to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps weather and slightly increases secondary multiplier.",
-    "max_potential": 114.8
+    "max_potential": 142.2
   },
   "ELL": {
     "recipe": "ELL",
     "class": "Wind",
     "category": "Buff / Sustain",
-    "b": 37.4,
+    "b": 38.2,
     "n": 0.0,
     "condition_required": "None",
     "description": "Grants the caster the Quickened buff, increases Speed by (1*b) for the match, and cures Slowed if afflicted.",
-    "max_potential": 37.4
+    "max_potential": 38.2
   },
   "ELD": {
     "recipe": "ELD",
     "class": "Wind",
     "category": "Conditional Strike",
-    "b": 7.8,
-    "n": 21927.5,
+    "b": 8.0,
+    "n": 35084.0,
     "condition_required": "the weather is Raining",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if weather is Raining, changes weather to Blizzard, and grants match-long (1.0 + b/400)x damage multiplier to Ice spells.",
-    "max_potential": 171042.3
+    "max_potential": 280680.0
   },
   "LEF": {
     "recipe": "LEF",
     "class": "Wind",
     "category": "Conditional Strike",
-    "b": 8.6,
-    "n": 27208.9,
+    "b": 8.8,
+    "n": 37831.7,
     "condition_required": "the target is Burning",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the target is Burning.",
-    "max_potential": 234005.1
+    "max_potential": 332927.8
   },
   "LEW": {
     "recipe": "LEW",
     "class": "Wind",
     "category": "Debuff / Control",
-    "b": 170.8,
+    "b": 207.3,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and re-applies any debuff on the target, effectively resetting its duration.",
-    "max_potential": 170.8
+    "max_potential": 207.3
   },
   "LEE": {
     "recipe": "LEE",
     "class": "Wind",
     "category": "Setup - Weather",
-    "b": 530.7,
+    "b": 660.0,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes weather to Sandstorm (buffs Earth & Wind by (1*b)%, nerfs Beasts by (1*b)%). Secondary: increases damage of Earth & Wind spells by (1.0 + b/400)x for the match. Requires active weather to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps weather and slightly increases secondary multiplier.",
-    "max_potential": 530.7
+    "max_potential": 660.0
   },
   "LEL": {
     "recipe": "LEL",
     "class": "Wind",
     "category": "Buff / Sustain",
-    "b": 149.8,
+    "b": 184.4,
     "n": 0.0,
     "condition_required": "None",
     "description": "Gives the caster Quickened and applies Slowed to the target.",
-    "max_potential": 149.8
+    "max_potential": 184.4
   },
   "LED": {
     "recipe": "LED",
@@ -1054,190 +1054,190 @@
     "class": "Poison",
     "category": "Conditional Strike",
     "b": 1.6,
-    "n": 4441.4,
+    "n": 6942.7,
     "condition_required": "the target is Weakened",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the target is Weakened.",
-    "max_potential": 7107.8
+    "max_potential": 11109.9
   },
   "EDW": {
     "recipe": "EDW",
     "class": "Poison",
     "category": "Debuff / Control",
-    "b": 31.4,
+    "b": 32.0,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and decreases the target's Potency and Defense by (1*b) for the match.",
-    "max_potential": 31.4
+    "max_potential": 32.0
   },
   "EDE": {
     "recipe": "EDE",
     "class": "Poison",
     "category": "Setup - Location",
-    "b": 311.8,
+    "b": 390.1,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes location to Swamp (buffs Poison by (1*b)%). Secondary: increases damage of Poison spells by (1.0 + b/400)x for the match. Requires active location to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps location and slightly increases secondary multiplier.",
-    "max_potential": 311.8
+    "max_potential": 390.1
   },
   "EDL": {
     "recipe": "EDL",
     "class": "Poison",
     "category": "Debuff / Control",
-    "b": 9.6,
+    "b": 9.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Poisoned to the target.",
-    "max_potential": 9.6
+    "max_potential": 9.8
   },
   "EDD": {
     "recipe": "EDD",
     "class": "Poison",
     "category": "Ultimate",
-    "b": 190.2,
-    "n": 24.4,
+    "b": 227.1,
+    "n": 27.6,
     "condition_required": "Target is Bleeding AND Location is Swamp",
     "description": "Deals (1*b) base damage; grants sequential payoff of (0.25*n*b*(m/2)) for conditions met (Target Bleeding, Location Swamp), and deals full (n*b) bonus damage if both are met.",
-    "max_potential": 4831.1
+    "max_potential": 6495.1
   },
   "DEF": {
     "recipe": "DEF",
     "class": "Poison",
     "category": "Conditional Strike",
-    "b": 1082.6,
-    "n": 2.1,
+    "b": 1406.9,
+    "n": 1.7,
     "condition_required": "None",
     "description": "Deals (1*b) damage scaling with the target's missing Potency.",
-    "max_potential": 3356.1
+    "max_potential": 3798.6
   },
   "DEW": {
     "recipe": "DEW",
     "class": "Poison",
     "category": "Debuff / Control",
-    "b": 741.2,
+    "b": 927.3,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and decreases the target's Potency and Luck by (1*b) for the match.",
-    "max_potential": 741.2
+    "max_potential": 927.3
   },
   "DEE": {
     "recipe": "DEE",
     "class": "Poison",
     "category": "Debuff / Control",
-    "b": 179.4,
+    "b": 209.9,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Weakened to the target.",
-    "max_potential": 179.4
+    "max_potential": 209.9
   },
   "DEL": {
     "recipe": "DEL",
     "class": "Poison",
     "category": "Conditional Strike",
     "b": 1.3,
-    "n": 7172.5,
+    "n": 11476.0,
     "condition_required": "the target is Bleeding",
     "description": "Deals (1*b) damage; if the target is Bleeding, additionally applies Infected to the target.",
-    "max_potential": 9325.6
+    "max_potential": 14920.1
   },
   "DED": {
     "recipe": "DED",
     "class": "Poison",
     "category": "Debuff / Control",
-    "b": 129.6,
+    "b": 135.3,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and removes any debuffs on target to heal the caster for each removed.",
-    "max_potential": 129.6
+    "max_potential": 135.3
   },
   "LDF": {
     "recipe": "LDF",
     "class": "Cosmic",
     "category": "Debuff / Control",
-    "b": 901.4,
+    "b": 1093.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage and applies Jinxed to the target.",
-    "max_potential": 901.4
+    "max_potential": 1093.8
   },
   "LDW": {
     "recipe": "LDW",
     "class": "Cosmic",
     "category": "Debuff / Control",
-    "b": 1303.9,
+    "b": 1582.8,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage with a chance to apply Stunned to the target (chance scales with Luck).",
-    "max_potential": 1303.9
+    "max_potential": 1582.8
   },
   "LDE": {
     "recipe": "LDE",
     "class": "Cosmic",
     "category": "Setup - Location",
-    "b": 153.7,
+    "b": 193.6,
     "n": 0.0,
     "condition_required": "None",
     "description": "Changes location to Space (buffs Cosmic by (1*b)%). Secondary: increases damage of Cosmic spells by (1.0 + b/400)x for the match. Requires active location to have lasted >= 3 turns (unless turn < 3) to change; otherwise keeps location and slightly increases secondary multiplier.",
-    "max_potential": 153.7
+    "max_potential": 193.6
   },
   "LDL": {
     "recipe": "LDL",
     "class": "Cosmic",
     "category": "Conditional Strike",
-    "b": 1.8,
-    "n": 4229.3,
+    "b": 1.5,
+    "n": 5780.7,
     "condition_required": "the target is Jinxed",
     "description": "Deals (1*b) damage, dealing (2*b) bonus damage if the target is Jinxed.",
-    "max_potential": 7614.5
+    "max_potential": 8672.5
   },
   "LDD": {
     "recipe": "LDD",
     "class": "Cosmic",
     "category": "Ultimate",
-    "b": 155.7,
-    "n": 4.7,
+    "b": 169.3,
+    "n": 4.2,
     "condition_required": "Target has Jinxed, Weakened, Slowed, AND Vulnerable",
     "description": "Deals (1*b) base damage; grants sequential payoff of (0.25*n*b*(m/4)) for conditions met (Target has Jinxed, Weakened, Slowed, Vulnerable), and deals full (n*b) bonus damage if all 4 are met.",
-    "max_potential": 887.5
+    "max_potential": 880.4
   },
   "DLF": {
     "recipe": "DLF",
     "class": "Cosmic",
     "category": "Conditional Strike",
-    "b": 11.5,
-    "n": 3621.4,
+    "b": 11.6,
+    "n": 5662.7,
     "condition_required": "the target is Slowed",
     "description": "Deals (1*b) damage; if the target is Slowed, consumes it to increase the caster's Speed.",
-    "max_potential": 41657.6
+    "max_potential": 65698.9
   },
   "DLW": {
     "recipe": "DLW",
     "class": "Cosmic",
     "category": "Direct Damage",
-    "b": 2313.4,
+    "b": 2894.3,
     "n": 0.0,
     "condition_required": "None",
     "description": "Deals (1*b) damage to the target, and gives the caster a Dark rune to their rune pool.",
-    "max_potential": 2313.4
+    "max_potential": 2894.3
   },
   "DLE": {
     "recipe": "DLE",
     "class": "Cosmic",
     "category": "Buff / Sustain",
-    "b": 597.4,
+    "b": 747.4,
     "n": 0.0,
     "condition_required": "None",
     "description": "Heals (1*b) the caster and gives the caster a Light rune to their rune pool.",
-    "max_potential": 597.4
+    "max_potential": 747.4
   },
   "DLL": {
     "recipe": "DLL",
     "class": "Cosmic",
     "category": "Conditional Strike",
-    "b": 65.0,
-    "n": 920.4,
+    "b": 64.6,
+    "n": 1349.3,
     "condition_required": "the weather condition is Darkness",
     "description": "Deals (1*b) damage; if the weather condition is Darkness, gives the caster Charged and Quickened, and applies Slowed to the target.",
-    "max_potential": 59891.0
+    "max_potential": 87229.4
   },
   "DLD": {
     "recipe": "DLD",
