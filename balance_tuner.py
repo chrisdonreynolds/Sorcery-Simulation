@@ -1385,6 +1385,7 @@ def run_balance_simulation_suite(
     dna_path: Optional[str] = None,
     apply_tuning: bool = True,
     data_log_path: Optional[str] = None,
+    knob_log_path: Optional[str] = None,
     sync_interval: int = 50,
     verbose: bool = True,
     total_games: Optional[int] = None,
@@ -1651,6 +1652,30 @@ def run_balance_simulation_suite(
         except Exception:
             pass
 
+    # Append Knob Log for this run (strictly CSV format only, listing each change it makes to each knob)
+    target_knob_log_path = Path(knob_log_path).resolve() if knob_log_path else (resolved_spell_path.parent / "knob_log.csv")
+    saved_knob_log_path = append_knob_log(
+        log_path=target_knob_log_path,
+        run_meta=run_meta,
+        changelog=changelog,
+        status_buff_knobs=status_buff_knobs,
+        tuned_spell_data=tuned_spell_data,
+        original_spell_data=spell_data,
+    )
+
+    if not knob_log_path and SCRIPT_DIR != resolved_spell_path.parent:
+        try:
+            append_knob_log(
+                log_path=(SCRIPT_DIR / "knob_log.csv"),
+                run_meta=run_meta,
+                changelog=changelog,
+                status_buff_knobs=status_buff_knobs,
+                tuned_spell_data=tuned_spell_data,
+                original_spell_data=spell_data,
+            )
+        except Exception:
+            pass
+
     return {
         "status": "success",
         "total_games": total_run_matches,
@@ -1659,6 +1684,7 @@ def run_balance_simulation_suite(
         "modifications_count": len(changelog),
         "changelog": changelog,
         "status_buff_knobs": status_buff_knobs,
+        "knob_log_path": str(target_knob_log_path),
         "elapsed_seconds": total_sim_time,
     }
 
@@ -1715,6 +1741,7 @@ def append_data_log(
                     run_id = last_run_id + 1
         except Exception:
             run_id = 1
+    run_meta["run_id"] = run_id
 
     timestamp = run_meta.get("timestamp", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
     # Use the count of post-training evaluation matches (e.g., 5000), not total matches
@@ -1756,6 +1783,166 @@ def append_data_log(
 
     print(f"[Data Log] Successfully appended run #{run_id} to CSV log: {csv_path}")
     return csv_path
+
+
+def append_knob_log(
+    log_path: Union[str, Path],
+    run_meta: Dict[str, Any],
+    changelog: Optional[List[Dict[str, Any]]] = None,
+    tuned_spell_data: Optional[Dict[str, Any]] = None,
+    original_spell_data: Optional[Dict[str, Any]] = None,
+    status_buff_knobs: Optional[Dict[str, Any]] = None,
+) -> Path:
+    """
+    Appends a log of each change made to each knob after a balancing run to the CSV knob log.
+    Strictly outputs ONLY a .csv file (no .json, .jsonl, or .log files).
+    Creates the CSV file with headers if it does not already exist, or appends new records.
+
+    Data points recorded per knob change:
+    1. run_id: Sequential integer identifying the simulation run.
+    2. timestamp: ISO-8601 UTC timestamp of the run.
+    3. total_games: Number of evaluated matches in the run.
+    4. recipe: The spell recipe identifier (e.g., 'FFD').
+    5. class: Spell class (e.g., 'Fire').
+    6. category: Spell category (e.g., 'Conditional Strike').
+    7. knob: Specific formula knob modified ('b', 'n', or 'max_potential').
+    8. old_value: Value of the knob prior to tuning.
+    9. new_value: Value of the knob after tuning.
+    10. delta: Absolute net change (new_value - old_value).
+    11. delta_pct: Percentage change relative to the old value.
+    12. reasons: Justification(s) from the balancing algorithms.
+    """
+    csv_path = Path(log_path).resolve()
+    if csv_path.suffix != ".csv":
+        csv_path = csv_path.with_suffix(".csv")
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+    csv_exists = csv_path.exists()
+    csv_headers = [
+        "run_id",
+        "timestamp",
+        "total_games",
+        "recipe",
+        "class",
+        "category",
+        "knob",
+        "old_value",
+        "new_value",
+        "delta",
+        "delta_pct",
+        "reasons",
+    ]
+
+    run_id = run_meta.get("run_id")
+    if run_id is None:
+        run_id = 1
+        if csv_exists:
+            try:
+                with open(csv_path, "r", encoding="utf-8") as f:
+                    reader = csv.reader(f)
+                    rows = [r for r in reader if r]
+                    if len(rows) > 1:
+                        last_run_id = int(rows[-1][0])
+                        run_id = last_run_id + 1
+            except Exception:
+                run_id = 1
+        run_meta["run_id"] = run_id
+
+    timestamp = run_meta.get("timestamp", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+    total_games = run_meta.get("eval_games", run_meta.get("total_games", 5000))
+
+    knob_changes = []
+
+    # 1. Spell formula knob adjustments (b, n, max_potential)
+    if changelog:
+        for entry in changelog:
+            recipe = entry.get("recipe", "")
+            sp_class = entry.get("class", "Unknown")
+            category = entry.get("category", "Unknown")
+            all_reasons = entry.get("reasons", [])
+            if isinstance(all_reasons, list):
+                reasons_str = "; ".join(str(r) for r in all_reasons)
+            else:
+                reasons_str = str(all_reasons)
+
+            # Knob 'b'
+            b_old = entry.get("b_old")
+            b_new = entry.get("b_new")
+            if b_old is not None and b_new is not None and abs(float(b_new) - float(b_old)) >= 0.01:
+                b_delta = round(float(b_new) - float(b_old), 4)
+                b_delta_pct = entry.get("b_delta_pct")
+                if b_delta_pct is None:
+                    b_delta_pct = round(((float(b_new) - float(b_old)) / max(1e-5, float(b_old))) * 100, 1)
+                knob_changes.append([
+                    run_id,
+                    timestamp,
+                    total_games,
+                    recipe,
+                    sp_class,
+                    category,
+                    "b",
+                    round(float(b_old), 2),
+                    round(float(b_new), 2),
+                    b_delta,
+                    b_delta_pct,
+                    reasons_str,
+                ])
+
+            # Knob 'n'
+            n_old = entry.get("n_old")
+            n_new = entry.get("n_new")
+            if n_old is not None and n_new is not None and abs(float(n_new) - float(n_old)) >= 0.01:
+                n_delta = round(float(n_new) - float(n_old), 4)
+                n_delta_pct = entry.get("n_delta_pct")
+                if n_delta_pct is None:
+                    n_delta_pct = round(((float(n_new) - float(n_old)) / max(1e-5, float(n_old))) * 100, 1) if float(n_old) > 0 else 0.0
+                knob_changes.append([
+                    run_id,
+                    timestamp,
+                    total_games,
+                    recipe,
+                    sp_class,
+                    category,
+                    "n",
+                    round(float(n_old), 2),
+                    round(float(n_new), 2),
+                    n_delta,
+                    n_delta_pct,
+                    reasons_str,
+                ])
+
+            # Knob 'max_potential'
+            mp_old = entry.get("max_potential_old")
+            mp_new = entry.get("max_potential_new")
+            if mp_old is not None and mp_new is not None and abs(float(mp_new) - float(mp_old)) >= 0.01:
+                mp_delta = round(float(mp_new) - float(mp_old), 4)
+                mp_delta_pct = round(((float(mp_new) - float(mp_old)) / max(1e-5, float(mp_old))) * 100, 1)
+                mp_reason = reasons_str if reasons_str else "Recalculated max_potential = (1 + n) * b"
+                knob_changes.append([
+                    run_id,
+                    timestamp,
+                    total_games,
+                    recipe,
+                    sp_class,
+                    category,
+                    "max_potential",
+                    round(float(mp_old), 2),
+                    round(float(mp_new), 2),
+                    mp_delta,
+                    mp_delta_pct,
+                    mp_reason,
+                ])
+
+    with open(csv_path, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if not csv_exists:
+            writer.writerow(csv_headers)
+        for row in knob_changes:
+            writer.writerow(row)
+
+    print(f"[Knob Log] Successfully appended {len(knob_changes)} knob change(s) for run #{run_id} to CSV log: {csv_path}")
+    return csv_path
+
 
 
 # =============================================================================
@@ -1862,6 +2049,12 @@ def main():
         help="Custom path for CSV data log file (default: data_log.csv in simulation directory)",
     )
     parser.add_argument(
+        "--knob-log",
+        type=str,
+        default=None,
+        help="Custom path for CSV knob log file (default: knob_log.csv in simulation directory)",
+    )
+    parser.add_argument(
         "--sync-interval",
         type=int,
         default=50,
@@ -1937,6 +2130,7 @@ def main():
             dna_path=args.dna,
             apply_tuning=not args.no_tuning,
             data_log_path=args.data_log,
+            knob_log_path=args.knob_log,
             sync_interval=args.sync_interval,
             verbose=not args.quiet,
             total_games=args.total_games,
