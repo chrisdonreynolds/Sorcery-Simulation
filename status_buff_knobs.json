@@ -1,32 +1,35 @@
 {
   "buffs": {
     "Charged": 0.25,
-    "Lucky": 0.25,
-    "Shielded": 0.25,
-    "Quickened": 0.3,
-    "Invisible": 0.5,
-    "Blessed": 0.2
+    "Lucky": 0.3125,
+    "Shielded": 0.3125,
+    "Quickened": 0.375,
+    "Invisible": 0.625,
+    "Blessed": 0.15
   },
   "statuses": {
-    "Burning": 0.04,
+    "Burning": 0.05,
     "Poisoned": {
-      "magnitude": 0.02,
-      "escalation_rate": 0.01
+      "magnitude": 0.025,
+      "escalation_rate": 0.0125
     },
-    "Cursed": 0.15,
-    "Slowed": 0.2,
-    "Vulnerable": 0.2,
-    "Weakened": 0.2,
-    "Jinxed": 0.2,
-    "Bleeding": 0.035,
-    "Entangled": 0.25,
-    "Frosty": 0.15,
-    "Stunned": 0.25,
-    "Asleep": 0.25,
-    "Polymorphed": 0.25,
+    "Cursed": 0.1368,
+    "Slowed": 0.15,
+    "Vulnerable": 0.23,
+    "Weakened": 0.1698,
+    "Jinxed": 0.15,
+    "Bleeding": 0.0263,
+    "Entangled": 0.1875,
+    "Frosty": 0.1875,
+    "Stunned": 0.1875,
+    "Asleep": 0.1875,
+    "Polymorphed": 0.3125,
     "Infected": {
-      "magnitude": 0.03,
-      "escalation_rate": 0.015
-    }
+      "magnitude": 0.0375,
+      "escalation_rate": 0.0187
+    },
+    "Blinded": 0.2,
+    "Wet": 0.2,
+    "Shocked": 0.2
   }
 }
