@@ -21,7 +21,7 @@ Key Capabilities:
    - Win Rate Outlier Tuner: Votes +/-1 score for win rate outliers (<46.5% or >53.5%).
    - Pick Rate Tuner: Votes +1 for low pickrate (<800/10k) and -1 for high pickrate (>7,000/10k).
      Spells with pick rate < 150 per 10,000 matches are not adjusted.
-   - Cleanse (WWW) Counterbalance: Buffs other spells (+1 score) when WWW is overtuned.
+   - Cleanse & Rune (WWW) Tuner: Inversely adjusts b (nerfs increase potency penalty b, buffs decrease it).
    - Conditional Payoff Tuner: Adjusts (b, n) spread score (+/-1) for conditional spells.
    - Score Aggregation & Synthesis: Aggregates scores (max +/-3), applies single 2%, 3%, 5%
      buff/nerf, and clamps bounds to [0, 200] for b and [0, 20] for n.
@@ -103,7 +103,7 @@ ULTIMATE_B_FLOOR: float = 20.0
 # Bounds for special spells to preserve specific design intent
 SPECIAL_BOUNDS: Dict[str, Tuple[float, float, float, float]] = {
     # recipe: (min_b, max_b, min_n, max_n)
-    "WWW": (1.0, 1.0, 0.0, 0.0),       # Cleanse utility
+    "WWW": (0.0, 200.0, 0.0, 0.0),     # Cleanse & Extra Rune (b: potency penalty)
     "EEE": (2.0, 10.0, 1.5, 3.5),      # % max health damage
     "EEL": (0.2, 1.5, 0.0, 0.0),       # Health scaling factor
     "EED": (2.0, 10.0, 0.0, 0.0),      # 4-12 instances scaling with luck
@@ -754,7 +754,7 @@ class SpellBalancingEngine:
     2. Algorithm Win Rate: Votes +/-1 score for win rate outliers (<46.5% or >53.5%).
     3. Algorithm Pick Rate: Votes +1 for low pick rate (<800/10k) and -1 for high pick rate (>7,000/10k).
        Excludes spells with <150 casts per 10,000 matches from adjustments.
-    4. Algorithm Cleanse Counterbalance: When WWW is overtuned, nerfs WWW (-1) and buffs other spells (+1).
+    4. Algorithm Cleanse Tuner: When WWW is overtuned/undertuned, marks WWW for nerf/buff. Inversely adjusts b instead of adjusting all other spells.
     5. Algorithm Conditional Payoff: Adjusts spread for conditional spells (b +/-1, n -/+1).
     6. Score Aggregation & Synthesis: Aggregates scores clamped to [-3, +3], applies single 2%, 3%, 5%
        buff/nerf, and clamps bounds to [0, 200] for b and [0, 20] for n.
@@ -1000,13 +1000,14 @@ class SpellBalancingEngine:
 
     def algorithm_cleanse_counterbalance(self) -> Dict[str, Dict[str, Any]]:
         """
-        Algorithm 3: Cleanse (WWW) Counterbalance Tuner
-        If WWW (cleanse) is overtuned (> 53.5% win rate), nerf WWW (-1 score) and buff all other spells (+1 score to b).
-        If WWW is undertuned (< 46.5% win rate), buff WWW (+1 score).
+        Algorithm 3: Cleanse (WWW) Tuner
+        If WWW is overtuned (> 53.5% win rate), mark WWW for nerf (-1 score).
+        If WWW is undertuned (< 46.5% win rate), mark WWW for buff (+1 score).
+        Instead of adjusting all other spells, inversely adjusts WWW's b value (nerfs increase b, buffs decrease b).
         Spells with pick rate < 150 per 10k matches are excluded.
         Each separate algorithm can only modify a knob score by at most +/-1.
         """
-        print("\n--- [Algorithm 3: Cleanse Counterbalance Tuner] ---")
+        print("\n--- [Algorithm 3: Cleanse Tuner] ---")
         votes: Dict[str, Dict[str, Any]] = {}
         for r in self.original_spell_data.keys():
             votes[r] = {"b": 0, "n": 0, "reasons": []}
@@ -1023,22 +1024,14 @@ class SpellBalancingEngine:
             return votes
 
         if www_wr > (self.target_win_rate + self.win_rate_tolerance):
-            reason_www = f"WWW Cleanse Counterbalance: WWW overtuned (WR: {www_wr*100:.1f}%) -> nerf WWW (-1 score) and buff other spells (+1 score)"
-            print(f"  * [Cleanse Counterbalance] {reason_www}")
+            reason_www = f"WWW Cleanse: WWW overtuned (WR: {www_wr*100:.1f}%) -> -1 nerf score for WWW (inversely increases potency penalty b)"
+            print(f"  * [Cleanse Tuner] {reason_www}")
             votes["WWW"]["b"] = -1
-            votes["WWW"]["reasons"].append(f"WWW overtuned (WR: {www_wr*100:.1f}%) -> -1 nerf score for WWW")
-
-            for other_r in self.original_spell_data.keys():
-                if other_r != "WWW":
-                    casts = per_spell.get(other_r, {}).get("casts", 0)
-                    casts_per_10k = casts * (10000.0 / max(1, eval_games))
-                    if casts_per_10k >= 150:
-                        votes[other_r]["b"] = 1
-                        votes[other_r]["reasons"].append(f"WWW Cleanse Counterbalance: overtuned WWW -> +1 buff score for b")
+            votes["WWW"]["reasons"].append(reason_www)
 
         elif www_wr < (self.target_win_rate - self.win_rate_tolerance):
-            reason_www = f"WWW Cleanse Counterbalance: WWW undertuned (WR: {www_wr*100:.1f}%) -> +1 buff score for WWW"
-            print(f"  * [Cleanse Counterbalance] {reason_www}")
+            reason_www = f"WWW Cleanse: WWW undertuned (WR: {www_wr*100:.1f}%) -> +1 buff score for WWW (inversely decreases potency penalty b)"
+            print(f"  * [Cleanse Tuner] {reason_www}")
             votes["WWW"]["b"] = 1
             votes["WWW"]["reasons"].append(reason_www)
 
@@ -1255,7 +1248,12 @@ class SpellBalancingEngine:
             n_pct = SCORE_TO_PERCENT[n_score] if n_orig > 0 else 0.0
 
             # Apply single buff/nerf percentage
-            b_new = b_orig * (1.0 + b_pct)
+            if r == "WWW":
+                # WWW has a potency penalty (b). Inversely adjust b value:
+                # Nerfs increase b (larger penalty), Buffs decrease b (smaller penalty).
+                b_new = b_orig * (1.0 - b_pct)
+            else:
+                b_new = b_orig * (1.0 + b_pct)
 
             # Requirement 5: Sanity floor and ceiling value clamping (0 to 200 for b)
             b_new = max(0.0, min(200.0, b_new))

@@ -1211,7 +1211,9 @@ class SpellResolver:
 
         elif recipe == "WWW":
             caster.cleanse_all_debuffs()
-            log["effects_applied"].append("Cleansed all status effects")
+            caster.extra_pool_capacity_next_turn += 1
+            caster.alter_stat("potency", -(1.0 * b))
+            log["effects_applied"].append(f"Cleansed all status effects, +1 rune next turn, Caster Potency -{b:.1f}")
 
         elif recipe == "WWE":
             self._resolve_env_setup(env, caster, "weather", Weather.RAINING, b, [SpellClass.WATER, SpellClass.PLANTS], cur_turn, log, spell_class=spell_class)
