@@ -585,7 +585,7 @@ class NeuralBotPolicy:
         forced_exploration_rate: Optional[float] = None,
     ):
         self.bot_id = bot_dict.get("bot_id", "Unknown")
-        self.name = bot_dict.get("name", self.bot_id)
+        self.name = self.bot_id
         self.action_catalog = action_catalog
         self.dqn_agent = dqn_agent
         self.eval_mode = eval_mode
@@ -678,14 +678,17 @@ class NeuralBotPolicy:
 def create_wizard_for_bot(bot: Dict[str, Any]) -> Wizard:
     """Creates a Wizard entity for a bot with standard base stats."""
     w_stats = bot.get("wizard_stats", {})
-    return Wizard(
-        name=bot.get("name", bot.get("bot_id", "Wizard")),
+    bot_id = bot.get("bot_id", "Wizard")
+    wiz = Wizard(
+        name=bot_id,
         starting_hp=float(w_stats.get("starting_hp", 1000.0)),
         base_potency=float(w_stats.get("base_potency", 100.0)),
         base_defense=float(w_stats.get("base_defense", 100.0)),
         base_luck=float(w_stats.get("base_luck", 100.0)),
         base_speed=float(w_stats.get("base_speed", 100.0)),
     )
+    wiz.bot_id = bot_id
+    return wiz
 
 
 def count_active_combo_conditions(caster: Wizard, target: Wizard, env: Any) -> int:
@@ -1113,7 +1116,7 @@ def run_tournament_iteration(
         if verbose:
             print(
                 f"Match {match_num + 1:02d}/{matches_to_play}: "
-                f"{bot_a['name']} vs {bot_b['name']} "
+                f"{bot_a.get('bot_id', 'bot_a')} vs {bot_b.get('bot_id', 'bot_b')} "
                 f"-> Winner: {result['winner_id']} in {result['turns']} turns | "
                 f"Peak Setup: A={result['peak_conditions_a']}, B={result['peak_conditions_b']}"
             )

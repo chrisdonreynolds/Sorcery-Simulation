@@ -389,10 +389,13 @@ class SimulationTelemetryTracker:
             cond_active = is_spell_condition_active(recipe, caster, target, env)
             log = tracker.orig_resolve(resolver_self, recipe, caster, target, env)
 
+            caster_id = getattr(caster, "bot_id", caster.name)
+            target_id = getattr(target, "bot_id", target.name)
+
             rec = CastRecord(
                 recipe=recipe,
-                caster=caster.name,
-                target=target.name,
+                caster=caster_id,
+                target=target_id,
                 damage=log.get("damage_dealt", 0.0),
                 healing=log.get("healing_done", 0.0),
                 condition_active=cond_active,
@@ -411,11 +414,15 @@ class SimulationTelemetryTracker:
             tracker.run_duel_casts = []
             result = tracker.orig_play_duel(bot_a, bot_b, action_catalog, spell_data_path, max_turns, initial_board_state=initial_board_state, **kwargs)
 
+            p1_id = bot_a.get("bot_id", bot_a.get("name", "bot_a"))
+            p2_id = bot_b.get("bot_id", bot_b.get("name", "bot_b"))
+            winner_id = result.get("winner_id", "")
+
             # Record duel telemetry for the entire run
             run_duel = DuelTelemetry(
-                p1_name=bot_a["bot_id"],
-                p2_name=bot_b["bot_id"],
-                winner_name=result.get("winner_id", ""),
+                p1_name=p1_id,
+                p2_name=p2_id,
+                winner_name=winner_id,
                 turns=result.get("turns", 0),
                 casts=list(tracker.run_duel_casts),
             )
@@ -423,9 +430,9 @@ class SimulationTelemetryTracker:
 
             if tracker.current_game_index >= tracker.eval_start_game:
                 duel_data = DuelTelemetry(
-                    p1_name=bot_a["bot_id"],
-                    p2_name=bot_b["bot_id"],
-                    winner_name=result.get("winner_id", ""),
+                    p1_name=p1_id,
+                    p2_name=p2_id,
+                    winner_name=winner_id,
                     turns=result.get("turns", 0),
                     casts=list(tracker.current_duel_casts),
                 )
