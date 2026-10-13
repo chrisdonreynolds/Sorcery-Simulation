@@ -120,9 +120,6 @@ def migrate_dna_registry(data: Dict[str, Any]) -> int:
 
     meta = data.setdefault("meta", {})
     model_arch = meta.setdefault("model_architecture", {})
-    model_arch["type"] = "Deep Q-Network (DQN)"
-    model_arch["output_activation"] = "linear"
-    model_arch["output_action_space"] = "125 discrete 3-rune spell recipes (real-valued Q-values)"
     model_arch["input_dimension"] = 80
     model_arch["total_parameters_per_bot"] = 9581
     model_arch["input_feature_description"] = (
@@ -411,6 +408,7 @@ class DQNAgent:
         buffer_capacity: int = 50000,
         batch_size: int = 64,
         weights_dict: Optional[Dict[str, Any]] = None,
+        eval_epsilon: float = 0.08,
     ):
         self.action_catalog = action_catalog
         self.action_to_idx = {r: i for i, r in enumerate(action_catalog)}
@@ -420,6 +418,7 @@ class DQNAgent:
         self.epsilon_decay = epsilon_decay
         self.tau = tau
         self.batch_size = batch_size
+        self.eval_epsilon = eval_epsilon
 
         self.online_net = QNetwork(weights_dict=weights_dict)
         self.target_net = QNetwork()
@@ -450,16 +449,31 @@ class DQNAgent:
             mask[:] = 1.0
         return mask
 
-    def select_action(self, obs: Dict[str, Any], eval_mode: bool = False) -> str:
+    def select_action(
+        self,
+        obs: Dict[str, Any],
+        eval_mode: bool = False,
+        forced_exploration_rate: Optional[float] = None,
+    ) -> str:
         """
         Action-Masked Epsilon-Greedy action selection.
         Sets uncraftable spell logits to -1e9.
+        If forced_exploration_rate is provided, uses that exploration probability.
+        In eval_mode, defaults to forced_exploration_rate or self.eval_epsilon (0.08).
         """
         mask = self.get_action_mask(obs)
         valid_indices = np.where(mask > 0.5)[0]
 
+        # Determine effective exploration probability
+        if forced_exploration_rate is not None:
+            explore_prob = forced_exploration_rate
+        elif eval_mode:
+            explore_prob = getattr(self, "eval_epsilon", 0.08)
+        else:
+            explore_prob = self.epsilon
+
         # Epsilon-random exploration over VALID spells
-        if not eval_mode and random.random() < self.epsilon:
+        if explore_prob > 0.0 and random.random() < explore_prob and len(valid_indices) > 0:
             chosen_idx = int(np.random.choice(valid_indices))
             return self.action_catalog[chosen_idx]
 
@@ -568,29 +582,38 @@ class NeuralBotPolicy:
         action_catalog: List[str],
         dqn_agent: Optional[DQNAgent] = None,
         eval_mode: bool = False,
+        forced_exploration_rate: Optional[float] = None,
     ):
         self.bot_id = bot_dict.get("bot_id", "Unknown")
         self.name = bot_dict.get("name", self.bot_id)
         self.action_catalog = action_catalog
         self.dqn_agent = dqn_agent
         self.eval_mode = eval_mode
+        self.forced_exploration_rate = forced_exploration_rate
         self.memory: List[Dict[str, Any]] = []
 
         if dqn_agent is None:
             # Standalone QNetwork initialized from bot DNA
             dna = bot_dict.get("dna", {})
             self.network = QNetwork(weights_dict=dna)
-            self.decision_mode = "greedy"
+            hyperparams = bot_dict.get("genetic_hyperparameters", {})
+            self.temperature = float(hyperparams.get("temperature", 1.0))
+            self.decision_mode = hyperparams.get("decision_mode", "softmax_sample")
         else:
             self.network = dqn_agent.online_net
+            self.temperature = 1.0
             self.decision_mode = "dqn"
 
     def __call__(self, obs: Dict[str, Any]) -> str:
         """Takes game state dict and outputs a valid, craftable 3-rune recipe."""
         if self.dqn_agent is not None:
-            return self.dqn_agent.select_action(obs, eval_mode=self.eval_mode)
+            return self.dqn_agent.select_action(
+                obs,
+                eval_mode=self.eval_mode,
+                forced_exploration_rate=self.forced_exploration_rate,
+            )
 
-        # Standalone greedy evaluation using bot network
+        # Standalone evaluation using bot network
         feature_vec = obs.get("feature_vector")
         if feature_vec is None:
             raise ValueError(f"Observation missing 'feature_vector' for bot {self.bot_id}")
@@ -603,6 +626,15 @@ class NeuralBotPolicy:
         if not castable_spells and rune_pool:
             castable_spells = get_castable_spells_from_pool(rune_pool, self.action_catalog)
 
+        # Forced exploration rate check for evaluation mode / balancing
+        explore_prob = (
+            self.forced_exploration_rate
+            if self.forced_exploration_rate is not None
+            else (0.08 if self.eval_mode else 0.0)
+        )
+        if explore_prob > 0.0 and random.random() < explore_prob and castable_spells:
+            return random.choice(castable_spells)
+
         class_multipliers = me_info.get("class_multipliers", {})
         combo_impacts = obs.get("combo_setup_impact", {})
 
@@ -610,14 +642,14 @@ class NeuralBotPolicy:
             if recipe in combo_impacts:
                 total_adv = combo_impacts[recipe].get("total_advance", 0.0)
                 if total_adv > 0:
-                    q_values[idx] += total_adv * 0.5
+                    q_values[idx] += total_adv * 2.0
 
             prefix = recipe[:2].upper()
             if prefix in PREFIX_TO_CLASS:
                 cls_val = PREFIX_TO_CLASS[prefix].value
                 c_mult = class_multipliers.get(cls_val, 1.0)
                 if c_mult > 1.0:
-                    q_values[idx] += (c_mult - 1.0) * 0.5
+                    q_values[idx] += (c_mult - 1.0) * 2.0
 
         if castable_spells:
             castable_set = set(castable_spells)
@@ -629,7 +661,17 @@ class NeuralBotPolicy:
         if not np.any(valid_mask):
             return random.choice(self.action_catalog)
 
-        action_idx = int(np.argmax(q_values))
+        # Softmax sampling or argmax
+        if self.decision_mode == "softmax_sample":
+            scaled = q_values / max(1e-5, self.temperature)
+            shifted = np.where(valid_mask, scaled - np.max(scaled[valid_mask]), -np.inf)
+            exp_q = np.where(valid_mask, np.exp(shifted), 0.0)
+            sum_exp = np.sum(exp_q)
+            probs = exp_q / sum_exp if sum_exp > 0 else np.ones(len(q_values)) / len(q_values)
+            action_idx = int(np.random.choice(len(probs), p=probs))
+        else:
+            action_idx = int(np.argmax(q_values))
+
         return self.action_catalog[action_idx]
 
 
@@ -672,6 +714,7 @@ def play_duel(
     dqn_agent: Optional[DQNAgent] = None,
     record_experience: bool = True,
     eval_mode: bool = False,
+    forced_exploration_rate: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Conducts a single 1v1 duel between bot_a and bot_b.
@@ -681,8 +724,20 @@ def play_duel(
     wiz_a = create_wizard_for_bot(bot_a)
     wiz_b = create_wizard_for_bot(bot_b)
 
-    policy_a = NeuralBotPolicy(bot_a, action_catalog, dqn_agent=dqn_agent, eval_mode=eval_mode)
-    policy_b = NeuralBotPolicy(bot_b, action_catalog, dqn_agent=dqn_agent, eval_mode=eval_mode)
+    policy_a = NeuralBotPolicy(
+        bot_a,
+        action_catalog,
+        dqn_agent=dqn_agent,
+        eval_mode=eval_mode,
+        forced_exploration_rate=forced_exploration_rate,
+    )
+    policy_b = NeuralBotPolicy(
+        bot_b,
+        action_catalog,
+        dqn_agent=None,
+        eval_mode=eval_mode,
+        forced_exploration_rate=forced_exploration_rate,
+    )
 
     game = ProjectSorceryGame(
         player1=wiz_a,
@@ -801,7 +856,7 @@ def play_duel(
     terminal_bonus_a = 1.0 if winner_bot is bot_a else (-1.0 if winner_bot is bot_b else 0.0)
     terminal_bonus_b = 1.0 if winner_bot is bot_b else (-1.0 if winner_bot is bot_a else 0.0)
 
-    if record_experience and dqn_agent is not None:
+    if record_experience and dqn_agent is not None and not eval_mode:
         for i, (s, a, r, s_n, m_n, d) in enumerate(transitions_a):
             r_tot = r + (terminal_bonus_a if i == len(transitions_a) - 1 else 0.0)
             dqn_agent.replay_buffer.push(s, a, r_tot, s_n, m_n, d)
@@ -858,9 +913,6 @@ def play_duel(
     fitness_a = round(w_outcome * s_outcome_a + w_combo * s_combo_a + w_damage * s_damage_a + w_entropy * s_entropy_a, 4)
     fitness_b = round(w_outcome * s_outcome_b + w_combo * s_combo_b + w_damage * s_damage_b + w_entropy * s_entropy_b, 4)
 
-    total_reward_a = sum(t[2] for t in transitions_a) + terminal_bonus_a
-    total_reward_b = sum(t[2] for t in transitions_b) + terminal_bonus_b
-
     # Update Performance Trackers
     def update_bot_stats(
         bot: Dict[str, Any],
@@ -870,7 +922,6 @@ def play_duel(
         classes_used: Dict[str, int],
         match_fitness: float,
         peak_conditions: int,
-        match_reward: float = 0.0,
     ):
         tracker = bot.setdefault("performance_tracker", {})
         tracker["matches_played"] = tracker.get("matches_played", 0) + 1
@@ -897,11 +948,9 @@ def play_duel(
         tracker["last_match_fitness"] = match_fitness
         tracker["fitness"] = round(tracker.get("fitness", 0.0) + match_fitness, 4)
         tracker["peak_combo_conditions"] = max(tracker.get("peak_combo_conditions", 0), peak_conditions)
-        tracker["last_match_reward"] = round(match_reward, 4)
-        tracker["cumulative_reward"] = round(tracker.get("cumulative_reward", 0.0) + match_reward, 4)
 
-    update_bot_stats(bot_a, winner_bot is bot_a, wiz_a, spells_cast_a, classes_used_a, fitness_a, peak_conditions_a, total_reward_a)
-    update_bot_stats(bot_b, winner_bot is bot_b, wiz_b, spells_cast_b, classes_used_b, fitness_b, peak_conditions_b, total_reward_b)
+    update_bot_stats(bot_a, winner_bot is bot_a, wiz_a, spells_cast_a, classes_used_a, fitness_a, peak_conditions_a)
+    update_bot_stats(bot_b, winner_bot is bot_b, wiz_b, spells_cast_b, classes_used_b, fitness_b, peak_conditions_b)
 
     return {
         "bot_a_id": bot_a["bot_id"],
@@ -925,6 +974,32 @@ def play_duel(
 # 4. SEQUENTIAL PHASE CURRICULUM TRAINING & TOURNAMENT LOOP
 # =============================================================================
 
+_GLOBAL_DQN_AGENT: Optional[DQNAgent] = None
+
+def get_global_dqn_agent(
+    action_catalog: List[str],
+    weights_dict: Optional[Dict[str, Any]] = None,
+    reset: bool = False,
+    **kwargs,
+) -> DQNAgent:
+    """
+    Maintains a persistent global DQN Agent across tournament iterations,
+    preventing replay buffer and optimizer wipes every 50 matches.
+    """
+    global _GLOBAL_DQN_AGENT
+    if _GLOBAL_DQN_AGENT is None or reset:
+        _GLOBAL_DQN_AGENT = DQNAgent(
+            action_catalog=action_catalog,
+            weights_dict=weights_dict,
+            **kwargs,
+        )
+    return _GLOBAL_DQN_AGENT
+
+def reset_global_dqn_agent() -> None:
+    """Resets the persistent global DQN Agent."""
+    global _GLOBAL_DQN_AGENT
+    _GLOBAL_DQN_AGENT = None
+
 def run_tournament_iteration(
     dna_path: Optional[Union[str, Path]] = None,
     spell_data_path: Optional[Union[str, Path]] = None,
@@ -933,6 +1008,8 @@ def run_tournament_iteration(
     dqn_agent: Optional[DQNAgent] = None,
     matches_to_play: int = 50,
     eval_mode: bool = False,
+    forced_exploration_rate: Optional[float] = None,
+    reset_agent: bool = False,
 ) -> Dict[str, Any]:
     """
     Executes one tournament training iteration using DQN:
@@ -977,25 +1054,13 @@ def run_tournament_iteration(
             "base_speed": 100.0,
         })
 
-    # Initialize DQN Agent if not provided (restoring saved hyperparameters)
+    # Initialize Persistent DQN Agent if not provided (persists across 50-match iterations)
     if dqn_agent is None:
-        best_bot = max(
-            bots,
-            key=lambda b: (
-                b.get("performance_tracker", {}).get("win_rate", 0.5),
-                b.get("performance_tracker", {}).get("cumulative_reward", 0.0),
-            ),
-        )
-        dqn_params = data.get("meta", {}).get("dqn_hyperparameters", {})
-        dqn_agent = DQNAgent(
+        best_bot = max(bots, key=lambda b: b.get("performance_tracker", {}).get("win_rate", 0.5))
+        dqn_agent = get_global_dqn_agent(
             action_catalog=action_catalog,
-            lr=float(dqn_params.get("learning_rate", 0.001)),
-            gamma=float(dqn_params.get("gamma", 0.98)),
-            epsilon=float(dqn_params.get("epsilon", 0.8)),
-            epsilon_min=float(dqn_params.get("epsilon_min", 0.05)),
-            epsilon_decay=float(dqn_params.get("epsilon_decay", 0.998)),
-            batch_size=int(dqn_params.get("batch_size", 64)),
             weights_dict=best_bot.get("dna"),
+            reset=reset_agent,
         )
 
     match_results = []
@@ -1036,11 +1101,12 @@ def run_tournament_iteration(
             dqn_agent=dqn_agent,
             record_experience=not eval_mode,
             eval_mode=eval_mode,
+            forced_exploration_rate=forced_exploration_rate,
         )
         match_results.append(result)
 
-        # Train DQN on mini-batches after each match
-        if len(dqn_agent.replay_buffer) >= dqn_agent.batch_size:
+        # Train DQN on mini-batches after each match (only during training mode)
+        if not eval_mode and len(dqn_agent.replay_buffer) >= dqn_agent.batch_size:
             for _ in range(2):
                 dqn_agent.train_step()
 
@@ -1061,33 +1127,42 @@ def run_tournament_iteration(
               f"Replay Size: {len(dqn_agent.replay_buffer)} | "
               f"DQN Loss: {avg_loss:.4f} | Epsilon: {dqn_agent.epsilon:.3f}")
 
-    # Synchronize trained DQN weights across entire population
-    updated_dna = dqn_agent.online_net.to_dict()
-    for bot in bots:
-        bot["dna"] = copy.deepcopy(updated_dna)
-
-    # Update metadata
     meta = data.setdefault("meta", {})
-    meta["workflow"] = "Deep Q-Network (DQN) Reinforcement Learning & Dynamic Spell Balancing Loop"
-    meta["last_trained_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    meta["total_training_iterations"] = meta.get("total_training_iterations", 0) + 1
-    meta["total_matches_simulated"] = meta.get("total_matches_simulated", 0) + matches_to_play
-    meta["dqn_hyperparameters"] = {
-        "learning_rate": dqn_agent.optimizer.lr,
-        "gamma": dqn_agent.gamma,
-        "epsilon": round(float(dqn_agent.epsilon), 4),
-        "epsilon_min": dqn_agent.epsilon_min,
-        "epsilon_decay": dqn_agent.epsilon_decay,
-        "batch_size": dqn_agent.batch_size,
-        "replay_buffer_size": len(dqn_agent.replay_buffer),
-        "avg_loss": round(avg_loss, 4),
-    }
+    # Synchronize trained DQN weights to bottom 40% bots in population (training mode only)
+    if not eval_mode:
+        updated_dna = dqn_agent.online_net.to_dict()
+        cutoff = int(len(bots) * 0.60)
+        ranked_bots = sorted(
+            bots,
+            key=lambda b: b.get("performance_tracker", {}).get("last_match_fitness", 0.0),
+            reverse=True,
+        )
+        for bot in ranked_bots[cutoff:]:
+            bot["dna"] = copy.deepcopy(updated_dna)
+            bot["generation"] = bot.get("generation", 0) + 1
 
-    # Save updated registry atomically
-    temp_dna_path = actual_dna_path.with_suffix(".tmp.json")
-    with open(temp_dna_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, separators=(",", ":"))
-    temp_dna_path.replace(actual_dna_path)
+        # Update metadata
+        meta = data.setdefault("meta", {})
+        meta["workflow"] = "Deep Q-Network (DQN) Reinforcement Learning & Dynamic Spell Balancing Loop"
+        meta["last_trained_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        meta["total_training_iterations"] = meta.get("total_training_iterations", 0) + 1
+        meta["total_matches_simulated"] = meta.get("total_matches_simulated", 0) + matches_to_play
+        meta["dqn_hyperparameters"] = {
+            "learning_rate": dqn_agent.optimizer.lr,
+            "gamma": dqn_agent.gamma,
+            "epsilon": round(float(dqn_agent.epsilon), 4),
+            "epsilon_min": dqn_agent.epsilon_min,
+            "epsilon_decay": dqn_agent.epsilon_decay,
+            "batch_size": dqn_agent.batch_size,
+            "replay_buffer_size": len(dqn_agent.replay_buffer),
+            "avg_loss": round(avg_loss, 4),
+        }
+
+        # Save updated registry atomically
+        temp_dna_path = actual_dna_path.with_suffix(".tmp.json")
+        with open(temp_dna_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, separators=(",", ":"))
+        temp_dna_path.replace(actual_dna_path)
 
     if verbose:
         print(f"Saved updated DQN models and registry to: {actual_dna_path}\n")
@@ -1141,25 +1216,16 @@ def run_sequential_curriculum_training(
         registry = get_registry(str(actual_spell_path))
         action_catalog = registry.all_recipes()
 
-    # Instantiate single persistent DQN Agent to preserve replay buffer and weight updates across phases
-    best_bot = max(
-        data["bots"],
-        key=lambda b: (
-            b.get("performance_tracker", {}).get("win_rate", 0.5),
-            b.get("performance_tracker", {}).get("cumulative_reward", 0.0),
-        ),
-    )
-    dqn_params = data.get("meta", {}).get("dqn_hyperparameters", {})
-    dqn_agent = DQNAgent(
-        action_catalog=action_catalog,
-        lr=float(dqn_params.get("learning_rate", 0.001)),
-        gamma=float(dqn_params.get("gamma", 0.98)),
-        epsilon=float(dqn_params.get("epsilon", 0.8)),
-        epsilon_min=float(dqn_params.get("epsilon_min", 0.05)),
-        epsilon_decay=float(dqn_params.get("epsilon_decay", 0.996)),
-        batch_size=int(dqn_params.get("batch_size", 64)),
-        weights_dict=best_bot.get("dna"),
-    )
+    # Instantiate or reuse persistent DQN Agent to preserve replay buffer and weight updates across phases
+    best_bot = max(data["bots"], key=lambda b: b.get("performance_tracker", {}).get("win_rate", 0.5))
+    if dqn_agent is None:
+        dqn_agent = get_global_dqn_agent(
+            action_catalog=action_catalog,
+            weights_dict=best_bot.get("dna"),
+            epsilon=0.8,
+            epsilon_min=0.05,
+            epsilon_decay=0.996,
+        )
 
     phases = [
         {"name": "Phase 1: Stage 1 Finisher Payoffs", "stage_idx": 1},
@@ -1232,9 +1298,10 @@ def main(
     board_states: Optional[List[Dict[str, Any]]] = None,
     sequential_curriculum: bool = False,
     matches_per_stage: int = 50,
-    eval_mode: bool = False,
     dqn_agent: Optional[DQNAgent] = None,
-    matches_to_play: int = 50,
+    eval_mode: bool = False,
+    forced_exploration_rate: Optional[float] = None,
+    reset_agent: bool = False,
 ) -> Dict[str, Any]:
     """Main entry point for simulation suite."""
     if sequential_curriculum:
@@ -1243,6 +1310,7 @@ def main(
             spell_data_path=spell_data_path,
             matches_per_stage=matches_per_stage,
             verbose=verbose,
+            dqn_agent=dqn_agent,
         )
     else:
         return run_tournament_iteration(
@@ -1251,8 +1319,10 @@ def main(
             verbose=verbose,
             board_states=board_states,
             dqn_agent=dqn_agent,
-            matches_to_play=matches_to_play,
+            matches_to_play=matches_per_stage,
             eval_mode=eval_mode,
+            forced_exploration_rate=forced_exploration_rate,
+            reset_agent=reset_agent,
         )
 
 
@@ -1265,6 +1335,9 @@ if __name__ == "__main__":
     parser.add_argument("--stage", type=int, default=None, choices=[1, 2, 3, 4], help="Stage of curriculum to sample from (1..4)")
     parser.add_argument("--sequential-curriculum", action="store_true", help="Run full sequential phase curriculum (Stages 1->2->3->4->Full)")
     parser.add_argument("--matches-per-stage", type=int, default=50, help="Matches per curriculum stage (default: 50)")
+    parser.add_argument("--eval-mode", action="store_true", help="Run in evaluation mode without training updates")
+    parser.add_argument("--forced-exploration-rate", type=float, default=None, help="Forced exploration rate during action selection (e.g. 0.08 for ~200 casts per spell)")
+    parser.add_argument("--reset-agent", action="store_true", help="Reset persistent DQN agent instead of reusing across iterations")
     parser.add_argument("--quiet", action="store_true", help="Suppress verbose match logging")
 
     args = parser.parse_args()

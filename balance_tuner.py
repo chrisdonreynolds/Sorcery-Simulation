@@ -273,8 +273,6 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
         return "Vulnerable" in t_deb
     elif recipe == "LFL":
         return w == Weather.DARKNESS
-    elif recipe == "LFE":
-        return w == Weather.STORMING
     elif recipe == "LFD":
         return "Charged" in c_buf
     elif recipe == "FDF":
@@ -413,15 +411,11 @@ class SimulationTelemetryTracker:
             tracker.run_duel_casts = []
             result = tracker.orig_play_duel(bot_a, bot_b, action_catalog, spell_data_path, max_turns, initial_board_state=initial_board_state, **kwargs)
 
-            winner_name = result.get("winner_bot", {}).get("name", result.get("winner_id", ""))
-            p1_name = bot_a.get("name", bot_a["bot_id"])
-            p2_name = bot_b.get("name", bot_b["bot_id"])
-
             # Record duel telemetry for the entire run
             run_duel = DuelTelemetry(
-                p1_name=p1_name,
-                p2_name=p2_name,
-                winner_name=winner_name,
+                p1_name=bot_a["bot_id"],
+                p2_name=bot_b["bot_id"],
+                winner_name=result.get("winner_id", ""),
                 turns=result.get("turns", 0),
                 casts=list(tracker.run_duel_casts),
             )
@@ -429,9 +423,9 @@ class SimulationTelemetryTracker:
 
             if tracker.current_game_index >= tracker.eval_start_game:
                 duel_data = DuelTelemetry(
-                    p1_name=p1_name,
-                    p2_name=p2_name,
-                    winner_name=winner_name,
+                    p1_name=bot_a["bot_id"],
+                    p2_name=bot_b["bot_id"],
+                    winner_name=result.get("winner_id", ""),
                     turns=result.get("turns", 0),
                     casts=list(tracker.current_duel_casts),
                 )
@@ -545,7 +539,7 @@ class SimulationTelemetryTracker:
 
             raw_wr = round(wins / max(1, total_resolved), 4) if total_resolved > 0 else 0.0
             k = 12.0
-            bayesian_wr = round((wins + k * 0.5) / (total_resolved + k), 4) if total_resolved > 0 else 0.50
+            bayesian_wr = round((wins + k * 0.5) / (total_resolved + k), 4) if total_resolved > 0 else 0.40
 
             sp["raw_win_rate"] = raw_wr
             sp["bayesian_win_rate"] = bayesian_wr
@@ -1263,29 +1257,19 @@ class SpellBalancingEngine:
             # Apply single buff/nerf percentage
             b_new = b_orig * (1.0 + b_pct)
 
-            # Requirement 5: Sanity floor and ceiling value clamping
-            if r in SPECIAL_BOUNDS:
-                min_b, max_b, min_n, max_n = SPECIAL_BOUNDS[r]
-                b_new = max(min_b, min(max_b, b_new))
-                b_new = round(b_new, 1)
-                if n_orig > 0:
-                    n_new = n_orig * (1.0 + n_pct)
-                    n_new = max(min_n, min(max_n, n_new))
-                    n_new = round(n_new, 1)
-                else:
-                    n_new = 0.0
-            else:
-                b_new = max(0.0, min(200.0, b_new))
-                if category == "Ultimate":
-                    b_new = max(ULTIMATE_B_FLOOR, b_new)
-                b_new = round(b_new, 1)
+            # Requirement 5: Sanity floor and ceiling value clamping (0 to 200 for b)
+            b_new = max(0.0, min(200.0, b_new))
+            if category == "Ultimate":
+                b_new = max(ULTIMATE_B_FLOOR, b_new)
+            b_new = round(b_new, 1)
 
-                if n_orig > 0:
-                    n_new = n_orig * (1.0 + n_pct)
-                    n_new = max(0.0, min(20.0, n_new))
-                    n_new = round(n_new, 1)
-                else:
-                    n_new = 0.0
+            if n_orig > 0:
+                n_new = n_orig * (1.0 + n_pct)
+                # Requirement 5: Sanity floor and ceiling value clamping (0 to 20 for n)
+                n_new = max(0.0, min(20.0, n_new))
+                n_new = round(n_new, 1)
+            else:
+                n_new = 0.0
 
             # Atomic max_potential calculation: (1 + n) * b if n > 0 else b
             if n_new > 0:
@@ -1345,6 +1329,8 @@ def run_balance_simulation_suite(
     eval_games: Optional[int] = None,
     mode: str = "games",
     iterations: Optional[int] = None,
+    eval_exploration_rate: float = 0.08,
+    persistent_dqn_agent: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
     Restructured 5-Phase Iteration Workflow:
@@ -1443,6 +1429,20 @@ def run_balance_simulation_suite(
     orig_get_registry = project_sorcery.get_registry
     project_sorcery.get_registry = lambda path=None: cached_registry
 
+    # Initialize Persistent DQNAgent to preserve replay buffer and optimizer across all stages and iterations
+    action_catalog = cached_registry.all_recipes()
+    if persistent_dqn_agent is None:
+        with open(resolved_dna_path, "r", encoding="utf-8") as f:
+            raw_dna = json.load(f)
+        bots = raw_dna.get("bots", [])
+        best_bot = max(bots, key=lambda b: b.get("performance_tracker", {}).get("win_rate", 0.5)) if bots else {}
+        persistent_dqn_agent = simulation.get_global_dqn_agent(
+            action_catalog=action_catalog,
+            weights_dict=best_bot.get("dna"),
+            reset=False,
+            eval_epsilon=eval_exploration_rate,
+        )
+
     # Fast In-Memory DNA Cache during Batch Loop with safe disk sync
     cached_dna_data = None
     orig_json_dump = json.dump
@@ -1507,20 +1507,24 @@ def run_balance_simulation_suite(
                 continue
             st_iters = math.ceil(st_count / 50)
             if verbose:
-                print(f"\n[Curriculum {st_name} Training] Simulating {st_count:,} matches across {st_iters} iterations...")
+                print(f"\n[Curriculum {st_name} Training] Simulating {st_count:,} matches across {st_iters} iterations (DQN Persistent Replay Buffer & Optimizer)...")
             for it in range(1, st_iters + 1):
                 simulation.main(
                     dna_path=str(resolved_dna_path),
                     spell_data_path=str(resolved_spell_path),
                     verbose=False,
                     board_states=st_boards,
+                    dqn_agent=persistent_dqn_agent,
+                    eval_mode=False,
                 )
                 if verbose and (it % 10 == 0 or it == st_iters):
-                    print(f"  * {st_name}: Iteration {it:3d}/{st_iters} complete ({it*50:,}/{st_count:,} matches)")
+                    replay_sz = len(persistent_dqn_agent.replay_buffer) if persistent_dqn_agent else 0
+                    eps_val = persistent_dqn_agent.epsilon if persistent_dqn_agent else 0.0
+                    print(f"  * {st_name}: Iteration {it:3d}/{st_iters} complete ({it*50:,}/{st_count:,} matches | Replay Buffer: {replay_sz:,} | eps={eps_val:.3f})")
 
         # Phase 5: Evaluation & Balancing (Standard unseeded matches from Turn 1)
         if verbose:
-            print(f"\n[Evaluation Phase] Simulating {eval_matches:,} unseeded duels across {eval_iters} iterations...")
+            print(f"\n[Evaluation Phase] Simulating {eval_matches:,} unseeded duels across {eval_iters} iterations (Forced Exploration Rate={eval_exploration_rate:.3f} for ~200 casts per spell)...")
         tracker.install_hooks()
         for it in range(1, eval_iters + 1):
             simulation.main(
@@ -1528,7 +1532,9 @@ def run_balance_simulation_suite(
                 spell_data_path=str(resolved_spell_path),
                 verbose=False,
                 board_states=None,
+                dqn_agent=persistent_dqn_agent,
                 eval_mode=True,
+                forced_exploration_rate=eval_exploration_rate,
             )
             if verbose and (it % 20 == 0 or it == eval_iters):
                 print(f"  * Eval: Iteration {it:3d}/{eval_iters} complete ({it*50:,}/{eval_matches:,} matches recorded)")
@@ -1938,6 +1944,12 @@ def main():
         help="Unseeded evaluation matches (default: 5000)",
     )
     parser.add_argument(
+        "--eval-exploration-rate",
+        type=float,
+        default=0.08,
+        help="Forced exploration rate during evaluation games to ensure spell coverage (~200 casts per spell, default: 0.08)",
+    )
+    parser.add_argument(
         "--curriculum",
         type=str,
         default=None,
@@ -2091,6 +2103,7 @@ def main():
             eval_games=args.eval_games,
             mode=args.mode,
             iterations=args.iterations,
+                    eval_exploration_rate=args.eval_exploration_rate,
         )
 
 
