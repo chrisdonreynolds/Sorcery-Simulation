@@ -397,6 +397,8 @@ class Wizard:
 
     # Match-long class damage multipliers (secondary effect of weather/location spells)
     class_multipliers: Dict[str, float] = field(default_factory=dict)
+    # Tracks the last spell cast by this wizard in the current match (for WLL)
+    last_spell_cast: Optional[str] = None
 
     def __post_init__(self):
         self.initial_potency = float(self.base_potency)
@@ -407,6 +409,7 @@ class Wizard:
         self.max_health = float(self.starting_hp)
         self.current_health = float(self.starting_hp)
         self.extra_pool_capacity_next_turn = 0
+        self.last_spell_cast = None
         if not self.class_multipliers:
             self.class_multipliers = {cls.value: 1.0 for cls in SpellClass}
 
@@ -432,6 +435,7 @@ class Wizard:
         self.damage_taken = 0.0
         self.healing_done = 0.0
         self.turns_survived = 0
+        self.last_spell_cast = None
         self.class_multipliers = {cls.value: 1.0 for cls in SpellClass}
 
     def get_class_multiplier(self, spell_class: Union[SpellClass, str]) -> float:
@@ -983,7 +987,6 @@ def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, ca
 
         # Buff setups
         if sp in ["FEE", "LFW", "DFE"]: proj_caster_buffs.add("Charged")
-        if sp == "DLL" and proj_weather == Weather.DARKNESS: proj_caster_buffs.add("Charged")
         if sp in ["LLF"]: proj_caster_buffs.add("Blessed")
         if sp in ["EEW", "EFW", "WDW"]: proj_caster_buffs.add("Shielded")
         if sp in ["WFL", "FEL", "DFE", "EFF"]: proj_caster_buffs.add("Lucky")
@@ -998,7 +1001,7 @@ def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, ca
         if sp in ["FWW", "WLW"]: proj_target_debuffs.add("Cursed")
         if sp in ["WEL"]: proj_target_debuffs.add("Entangled")
         if sp in ["FDL", "DFW", "EWD", "WFE"]: proj_target_debuffs.add("Bleeding")
-        if sp in ["LLW", "LFL", "LDF"]: proj_target_debuffs.add("Jinxed")
+        if sp in ["LLW", "LDF"]: proj_target_debuffs.add("Jinxed")
         if sp in ["DDL", "DEE"]: proj_target_debuffs.add("Weakened")
         if sp in ["DWW", "ELW", "LEL", "DFW"]: proj_target_debuffs.add("Slowed")
         if sp == "DLL" and proj_weather == Weather.DARKNESS: proj_target_debuffs.add("Slowed")
@@ -1109,6 +1112,16 @@ class SpellResolver:
                 )
 
     def resolve(
+        self,
+        recipe: str,
+        caster: Wizard,
+        target: Wizard,
+        env: Environment,
+        current_turn: Optional[int] = None
+    ) -> Dict[str, Any]:
+        return self._resolve_impl(recipe, caster, target, env, current_turn=current_turn)
+
+    def _resolve_impl(
         self,
         recipe: str,
         caster: Wizard,
@@ -1544,9 +1557,14 @@ class SpellResolver:
 
         elif recipe == "LFL":
             deal_damage(1.0 * b)
-            if env.weather == Weather.DARKNESS:
-                target.apply_debuff("Jinxed")
-                log["effects_applied"].append("Target Jinxed (Darkness effect)")
+            if "Weakened" in caster.debuffs:
+                caster.remove_debuff("Weakened")
+                caster.apply_debuff("Vulnerable")
+                pot_boost = (n if n > 0 else 1.5) * b
+                caster.alter_stat("potency", pot_boost)
+                log["effects_applied"].append(
+                    f"Removed Weakened -> Replaced with Vulnerable on caster, Caster Potency +{pot_boost:.1f}"
+                )
 
         elif recipe == "LFD":
             if "Charged" in caster.buffs:
@@ -1601,10 +1619,10 @@ class SpellResolver:
             deal_damage(1.0 * b + bonus)
 
         elif recipe == "DFW":
-            deal_damage(1.0 * b)
+            deal_self_damage(1.0 * b)
             target.apply_debuff("Bleeding")
             target.apply_debuff("Slowed")
-            log["effects_applied"].append("Target Bleeding and Slowed")
+            log["effects_applied"].append("Caster took self-damage; Target Bleeding and Slowed")
 
         elif recipe == "DFE":
             deal_self_damage(1.0 * b)
@@ -1702,7 +1720,22 @@ class SpellResolver:
             self._resolve_env_setup(env, caster, "location", Location.ENCHANTED_FOREST, b, [SpellClass.FEY], cur_turn, log, spell_class=spell_class)
 
         elif recipe == "WLL":
-            deal_damage(1.0 * b)
+            all_non_wll = [r for r in self.registry.all_recipes() if r != "WLL"]
+            if target.last_spell_cast and target.last_spell_cast != "WLL" and target.last_spell_cast in all_non_wll:
+                copied_recipe = target.last_spell_cast
+                copy_mode = "target's last spell"
+            else:
+                copied_recipe = random.choice(all_non_wll)
+                copy_mode = "random spell (first spell of match)"
+            sub_log = self._resolve_impl(copied_recipe, caster, target, env, current_turn=cur_turn)
+            log["damage_dealt"] = sub_log["damage_dealt"]
+            log["healing_done"] = sub_log["healing_done"]
+            log["effects_applied"].append(f"WLL cast {copy_mode}: {copied_recipe}")
+            log["effects_applied"].extend(sub_log["effects_applied"])
+            log["ultimate_triggered"] = sub_log["ultimate_triggered"]
+            log["notes"] += f"WLL ({copy_mode} -> {copied_recipe}). " + sub_log["notes"]
+            log["copied_recipe"] = copied_recipe
+            caster.last_spell_cast = copied_recipe
 
         elif recipe == "WLD":
             # Ultimate: Target Asleep, Weather Darkness, Location Enchanted Forest (Sequential payoffs)
@@ -1726,9 +1759,10 @@ class SpellResolver:
                 log["effects_applied"].append("Target Vulnerable (Enchanted Forest effect)")
 
         elif recipe == "LWW":
-            caster.apply_debuff("Asleep")
-            target.apply_debuff("Asleep")
-            log["effects_applied"].append("Caster and Target Asleep")
+            deal_damage(1.0 * b)
+            if CombatMath.check_luck_chance(caster):
+                target.apply_debuff("Asleep")
+                log["effects_applied"].append("Target Asleep (Luck roll)")
 
         elif recipe == "LWE":
             caster.apply_buff("Invisible")
@@ -1997,10 +2031,9 @@ class SpellResolver:
         elif recipe == "DLL":
             deal_damage(1.0 * b)
             if env.weather == Weather.DARKNESS:
-                caster.apply_buff("Charged")
                 caster.apply_buff("Quickened")
                 target.apply_debuff("Slowed")
-                log["effects_applied"].append("Darkness effect: Caster Charged & Quickened, Target Slowed")
+                log["effects_applied"].append("Darkness effect: Caster Quickened, Target Slowed")
 
         elif recipe == "DLD":
             # Deals damage scaling with target's missing health
@@ -2011,6 +2044,9 @@ class SpellResolver:
 
         else:
             raise NotImplementedError(f"Spell logic for recipe '{recipe}' is not implemented.")
+
+        if recipe != "WLL":
+            caster.last_spell_cast = recipe
 
         return log
 
@@ -2150,6 +2186,8 @@ class ProjectSorceryGame:
                 self.player1.poison_turns_active = int(p1_state.get("poison_turns_active", 1))
             if "Infected" in self.player1.debuffs:
                 self.player1.infected_turns_active = int(p1_state.get("infected_turns_active", 1))
+            if "last_spell_cast" in p1_state:
+                self.player1.last_spell_cast = p1_state["last_spell_cast"]
 
             # Player 2 configuration
             p2_state = initial_board_state.get("player2", {})
@@ -2207,6 +2245,8 @@ class ProjectSorceryGame:
                 self.player2.poison_turns_active = int(p2_state.get("poison_turns_active", 1))
             if "Infected" in self.player2.debuffs:
                 self.player2.infected_turns_active = int(p2_state.get("infected_turns_active", 1))
+            if "last_spell_cast" in p2_state:
+                self.player2.last_spell_cast = p2_state["last_spell_cast"]
 
             self.env.weather_turns_active = int(initial_board_state.get("weather_turns_active", 0))
             self.env.location_turns_active = int(initial_board_state.get("location_turns_active", 0))
@@ -2634,6 +2674,7 @@ class ProjectSorceryGame:
                 "rune_pool": list(me.rune_pool),
                 "class_multipliers": dict(me.class_multipliers),
                 "castable_spells": castable_me,
+                "last_spell_cast": me.last_spell_cast,
             },
             "opponent": {
                 "name": opp.name,
@@ -2648,6 +2689,7 @@ class ProjectSorceryGame:
                 "has_priority": opp.has_next_turn_priority,
                 "rune_pool": list(opp.rune_pool),
                 "class_multipliers": dict(opp.class_multipliers),
+                "last_spell_cast": opp.last_spell_cast,
             },
             "environment": {
                 "weather": self.env.weather.value,

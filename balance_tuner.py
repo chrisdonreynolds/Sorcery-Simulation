@@ -167,7 +167,7 @@ def tag_spell_synergies(recipe: str, spell_data: Dict[str, Any]) -> Dict[str, An
             or f"if the target is {st_low}" in desc_lower
             or f"if {st_low}" in desc_lower
         ):
-            if st == "Bleeding" and ("caster is bleeding" in desc_lower or "caster is bleeding" in cond_lower):
+            if st in ("Bleeding", "Weakened") and (f"caster is {st_low}" in desc_lower or f"caster is {st_low}" in cond_lower):
                 tags["benefits_status"].append(st)
             elif not (f"caster is {st_low}" in desc_lower and "target is" not in desc_lower):
                 tags["benefits_status"].append(st)
@@ -206,7 +206,7 @@ def tag_spell_synergies(recipe: str, spell_data: Dict[str, Any]) -> Dict[str, An
             f"gives the caster {bf_low}", f"gives the caster the {bf_low}",
             f"caster {bf_low}", f"granted {bf_low}", f"{bf_low} buff"
         ]) or (bf_low == "lucky" and "charged and lucky" in desc_lower) or (bf_low == "quickened" and ("charged and quickened" in desc_lower or "lucky and quickened" in desc_lower)):
-            if not (f"if the caster is {bf_low}" in desc_lower or f"if caster is {bf_low}" in desc_lower or f"caster {bf_low}," in desc_lower):
+            if not (f"if the caster is {bf_low}" in desc_lower or f"if caster is {bf_low}" in desc_lower or (f"caster {bf_low}," in desc_lower and f"gives the caster {bf_low}" not in desc_lower)):
                 tags["applies_buff"].append(bf)
 
         if recipe == "WFD" and bf in ["Shielded", "Lucky"]:
@@ -216,7 +216,7 @@ def tag_spell_synergies(recipe: str, spell_data: Dict[str, Any]) -> Dict[str, An
             or f"caster is {bf_low}" in desc_lower
             or f"if caster is {bf_low}" in desc_lower
             or f"if the caster is {bf_low}" in desc_lower
-            or f"caster {bf_low}," in desc_lower
+            or (f"caster {bf_low}," in desc_lower and f"gives the caster {bf_low}" not in desc_lower)
         ):
             tags["benefits_buff"].append(bf)
 
@@ -272,7 +272,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "LFF":
         return "Vulnerable" in t_deb
     elif recipe == "LFL":
-        return w == Weather.DARKNESS
+        return "Weakened" in c_deb
     elif recipe == "LFD":
         return "Charged" in c_buf
     elif recipe == "FDF":
@@ -385,9 +385,9 @@ class SimulationTelemetryTracker:
     def install_hooks(self):
         tracker = self
 
-        def hooked_resolve(resolver_self, recipe, caster, target, env):
+        def hooked_resolve(resolver_self, recipe, caster, target, env, *args, **kwargs):
             cond_active = is_spell_condition_active(recipe, caster, target, env)
-            log = tracker.orig_resolve(resolver_self, recipe, caster, target, env)
+            log = tracker.orig_resolve(resolver_self, recipe, caster, target, env, *args, **kwargs)
 
             caster_id = getattr(caster, "bot_id", caster.name)
             target_id = getattr(target, "bot_id", target.name)
@@ -1092,6 +1092,8 @@ class SpellBalancingEngine:
             # Scenario B: Under-triggered condition (incentivize setup)
             elif trig_rate < target_min:
                 category = self.original_spell_data.get(r, {}).get("category", "")
+                desc_text = self.original_spell_data.get(r, {}).get("description", "")
+                uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF"))
                 if category == "Ultimate":
                     # Floor protection: DO NOT cut ultimate base floor
                     votes[r]["b"] = 0
@@ -1129,8 +1131,8 @@ class SpellBalancingEngine:
                                 if setup_reason not in votes[setup_r]["reasons"]:
                                     votes[setup_r]["reasons"].append(setup_reason)
 
-                else:
-                    # Widen spread
+                elif uses_n_multiplier:
+                    # Widen spread for spells that scale payoff with (n*b)
                     votes[r]["b"] = -1
                     votes[r]["n"] = 1
                     reason = (
@@ -1139,27 +1141,43 @@ class SpellBalancingEngine:
                     )
                     votes[r]["reasons"].append(reason)
                     print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
+                else:
+                    # Fixed status/buff/weather conditional spell (e.g. DLL): protect base floor b from draining into unused n
+                    votes[r]["b"] = 0
+                    votes[r]["n"] = 0
+                    reason = (
+                        f"Fixed-effect conditional spell under-triggered (N={num_cond}, Trig: {trig_rate*100:.1f}% vs {target_min*100:.0f}%) -> "
+                        f"Protected base damage b (status/buff payoff tuned via status_buff_knobs)"
+                    )
+                    votes[r]["reasons"].append(reason)
+                    print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
 
             # Scenario C: Over-triggered / Trivialized condition
             elif trig_rate > target_max:
-                votes[r]["b"] = 1
-                votes[r]["n"] = -1
-                reason = (
-                    f"Condition triggers excessively (N={num_cond}, Trig: {trig_rate*100:.1f}% vs {target_max*100:.0f}%) -> "
-                    f"Compress spread: b +1 score, n -1 score"
-                )
-                votes[r]["reasons"].append(reason)
-                print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
+                desc_text = self.original_spell_data.get(r, {}).get("description", "")
+                uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF"))
+                if uses_n_multiplier:
+                    votes[r]["b"] = 1
+                    votes[r]["n"] = -1
+                    reason = (
+                        f"Condition triggers excessively (N={num_cond}, Trig: {trig_rate*100:.1f}% vs {target_max*100:.0f}%) -> "
+                        f"Compress spread: b +1 score, n -1 score"
+                    )
+                    votes[r]["reasons"].append(reason)
+                    print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
 
             # Scenario D: Combo win-rate warping
             elif wr > 0.54 and sp.get("payoff_damage_sum", 0) > sp.get("total_damage", 1) * 0.65:
-                votes[r]["b"] = 1
-                votes[r]["n"] = -1
-                reason = (
-                    f"Combo payoff warping win rate ({wr*100:.1f}%) -> Compress spread: b +1 score, n -1 score"
-                )
-                votes[r]["reasons"].append(reason)
-                print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
+                desc_text = self.original_spell_data.get(r, {}).get("description", "")
+                uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF"))
+                if uses_n_multiplier:
+                    votes[r]["b"] = 1
+                    votes[r]["n"] = -1
+                    reason = (
+                        f"Combo payoff warping win rate ({wr*100:.1f}%) -> Compress spread: b +1 score, n -1 score"
+                    )
+                    votes[r]["reasons"].append(reason)
+                    print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
 
             else:
                 reason = f"Conditional payoff in equilibrium (N={num_cond}, Trig: {trig_rate*100:.1f}%)"
@@ -1247,17 +1265,24 @@ class SpellBalancingEngine:
                         if reason and reason not in all_reasons:
                             all_reasons.append(reason)
 
+            # Mirror spell WLL casts the target's last spell using that spell's own knobs
+            if r == "WLL":
+                continue
+
+            desc_text = orig_data.get("description", "")
+            uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF"))
+
             # Clamp scores between -3 and +3
             b_score = max(-3, min(3, raw_b_score))
-            n_score = max(-3, min(3, raw_n_score)) if n_orig > 0 else 0
+            n_score = max(-3, min(3, raw_n_score)) if (n_orig > 0 and uses_n_multiplier) else 0
 
             b_pct = SCORE_TO_PERCENT[b_score]
-            n_pct = SCORE_TO_PERCENT[n_score] if n_orig > 0 else 0.0
+            n_pct = SCORE_TO_PERCENT[n_score] if (n_orig > 0 and uses_n_multiplier) else 0.0
 
             # Apply single buff/nerf percentage
-            if r == "WWW":
-                # WWW has a potency penalty (b). Inversely adjust b value:
-                # Nerfs increase b (larger penalty), Buffs decrease b (smaller penalty).
+            if r in ("WWW", "DFW", "DFE"):
+                # WWW (potency penalty) and DFW / DFE (self-damage to caster) use b as a caster cost/penalty.
+                # Inversely adjust b value: Nerfs increase b (larger penalty), Buffs decrease b (smaller penalty).
                 b_new = b_orig * (1.0 - b_pct)
             else:
                 b_new = b_orig * (1.0 + b_pct)
@@ -1272,7 +1297,7 @@ class SpellBalancingEngine:
                 n_new = n_orig * (1.0 + n_pct)
                 # Requirement 5: Sanity floor and ceiling value clamping (0 to 20 for n)
                 n_new = max(0.0, min(20.0, n_new))
-                n_new = round(n_new, 1)
+                n_new = round(n_new, 2)
             else:
                 n_new = 0.0
 
@@ -1282,7 +1307,7 @@ class SpellBalancingEngine:
             else:
                 mp_new = round(b_new, 1)
 
-            changed = (abs(b_new - b_orig) >= 0.1) or (abs(n_new - n_orig) >= 0.1)
+            changed = (abs(b_new - b_orig) >= 0.1) or (abs(n_new - n_orig) >= 0.01)
             if changed:
                 entry = {
                     "recipe": r,

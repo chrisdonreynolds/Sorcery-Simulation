@@ -8101,7 +8101,7 @@
       "class": "Lightning",
       "stage": 1,
       "turn": 6,
-      "weather": "Darkness",
+      "weather": "Storming",
       "location": "Graveyard",
       "weather_turns_active": 3,
       "location_turns_active": 3,
@@ -8130,7 +8130,9 @@
           "E"
         ],
         "buffs": {},
-        "debuffs": {},
+        "debuffs": {
+          "Weakened": 6
+        },
         "class_multipliers": {
           "Lightning": 1.25
         }
@@ -8168,7 +8170,9 @@
         "speed": 100.0
       },
       "caster_buffs": {},
-      "caster_debuffs": {},
+      "caster_debuffs": {
+        "Weakened": 6
+      },
       "target_hp": 1000.0,
       "target_stats": {
         "potency": 100.0,
@@ -10897,7 +10901,8 @@
           "Vulnerable": 6,
           "Cursed": 6
         },
-        "class_multipliers": {}
+        "class_multipliers": {},
+        "last_spell_cast": "WLF"
       },
       "turn_number": 6,
       "caster_hp": 1000.0,
@@ -19375,9 +19380,9 @@
       "class": "Lightning",
       "stage": 2,
       "turn": 5,
-      "weather": "Clear",
+      "weather": "Storming",
       "location": "Graveyard",
-      "weather_turns_active": 0,
+      "weather_turns_active": 2,
       "location_turns_active": 2,
       "seedling_active": false,
       "seedling_rained_on": false,
@@ -19388,8 +19393,8 @@
         "rune_pool": [
           "D",
           "D",
-          "E",
           "W",
+          "F",
           "L"
         ],
         "stats": {
@@ -19400,7 +19405,7 @@
           "speed": 100.0
         },
         "other_runes": [
-          "W",
+          "F",
           "L"
         ],
         "buffs": {},
@@ -19456,7 +19461,7 @@
         "Vulnerable": 6
       },
       "other_runes_in_pool": [
-        "W",
+        "F",
         "L"
       ]
     },
@@ -22114,7 +22119,8 @@
         "debuffs": {
           "Cursed": 6
         },
-        "class_multipliers": {}
+        "class_multipliers": {},
+        "last_spell_cast": "WLF"
       },
       "turn_number": 5,
       "caster_hp": 1000.0,
@@ -30431,9 +30437,9 @@
       "class": "Lightning",
       "stage": 3,
       "turn": 4,
-      "weather": "Clear",
+      "weather": "Storming",
       "location": "Graveyard",
-      "weather_turns_active": 0,
+      "weather_turns_active": 1,
       "location_turns_active": 1,
       "seedling_active": false,
       "seedling_rained_on": false,
