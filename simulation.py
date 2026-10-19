@@ -477,30 +477,23 @@ class DQNAgent:
             chosen_idx = int(np.random.choice(valid_indices))
             return self.action_catalog[chosen_idx]
 
-        # Q-Network Forward Pass
+        # Q-Network Forward Pass (pure learned Q-values without hardcoded spell biases)
         feat_vec = np.array(obs.get("feature_vector", []), dtype=np.float32)
         q_values = self.online_net.compute_q(feat_vec)[0]
 
-        # Heuristic tactical combo & class multiplier bias
-        me_info = obs.get("me", {})
-        class_multipliers = me_info.get("class_multipliers", {})
-        combo_impacts = obs.get("combo_setup_impact", {})
-
-        for idx, recipe in enumerate(self.action_catalog):
-            if recipe in combo_impacts:
-                adv = combo_impacts[recipe].get("total_advance", 0.0)
-                if adv > 0:
-                    q_values[idx] += adv * 0.5
-
-            prefix = recipe[:2].upper()
-            if prefix in PREFIX_TO_CLASS:
-                cls_val = PREFIX_TO_CLASS[prefix].value
-                c_mult = class_multipliers.get(cls_val, 1.0)
-                if c_mult > 1.0:
-                    q_values[idx] += (c_mult - 1.0) * 0.5
-
         # ACTION MASKING: Set uncraftable spells to -1e9
         q_masked = np.where(mask > 0.5, q_values, -1e9)
+        if eval_mode and len(valid_indices) > 1:
+            # Boltzmann (softmax) action selection over valid castable spells in eval mode
+            # so pick rates respond smoothly to Q-value shifts without deterministic argmax lock-in
+            eval_temp = float(getattr(self, "eval_temperature", 0.25))
+            valid_q = q_values[valid_indices] / max(1e-4, eval_temp)
+            valid_q = valid_q - np.max(valid_q)
+            exp_q = np.exp(np.clip(valid_q, -20.0, 0.0))
+            probs = exp_q / np.sum(exp_q)
+            chosen_idx = int(np.random.choice(valid_indices, p=probs))
+            return self.action_catalog[chosen_idx]
+
         chosen_idx = int(np.argmax(q_masked))
         return self.action_catalog[chosen_idx]
 
@@ -592,33 +585,22 @@ class NeuralBotPolicy:
         self.forced_exploration_rate = forced_exploration_rate
         self.memory: List[Dict[str, Any]] = []
 
+        dna = bot_dict.get("dna", {})
+        self.bot_network = QNetwork(weights_dict=dna) if dna else None
+        hyperparams = bot_dict.get("genetic_hyperparameters", {})
+        self.temperature = float(hyperparams.get("temperature", 0.35))
+        self.decision_mode = hyperparams.get("decision_mode", "softmax_sample")
+
         if dqn_agent is None:
-            # Standalone QNetwork initialized from bot DNA
-            dna = bot_dict.get("dna", {})
-            self.network = QNetwork(weights_dict=dna)
-            hyperparams = bot_dict.get("genetic_hyperparameters", {})
-            self.temperature = float(hyperparams.get("temperature", 1.0))
-            self.decision_mode = hyperparams.get("decision_mode", "softmax_sample")
+            self.network = self.bot_network if self.bot_network is not None else QNetwork()
         else:
             self.network = dqn_agent.online_net
-            self.temperature = 1.0
-            self.decision_mode = "dqn"
 
     def __call__(self, obs: Dict[str, Any]) -> str:
         """Takes game state dict and outputs a valid, craftable 3-rune recipe."""
-        if self.dqn_agent is not None:
-            return self.dqn_agent.select_action(
-                obs,
-                eval_mode=self.eval_mode,
-                forced_exploration_rate=self.forced_exploration_rate,
-            )
-
-        # Standalone evaluation using bot network
         feature_vec = obs.get("feature_vector")
         if feature_vec is None:
             raise ValueError(f"Observation missing 'feature_vector' for bot {self.bot_id}")
-
-        q_values = self.network.compute_q(np.array(feature_vec, dtype=np.float32))[0]
 
         me_info = obs.get("me", {})
         rune_pool = me_info.get("rune_pool", [])
@@ -626,30 +608,29 @@ class NeuralBotPolicy:
         if not castable_spells and rune_pool:
             castable_spells = get_castable_spells_from_pool(rune_pool, self.action_catalog)
 
-        # Forced exploration rate check for evaluation mode / balancing
-        explore_prob = (
-            self.forced_exploration_rate
-            if self.forced_exploration_rate is not None
-            else (0.08 if self.eval_mode else 0.0)
-        )
+        # Determine effective exploration probability
+        if self.forced_exploration_rate is not None:
+            explore_prob = self.forced_exploration_rate
+        elif self.eval_mode:
+            explore_prob = getattr(self.dqn_agent, "eval_epsilon", 0.08) if self.dqn_agent else 0.08
+        elif self.dqn_agent is not None:
+            explore_prob = self.dqn_agent.epsilon
+        else:
+            explore_prob = 0.0
+
         if explore_prob > 0.0 and random.random() < explore_prob and castable_spells:
             return random.choice(castable_spells)
 
-        class_multipliers = me_info.get("class_multipliers", {})
-        combo_impacts = obs.get("combo_setup_impact", {})
-
-        for idx, recipe in enumerate(self.action_catalog):
-            if recipe in combo_impacts:
-                total_adv = combo_impacts[recipe].get("total_advance", 0.0)
-                if total_adv > 0:
-                    q_values[idx] += total_adv * 2.0
-
-            prefix = recipe[:2].upper()
-            if prefix in PREFIX_TO_CLASS:
-                cls_val = PREFIX_TO_CLASS[prefix].value
-                c_mult = class_multipliers.get(cls_val, 1.0)
-                if c_mult > 1.0:
-                    q_values[idx] += (c_mult - 1.0) * 2.0
+        feat_arr = np.array(feature_vec, dtype=np.float32)
+        if self.dqn_agent is not None and self.bot_network is not None:
+            # Blend shared online Q-network with individual bot DNA network for symmetric, diverse evaluation
+            q_online = self.dqn_agent.online_net.compute_q(feat_arr)[0]
+            q_bot = self.bot_network.compute_q(feat_arr)[0]
+            q_values = 0.75 * q_online + 0.25 * q_bot
+        elif self.dqn_agent is not None:
+            q_values = self.dqn_agent.online_net.compute_q(feat_arr)[0]
+        else:
+            q_values = self.network.compute_q(feat_arr)[0]
 
         if castable_spells:
             castable_set = set(castable_spells)
@@ -661,13 +642,17 @@ class NeuralBotPolicy:
         if not np.any(valid_mask):
             return random.choice(self.action_catalog)
 
-        # Softmax sampling or argmax
-        if self.decision_mode == "softmax_sample":
-            scaled = q_values / max(1e-5, self.temperature)
+        # In training mode with dqn_agent, use greedy argmax after epsilon check;
+        # in eval_mode or standalone softmax_sample mode, use temperature-scaled Boltzmann sampling
+        if not self.eval_mode and self.dqn_agent is not None:
+            action_idx = int(np.argmax(q_values))
+        elif self.eval_mode or self.decision_mode == "softmax_sample":
+            eff_temp = max(0.15, min(0.50, self.temperature * 0.35)) if self.eval_mode else max(1e-5, self.temperature)
+            scaled = q_values / eff_temp
             shifted = np.where(valid_mask, scaled - np.max(scaled[valid_mask]), -np.inf)
-            exp_q = np.where(valid_mask, np.exp(shifted), 0.0)
+            exp_q = np.where(valid_mask, np.exp(np.clip(shifted, -20.0, 0.0)), 0.0)
             sum_exp = np.sum(exp_q)
-            probs = exp_q / sum_exp if sum_exp > 0 else np.ones(len(q_values)) / len(q_values)
+            probs = exp_q / sum_exp if sum_exp > 0 else np.where(valid_mask, 1.0, 0.0) / np.sum(valid_mask)
             action_idx = int(np.random.choice(len(probs), p=probs))
         else:
             action_idx = int(np.argmax(q_values))
@@ -737,7 +722,7 @@ def play_duel(
     policy_b = NeuralBotPolicy(
         bot_b,
         action_catalog,
-        dqn_agent=None,
+        dqn_agent=dqn_agent,
         eval_mode=eval_mode,
         forced_exploration_rate=forced_exploration_rate,
     )
@@ -756,8 +741,10 @@ def play_duel(
 
     prev_dmg_dealt_a = 0.0
     prev_dmg_taken_a = 0.0
+    prev_heal_done_a = 0.0
     prev_dmg_dealt_b = 0.0
     prev_dmg_taken_b = 0.0
+    prev_heal_done_b = 0.0
 
     action_to_idx = {r: i for i, r in enumerate(action_catalog)}
 
@@ -785,20 +772,26 @@ def play_duel(
         peak_conditions_a = max(peak_conditions_a, curr_cond_a)
         peak_conditions_b = max(peak_conditions_b, curr_cond_b)
 
-        # Turn damage differential
+        # Turn damage & healing differential
         turn_dmg_dealt_a = wiz_a.damage_dealt - prev_dmg_dealt_a
         turn_dmg_taken_a = wiz_a.damage_taken - prev_dmg_taken_a
+        turn_heal_a = wiz_a.healing_done - prev_heal_done_a
         prev_dmg_dealt_a = wiz_a.damage_dealt
         prev_dmg_taken_a = wiz_a.damage_taken
+        prev_heal_done_a = wiz_a.healing_done
 
         turn_dmg_dealt_b = wiz_b.damage_dealt - prev_dmg_dealt_b
         turn_dmg_taken_b = wiz_b.damage_taken - prev_dmg_taken_b
+        turn_heal_b = wiz_b.healing_done - prev_heal_done_b
         prev_dmg_dealt_b = wiz_b.damage_dealt
         prev_dmg_taken_b = wiz_b.damage_taken
+        prev_heal_done_b = wiz_b.healing_done
 
-        # Shaped turn rewards
-        r_step_a = (turn_dmg_dealt_a - turn_dmg_taken_a) / 1000.0 + 0.05 * cond_adv_a
-        r_step_b = (turn_dmg_dealt_b - turn_dmg_taken_b) / 1000.0 + 0.05 * cond_adv_b
+        # Shaped turn rewards (net health swing including healing + modest combo setup progress)
+        net_swing_a = (turn_dmg_dealt_a + turn_heal_a) - (turn_dmg_taken_a + turn_heal_b)
+        net_swing_b = (turn_dmg_dealt_b + turn_heal_b) - (turn_dmg_taken_b + turn_heal_a)
+        r_step_a = net_swing_a / 1000.0 + 0.015 * cond_adv_a
+        r_step_b = net_swing_b / 1000.0 + 0.015 * cond_adv_b
 
         next_state_vec_a = np.array(obs_a_next.get("feature_vector", []), dtype=np.float32)
         next_state_vec_b = np.array(obs_b_next.get("feature_vector", []), dtype=np.float32)
@@ -1131,18 +1124,26 @@ def run_tournament_iteration(
               f"DQN Loss: {avg_loss:.4f} | Epsilon: {dqn_agent.epsilon:.3f}")
 
     meta = data.setdefault("meta", {})
-    # Synchronize trained DQN weights to bottom 40% bots in population (training mode only)
+    # Synchronize trained DQN weights across population (soft-update top 60%, refresh bottom 40% with diversity noise)
     if not eval_mode:
-        updated_dna = dqn_agent.online_net.to_dict()
         cutoff = int(len(bots) * 0.60)
         ranked_bots = sorted(
             bots,
-            key=lambda b: b.get("performance_tracker", {}).get("last_match_fitness", 0.0),
+            key=lambda b: b.get("performance_tracker", {}).get("win_rate", 0.5),
             reverse=True,
         )
-        for bot in ranked_bots[cutoff:]:
-            bot["dna"] = copy.deepcopy(updated_dna)
-            bot["generation"] = bot.get("generation", 0) + 1
+        for idx_rank, bot in enumerate(ranked_bots):
+            if idx_rank < cutoff and "dna" in bot:
+                bot_net = QNetwork(weights_dict=bot["dna"])
+                bot_net.copy_weights_from(dqn_agent.online_net, tau=0.20)
+                bot["dna"] = bot_net.to_dict()
+            else:
+                mut_net = QNetwork()
+                mut_net.copy_weights_from(dqn_agent.online_net, tau=1.0)
+                mut_net.w3 += np.random.normal(0.0, 0.015, size=mut_net.w3.shape).astype(np.float32)
+                mut_net.b3 += np.random.normal(0.0, 0.01, size=mut_net.b3.shape).astype(np.float32)
+                bot["dna"] = mut_net.to_dict()
+                bot["generation"] = bot.get("generation", 0) + 1
 
         # Update metadata
         meta = data.setdefault("meta", {})

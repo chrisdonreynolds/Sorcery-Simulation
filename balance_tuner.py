@@ -71,6 +71,9 @@ try:
         MULTI_CONDITION_REQUIREMENTS,
         BUFF_CONFIGS,
         STATUS_CONFIGS,
+        DEFAULT_BUFF_CONFIGS,
+        DEFAULT_STATUS_CONFIGS,
+        load_status_buff_knobs,
     )
 except ImportError as e:
     raise ImportError(f"Could not import Project Sorcery modules: {e}")
@@ -271,6 +274,8 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
         return ("Stunned" in t_deb) or ("Charged" in c_buf) or (w == Weather.STORMING)
     elif recipe == "LFF":
         return "Vulnerable" in t_deb
+    elif recipe == "LFE":
+        return w == Weather.STORMING
     elif recipe == "LFL":
         return "Weakened" in c_deb
     elif recipe == "LFD":
@@ -526,18 +531,22 @@ class SimulationTelemetryTracker:
                 elif c.caster == duel.p2_name:
                     p2_casts[r] = p2_casts.get(r, 0) + 1
 
+            # Attribute 1 win or 1 loss per wizard per duel who cast the spell (prevents spam-cast loss inflation)
             for r, cnt in p1_casts.items():
-                if duel.p1_name == winner:
-                    per_spell[r]["caster_wins"] += cnt
-                else:
-                    per_spell[r]["caster_losses"] += cnt
+                if cnt > 0:
+                    if duel.p1_name == winner:
+                        per_spell[r]["caster_wins"] += 1
+                    else:
+                        per_spell[r]["caster_losses"] += 1
 
             for r, cnt in p2_casts.items():
-                if duel.p2_name == winner:
-                    per_spell[r]["caster_wins"] += cnt
-                else:
-                    per_spell[r]["caster_losses"] += cnt
+                if cnt > 0:
+                    if duel.p2_name == winner:
+                        per_spell[r]["caster_wins"] += 1
+                    else:
+                        per_spell[r]["caster_losses"] += 1
 
+        raw_bayesian_list = []
         for r, sp in per_spell.items():
             casts = sp["casts"]
             wins = sp["caster_wins"]
@@ -546,9 +555,12 @@ class SimulationTelemetryTracker:
 
             raw_wr = round(wins / max(1, total_resolved), 4) if total_resolved > 0 else 0.0
             k = 12.0
-            bayesian_wr = round((wins + k * 0.5) / (total_resolved + k), 4) if total_resolved > 0 else 0.40
+            bayesian_wr = round((wins + k * 0.5) / (total_resolved + k), 4) if total_resolved > 0 else 0.50
+            if total_resolved > 0:
+                raw_bayesian_list.append(bayesian_wr)
 
             sp["raw_win_rate"] = raw_wr
+            sp["uncentered_bayesian_win_rate"] = bayesian_wr
             sp["bayesian_win_rate"] = bayesian_wr
             sp["winrate"] = raw_wr
             sp["win_rate"] = raw_wr
@@ -566,6 +578,16 @@ class SimulationTelemetryTracker:
             sp["avg_payoff_damage"] = round(sp["payoff_damage_sum"] / max(1, cond_trigs), 2) if cond_trigs > 0 else 0.0
             missed = cond_checks - cond_trigs
             sp["avg_base_damage"] = round(sp["base_damage_sum"] / max(1, missed), 2) if missed > 0 else 0.0
+
+        # Center Bayesian win rates around the run median to prevent macro skew from mass-nerfing all spells
+        if raw_bayesian_list:
+            sorted_wr = sorted(raw_bayesian_list)
+            mid = len(sorted_wr) // 2
+            median_wr = sorted_wr[mid] if len(sorted_wr) % 2 == 1 else 0.5 * (sorted_wr[mid - 1] + sorted_wr[mid])
+            for r, sp in per_spell.items():
+                if (sp["wins"] + sp["losses"]) > 0:
+                    centered = max(0.0, min(1.0, 0.50 + (sp["uncentered_bayesian_win_rate"] - median_wr)))
+                    sp["bayesian_win_rate"] = round(centered, 4)
 
         return per_spell, total_casts_all
 
@@ -788,7 +810,7 @@ class SpellBalancingEngine:
         print("=" * 75)
 
         # Stage 1: Status & Buff Magnitude Balancing Module (clamped 0% to 75%)
-        status_buff_knobs = self.tune_status_and_buff_magnitudes()
+        status_buff_knobs = self.tune_status_and_buff_magnitudes(output_path=getattr(self, "status_buff_knobs_path", "status_buff_knobs.json"))
 
         # Stage 2: Separate algorithms each voting +/-1 score per knob
         winrate_votes = self.algorithm_winrate()
@@ -814,96 +836,96 @@ class SpellBalancingEngine:
     def tune_status_and_buff_magnitudes(self, output_path: str = "status_buff_knobs.json") -> Dict[str, Any]:
         """
         Status & Buff Magnitude Balancing Module:
-        Computes aggregate Bayesian winrate across all spells that apply each specific buff or debuff.
-        - If aggregate winrate > 53.5%, scale magnitude downward proportionally.
-        - If aggregate winrate < 46.5%, scale magnitude upward proportionally.
-        Clamps status effect knob values strictly between 0% and 75% (0.0 to 0.75).
-        Saves tuned magnitudes to status_buff_knobs.json.
+        Computes aggregate centered winrate across all spells that apply each specific buff or debuff.
+        - If aggregate winrate > 53.5%, scale magnitude downward smoothly (max -5% per run).
+        - If aggregate winrate < 46.5%, scale magnitude upward smoothly (max +5% per run).
+        Anchors bounds within [0.60x, 1.40x] of design default and strictly within [0%, 75%].
+        Saves tuned magnitudes to status_buff_knobs.json and reloads in-memory configs.
         """
         print("\n--- [Status & Buff Magnitude Balancing Module] ---")
         per_spell = self.telemetry["per_spell"]
-        k = 12.0
 
         tuned_buffs = {}
         tuned_statuses = {}
 
         # 1. Buffs
         for buff_name, b_cfg in BUFF_CONFIGS.items():
-            base_mag = b_cfg["magnitude"]
+            curr_mag = float(b_cfg["magnitude"])
+            default_mag = float(DEFAULT_BUFF_CONFIGS.get(buff_name, b_cfg).get("magnitude", curr_mag))
             applier_recipes = []
             for r, sp_data in self.original_spell_data.items():
                 s_tags = tag_spell_synergies(r, sp_data)
                 if buff_name in s_tags.get("applies_buff", []):
                     applier_recipes.append(r)
 
-            tot_wins = sum(per_spell.get(r, {}).get("caster_wins", 0) for r in applier_recipes)
-            tot_losses = sum(per_spell.get(r, {}).get("caster_losses", 0) for r in applier_recipes)
-            tot_resolved = tot_wins + tot_losses
             tot_casts = sum(per_spell.get(r, {}).get("casts", 0) for r in applier_recipes)
+            wrs = [per_spell[r]["bayesian_win_rate"] for r in applier_recipes if r in per_spell and per_spell[r].get("casts", 0) > 0]
+            agg_wr = sum(wrs) / len(wrs) if wrs else 0.50
 
-            agg_wr = (tot_wins + k * 0.5) / (tot_resolved + k) if tot_resolved > 0 else 0.50
-
-            new_mag = base_mag
+            new_mag = curr_mag
             if agg_wr > 0.535:
                 delta = agg_wr - 0.50
-                scaling = max(0.75, 1.0 - (delta * 2.0))
-                new_mag = base_mag * scaling
-                print(f"  * Buff '{buff_name}' overtuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {base_mag*100:.1f}% -> {new_mag*100:.1f}%")
+                scaling = max(0.95, 1.0 - (delta * 0.8))
+                new_mag = curr_mag * scaling
+                print(f"  * Buff '{buff_name}' overtuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {curr_mag*100:.1f}% -> {new_mag*100:.1f}%")
             elif agg_wr < 0.465 and tot_casts >= 10:
                 delta = 0.50 - agg_wr
-                scaling = min(1.25, 1.0 + (delta * 2.0))
-                new_mag = base_mag * scaling
-                print(f"  * Buff '{buff_name}' undertuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {base_mag*100:.1f}% -> {new_mag*100:.1f}%")
+                scaling = min(1.05, 1.0 + (delta * 0.8))
+                new_mag = curr_mag * scaling
+                print(f"  * Buff '{buff_name}' undertuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {curr_mag*100:.1f}% -> {new_mag*100:.1f}%")
             else:
-                print(f"  * Buff '{buff_name}' balanced (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude remains {base_mag*100:.1f}%")
+                print(f"  * Buff '{buff_name}' balanced (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude remains {curr_mag*100:.1f}%")
 
-            new_mag = max(0.75 * base_mag, min(1.25 * base_mag, new_mag))
+            new_mag = max(0.60 * default_mag, min(1.40 * default_mag, new_mag))
+            new_mag = max(0.05, min(0.75, new_mag))
             tuned_buffs[buff_name] = round(new_mag, 4)
 
-        # 2. Status Effects (strictly clamped between 0% and 75%)
+        # 2. Status Effects (strictly clamped between 0% and 75% and anchored to DEFAULT_STATUS_CONFIGS)
         for st_name, s_cfg in STATUS_CONFIGS.items():
-            base_mag = s_cfg["magnitude"]
+            if st_name in ("Blinded", "Wet", "Shocked"):
+                continue
+            curr_mag = float(s_cfg["magnitude"])
+            default_mag = float(DEFAULT_STATUS_CONFIGS.get(st_name, s_cfg).get("magnitude", curr_mag))
             applier_recipes = []
             for r, sp_data in self.original_spell_data.items():
                 s_tags = tag_spell_synergies(r, sp_data)
                 if st_name in s_tags.get("applies_status", []):
                     applier_recipes.append(r)
 
-            tot_wins = sum(per_spell.get(r, {}).get("caster_wins", 0) for r in applier_recipes)
-            tot_losses = sum(per_spell.get(r, {}).get("caster_losses", 0) for r in applier_recipes)
-            tot_resolved = tot_wins + tot_losses
             tot_casts = sum(per_spell.get(r, {}).get("casts", 0) for r in applier_recipes)
+            wrs = [per_spell[r]["bayesian_win_rate"] for r in applier_recipes if r in per_spell and per_spell[r].get("casts", 0) > 0]
+            agg_wr = sum(wrs) / len(wrs) if wrs else 0.50
 
-            agg_wr = (tot_wins + k * 0.5) / (tot_resolved + k) if tot_resolved > 0 else 0.50
-
-            new_mag = base_mag
+            new_mag = curr_mag
             scaling = 1.0
             if agg_wr > 0.535:
                 delta = agg_wr - 0.50
-                scaling = max(0.75, 1.0 - (delta * 2.0))
-                new_mag = base_mag * scaling
-                print(f"  * Status '{st_name}' overtuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {base_mag*100:.1f}% -> {new_mag*100:.1f}%")
+                scaling = max(0.95, 1.0 - (delta * 0.8))
+                new_mag = curr_mag * scaling
+                print(f"  * Status '{st_name}' overtuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {curr_mag*100:.1f}% -> {new_mag*100:.1f}%")
             elif agg_wr < 0.465 and tot_casts >= 10:
                 delta = 0.50 - agg_wr
-                scaling = min(1.25, 1.0 + (delta * 2.0))
-                new_mag = base_mag * scaling
-                print(f"  * Status '{st_name}' undertuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {base_mag*100:.1f}% -> {new_mag*100:.1f}%")
+                scaling = min(1.05, 1.0 + (delta * 0.8))
+                new_mag = curr_mag * scaling
+                print(f"  * Status '{st_name}' undertuned (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude {curr_mag*100:.1f}% -> {new_mag*100:.1f}%")
             else:
-                print(f"  * Status '{st_name}' balanced (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude remains {base_mag*100:.1f}%")
+                print(f"  * Status '{st_name}' balanced (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude remains {curr_mag*100:.1f}%")
 
-            # Clamp the status effect knob values between 0% and 75%
+            new_mag = max(0.60 * default_mag, min(1.40 * default_mag, new_mag))
             new_mag = max(0.0, min(0.75, new_mag))
 
             if "escalation_rate" in s_cfg:
-                base_esc = s_cfg["escalation_rate"]
+                curr_esc = float(s_cfg["escalation_rate"])
+                default_esc = float(DEFAULT_STATUS_CONFIGS.get(st_name, s_cfg).get("escalation_rate", curr_esc))
                 scaling_esc = scaling if (agg_wr > 0.535 or (agg_wr < 0.465 and tot_casts >= 10)) else 1.0
-                new_esc = base_esc * scaling_esc
+                new_esc = curr_esc * scaling_esc
+                new_esc = max(0.60 * default_esc, min(1.40 * default_esc, new_esc))
                 new_esc = max(0.0, min(0.75, new_esc))
                 tuned_statuses[st_name] = {
                     "magnitude": round(new_mag, 4),
                     "escalation_rate": round(new_esc, 4),
                 }
-                print(f"    -> Tuned escalation rate for '{st_name}': {base_esc*100:.2f}% -> {new_esc*100:.2f}% (clamped [0%, 75%])")
+                print(f"    -> Tuned escalation rate for '{st_name}': {curr_esc*100:.2f}% -> {new_esc*100:.2f}% (clamped [0%, 75%])")
             else:
                 tuned_statuses[st_name] = round(new_mag, 4)
 
@@ -915,6 +937,13 @@ class SpellBalancingEngine:
         out_p = Path(output_path).resolve()
         with open(out_p, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
+        if SCRIPT_DIR / "status_buff_knobs.json" != out_p:
+            try:
+                with open(SCRIPT_DIR / "status_buff_knobs.json", "w", encoding="utf-8") as f:
+                    json.dump(result, f, indent=2)
+            except Exception:
+                pass
+        load_status_buff_knobs(out_p)
         print(f"[Status/Buff Knobs] Exported tuned status & buff magnitudes to: {out_p}")
         return result
 
@@ -961,16 +990,21 @@ class SpellBalancingEngine:
     def algorithm_pickrate(self) -> Dict[str, Dict[str, Any]]:
         """
         Algorithm 2: Pick Rate Tuner
-        Evaluates cast frequencies normalized per 10,000 matches.
+        Evaluates cast frequencies normalized per 10,000 matches relative to uniform equilibrium volume.
         - Requirement 8: If pick rate < 150 per 10k matches, do not adjust values.
-        - Low pick rate (< 800 per 10k matches): +1 score to buff under-utilized spells.
-        - Requirement 7: If cast > 7,000 times in 10,000 matches, lower buff/nerf score by 1 (-1 nerf score).
+        - Low pick rate (< low_threshold per 10k matches, ~0.60x uniform share): +1 score to buff under-utilized spells.
+        - High pick rate (> high_threshold per 10k matches, ~1.45x uniform share): -1 score to nerf over-spammed spells.
         Each separate algorithm can only modify a knob score by at most +/-1.
         """
         print("\n--- [Algorithm 2: Pick Rate Tuner] ---")
         votes: Dict[str, Dict[str, Any]] = {}
         per_spell = self.telemetry["per_spell"]
         eval_games = self.telemetry.get("evaluated_games", 10000)
+        total_casts = self.telemetry.get("total_casts", sum(s.get("casts", 0) for s in per_spell.values()))
+        num_spells = max(1, len(self.original_spell_data))
+        expected_per_10k = (total_casts / float(num_spells)) * (10000.0 / max(1, eval_games))
+        low_threshold = max(800.0, round(expected_per_10k * 0.60, 0)) if total_casts > 0 else 800.0
+        high_threshold = max(7000.0, round(expected_per_10k * 1.45, 0)) if total_casts > 0 else 7000.0
 
         for r in self.original_spell_data.keys():
             votes[r] = {"b": 0, "n": 0, "reasons": []}
@@ -983,23 +1017,27 @@ class SpellBalancingEngine:
                 continue
 
             n_val = float(self.original_spell_data[r].get("n", 0.0))
-            is_cond = (n_val > 0.0) or (self.original_spell_data[r].get("condition_required", "None") != "None")
+            desc_text = self.original_spell_data[r].get("description", "")
+            uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF", "WWD"))
+            num_cond = get_spell_condition_complexity(r, sp)
+            target_min, _, _, _ = get_condition_complexity_targets(num_cond)
+            trig_rate = sp.get("trigger_rate", 0.0)
 
-            # Low pick rate: < 800 per 10k matches -> +1 buff score
-            if casts_per_10k < 800:
+            # Low pick rate -> +1 buff score
+            if casts_per_10k < low_threshold:
                 votes[r]["b"] = 1
-                if is_cond and n_val > 0:
+                if uses_n_multiplier and n_val > 0 and trig_rate >= target_min:
                     votes[r]["n"] = 1
-                reason = f"Low pick rate ({casts_per_10k:.0f} casts per 10k < 800) -> +1 buff score"
+                reason = f"Low pick rate ({casts_per_10k:.0f} casts per 10k < {low_threshold:.0f}) -> +1 buff score"
                 votes[r]["reasons"].append(reason)
                 print(f"  * [Pick Rate Tuner] [{r}] {reason}")
 
-            # Requirement 7: Inverse low pick rate (> 7,000 per 10k matches) -> -1 nerf score
-            elif casts_per_10k > 7000:
+            # High pick rate -> -1 nerf score
+            elif casts_per_10k > high_threshold:
                 votes[r]["b"] = -1
-                if is_cond and n_val > 0:
+                if uses_n_multiplier and n_val > 0:
                     votes[r]["n"] = -1
-                reason = f"High pick rate ({casts_per_10k:.0f} casts per 10k > 7,000) -> -1 nerf score"
+                reason = f"High pick rate ({casts_per_10k:.0f} casts per 10k > {high_threshold:.0f}) -> -1 nerf score"
                 votes[r]["reasons"].append(reason)
                 print(f"  * [Pick Rate Tuner] [{r}] {reason}")
 
@@ -1062,7 +1100,13 @@ class SpellBalancingEngine:
         per_spell = self.telemetry["per_spell"]
         eval_games = self.telemetry.get("evaluated_games", 10000)
 
+        total_casts = self.telemetry.get("total_casts", sum(s.get("casts", 0) for s in per_spell.values()))
+        expected_per_10k = (total_casts / float(max(1, len(self.original_spell_data)))) * (10000.0 / max(1, eval_games))
+        low_pick_threshold = max(800.0, round(expected_per_10k * 0.60, 0)) if total_casts > 0 else 800.0
+
         for r, sp in per_spell.items():
+            if r == "EEE":
+                continue
             n_orig = float(self.original_spell_data.get(r, {}).get("n", 0.0))
             cond_req = self.original_spell_data.get(r, {}).get("condition_required", "None")
             if n_orig <= 0 and cond_req == "None":
@@ -1093,7 +1137,7 @@ class SpellBalancingEngine:
             elif trig_rate < target_min:
                 category = self.original_spell_data.get(r, {}).get("category", "")
                 desc_text = self.original_spell_data.get(r, {}).get("description", "")
-                uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF"))
+                uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF", "WWD"))
                 if category == "Ultimate":
                     # Floor protection: DO NOT cut ultimate base floor
                     votes[r]["b"] = 0
@@ -1132,13 +1176,23 @@ class SpellBalancingEngine:
                                     votes[setup_r]["reasons"].append(setup_reason)
 
                 elif uses_n_multiplier:
-                    # Widen spread for spells that scale payoff with (n*b)
-                    votes[r]["b"] = -1
-                    votes[r]["n"] = 1
-                    reason = (
-                        f"Conditional payoff under-triggered (N={num_cond}, Trig: {trig_rate*100:.1f}% vs {target_min*100:.0f}%) -> "
-                        f"Widen spread: b -1 score, n +1 score"
-                    )
+                    # Widen spread for spells that scale payoff with (n*b).
+                    # If the spell is already undertuned in winrate or low in pickrate, protect base floor b (+0)
+                    # so b does not cancel out buffs from the Win Rate / Pick Rate tuners.
+                    if wr < (self.target_win_rate - 0.015) or casts_per_10k < low_pick_threshold:
+                        votes[r]["b"] = 0
+                        votes[r]["n"] = 1
+                        reason = (
+                            f"Conditional payoff under-triggered (N={num_cond}, Trig: {trig_rate*100:.1f}% vs {target_min*100:.0f}%, "
+                            f"WR: {wr*100:.1f}%) -> Protected base b (+0), buffed payoff: n +1 score"
+                        )
+                    else:
+                        votes[r]["b"] = -1
+                        votes[r]["n"] = 1
+                        reason = (
+                            f"Conditional payoff under-triggered (N={num_cond}, Trig: {trig_rate*100:.1f}% vs {target_min*100:.0f}%) -> "
+                            f"Widen spread: b -1 score, n +1 score"
+                        )
                     votes[r]["reasons"].append(reason)
                     print(f"  * [Conditional Payoff Tuner] [{r}] {reason}")
                 else:
@@ -1155,7 +1209,7 @@ class SpellBalancingEngine:
             # Scenario C: Over-triggered / Trivialized condition
             elif trig_rate > target_max:
                 desc_text = self.original_spell_data.get(r, {}).get("description", "")
-                uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF"))
+                uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF", "WWD"))
                 if uses_n_multiplier:
                     votes[r]["b"] = 1
                     votes[r]["n"] = -1
@@ -1169,7 +1223,7 @@ class SpellBalancingEngine:
             # Scenario D: Combo win-rate warping
             elif wr > 0.54 and sp.get("payoff_damage_sum", 0) > sp.get("total_damage", 1) * 0.65:
                 desc_text = self.original_spell_data.get(r, {}).get("description", "")
-                uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF"))
+                uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF", "WWD"))
                 if uses_n_multiplier:
                     votes[r]["b"] = 1
                     votes[r]["n"] = -1
@@ -1270,7 +1324,11 @@ class SpellBalancingEngine:
                 continue
 
             desc_text = orig_data.get("description", "")
-            uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF"))
+            uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF", "WWD"))
+
+            # Spells with b == 0.0 that have no b scaling (EWE, LWE) are tuned via status/buff magnitudes
+            if b_orig == 0.0 and r in ("EWE", "LWE"):
+                continue
 
             # Clamp scores between -3 and +3
             b_score = max(-3, min(3, raw_b_score))
@@ -1287,27 +1345,43 @@ class SpellBalancingEngine:
             else:
                 b_new = b_orig * (1.0 + b_pct)
 
-            # Requirement 5: Sanity floor and ceiling value clamping (0 to 200 for b)
+            # Enforce 2-decimal precision & minimum step for small-b spells (<10.0) so they never freeze on rounding
+            if b_orig < 10.0:
+                if b_score != 0 and abs(round(b_new, 2) - b_orig) < 0.01:
+                    step_dir = -1.0 if (r in ("WWW", "DFW", "DFE") and b_score > 0) or (r not in ("WWW", "DFW", "DFE") and b_score < 0) else 1.0
+                    b_new = b_orig + step_dir * 0.02
+                b_new = round(b_new, 2)
+            else:
+                b_new = round(b_new, 1)
+
+            # Requirement 5: Sanity floor and ceiling value clamping (0 to 200 for b) + SPECIAL_BOUNDS enforcement
             b_new = max(0.0, min(200.0, b_new))
             if category == "Ultimate":
                 b_new = max(ULTIMATE_B_FLOOR, b_new)
-            b_new = round(b_new, 1)
+            if r in SPECIAL_BOUNDS:
+                min_b, max_b, _, _ = SPECIAL_BOUNDS[r]
+                b_new = max(min_b, min(max_b, b_new))
+            b_new = round(b_new, 2) if b_orig < 10.0 else round(b_new, 1)
 
-            if n_orig > 0:
+            if n_orig > 0 and uses_n_multiplier:
                 n_new = n_orig * (1.0 + n_pct)
-                # Requirement 5: Sanity floor and ceiling value clamping (0 to 20 for n)
+                # Requirement 5: Sanity floor and ceiling value clamping (0 to 20 for n) + SPECIAL_BOUNDS enforcement
                 n_new = max(0.0, min(20.0, n_new))
+                if r in SPECIAL_BOUNDS:
+                    _, _, min_n, max_n = SPECIAL_BOUNDS[r]
+                    if max_n > 0:
+                        n_new = max(min_n, min(max_n, n_new))
                 n_new = round(n_new, 2)
             else:
-                n_new = 0.0
+                n_new = n_orig
 
-            # Atomic max_potential calculation: (1 + n) * b if n > 0 else b
-            if n_new > 0:
-                mp_new = round((1.0 + n_new) * b_new, 1)
+            # Atomic max_potential calculation: (1 + n) * b if (n > 0 and uses_n_multiplier) else b
+            if n_new > 0 and uses_n_multiplier:
+                mp_new = round((1.0 + n_new) * b_new, 2 if b_new < 10.0 else 1)
             else:
-                mp_new = round(b_new, 1)
+                mp_new = round(b_new, 2 if b_new < 10.0 else 1)
 
-            changed = (abs(b_new - b_orig) >= 0.1) or (abs(n_new - n_orig) >= 0.01)
+            changed = (abs(b_new - b_orig) >= 0.01) or (abs(n_new - n_orig) >= 0.01)
             if changed:
                 entry = {
                     "recipe": r,
@@ -1472,6 +1546,9 @@ def run_balance_simulation_suite(
             reset=False,
             eval_epsilon=eval_exploration_rate,
         )
+        # Refresh exploration epsilon at the start of each cycle so the agent adapts to updated spell knobs
+        if persistent_dqn_agent is not None:
+            persistent_dqn_agent.epsilon = max(persistent_dqn_agent.epsilon, 0.35)
 
     # Fast In-Memory DNA Cache during Batch Loop with safe disk sync
     cached_dna_data = None
@@ -1596,6 +1673,7 @@ def run_balance_simulation_suite(
         target_win_rate=0.50,
         win_rate_tolerance=0.035,
     )
+    tuner.status_buff_knobs_path = str(resolved_spell_path.parent / "status_buff_knobs.json")
     tuning_results = tuner.run_all_algorithms()
     changelog = tuning_results["changelog"]
     tuned_spell_data = tuning_results["final_spell_data"]

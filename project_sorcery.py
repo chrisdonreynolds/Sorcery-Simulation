@@ -139,13 +139,20 @@ STATUS_CONFIGS = {
     "Shocked": {"category": "Stat Debuff", "magnitude": 0.20, "duration": 6, "desc": "Decreases Speed by 20% for 6 rounds."},
 }
 
+import copy as _copy
+
+# Immutable baseline copies of default buff and status configurations
+DEFAULT_BUFF_CONFIGS = _copy.deepcopy(BUFF_CONFIGS)
+DEFAULT_STATUS_CONFIGS = _copy.deepcopy(STATUS_CONFIGS)
+
+
 def load_status_buff_knobs(path: Optional[Union[str, Path]] = None) -> bool:
     """Dynamically loads status and buff magnitude adjustments if status_buff_knobs.json exists."""
     global STATUS_CONFIGS, BUFF_CONFIGS
     candidate_paths = [
         Path(path).resolve() if path else None,
-        Path("status_buff_knobs.json").resolve(),
         Path(__file__).resolve().parent / "status_buff_knobs.json",
+        Path("status_buff_knobs.json").resolve(),
         Path.cwd() / "status_buff_knobs.json",
     ]
     target_path = None
@@ -161,7 +168,7 @@ def load_status_buff_knobs(path: Optional[Union[str, Path]] = None) -> bool:
         if "buffs" in knobs:
             for b_name, mag in knobs["buffs"].items():
                 if b_name in BUFF_CONFIGS:
-                    BUFF_CONFIGS[b_name]["magnitude"] = float(mag)
+                    BUFF_CONFIGS[b_name]["magnitude"] = max(0.05, min(0.75, float(mag)))
         if "statuses" in knobs:
             for s_name, val in knobs["statuses"].items():
                 if s_name in STATUS_CONFIGS:
@@ -174,7 +181,7 @@ def load_status_buff_knobs(path: Optional[Union[str, Path]] = None) -> bool:
                         STATUS_CONFIGS[s_name]["magnitude"] = max(0.0, min(0.75, float(val)))
         for k, v in knobs.items():
             if k in BUFF_CONFIGS and isinstance(v, (int, float)):
-                BUFF_CONFIGS[k]["magnitude"] = float(v)
+                BUFF_CONFIGS[k]["magnitude"] = max(0.05, min(0.75, float(v)))
             elif k in STATUS_CONFIGS:
                 if isinstance(v, dict):
                     if "magnitude" in v:
@@ -956,6 +963,9 @@ def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, ca
     """Evaluates for each castable spell how casting it this turn would advance combo-setup scores of multi-condition spells."""
     current_scores = get_all_multi_condition_scores(caster, target, env)
     impacts: Dict[str, Dict[str, Any]] = {}
+    cur_turn = getattr(env, "current_turn", 1)
+    can_change_weather = (env.weather == Weather.CLEAR) or (env.weather_turns_active >= 3) or (cur_turn < 3)
+    can_change_location = (env.location == Location.NONE) or (env.location_turns_active >= 3) or (cur_turn < 3)
 
     for sp in castable_spells:
         proj_weather = env.weather
@@ -966,56 +976,115 @@ def get_combo_setup_impacts(caster: Wizard, target: Wizard, env: Environment, ca
         proj_seedling_rained = env.seedling_rained_on
         proj_seedling_sunny = env.seedling_sunny_on
 
-        # Weather setups
-        if sp == "WWE": proj_weather = Weather.RAINING
-        elif sp == "LLE": proj_weather = Weather.SUNNY
-        elif sp == "DDE": proj_weather = Weather.DARKNESS
-        elif sp == "FLE": proj_weather = Weather.STORMING
-        elif sp == "FDE": proj_weather = Weather.BLOOD_RAIN
-        elif sp == "WDE": proj_weather = Weather.SNOWING
-        elif sp == "ELE": proj_weather = Weather.WINDY
-        elif sp == "LEE": proj_weather = Weather.SANDSTORM
-        elif sp == "ELD": proj_weather = Weather.BLIZZARD
+        # Weather setups (respecting 3-turn environment stability rule and conditional triggers)
+        if can_change_weather:
+            if sp == "WWE": proj_weather = Weather.RAINING
+            elif sp == "LLE": proj_weather = Weather.SUNNY
+            elif sp == "DDE": proj_weather = Weather.DARKNESS
+            elif sp == "FLE": proj_weather = Weather.STORMING
+            elif sp == "FDE": proj_weather = Weather.BLOOD_RAIN
+            elif sp == "WDE": proj_weather = Weather.SNOWING
+            elif sp == "ELE": proj_weather = Weather.WINDY
+            elif sp == "LEE": proj_weather = Weather.SANDSTORM
+        if sp == "ELD":
+            proj_weather = Weather.BLIZZARD
+        elif sp == "WDF" and env.weather == Weather.RAINING:
+            proj_weather = Weather.SNOWING
+        elif sp == "ELF" and "Bleeding" in caster.debuffs:
+            proj_weather = Weather.BLOOD_RAIN
 
-        # Location setups
-        elif sp == "WEE": proj_location = Location.JUNGLE
-        elif sp == "FWE": proj_location = Location.GRAVEYARD
-        elif sp == "WLE": proj_location = Location.ENCHANTED_FOREST
-        elif sp == "DWE": proj_location = Location.TUNDRA
-        elif sp == "EDE": proj_location = Location.SWAMP
-        elif sp == "LDE": proj_location = Location.SPACE
+        # Location setups (respecting 3-turn environment stability rule)
+        if can_change_location:
+            if sp == "WEE": proj_location = Location.JUNGLE
+            elif sp == "FWE": proj_location = Location.GRAVEYARD
+            elif sp == "WLE": proj_location = Location.ENCHANTED_FOREST
+            elif sp == "DWE": proj_location = Location.TUNDRA
+            elif sp == "EDE": proj_location = Location.SWAMP
+            elif sp == "LDE": proj_location = Location.SPACE
+        if sp == "WEF" and env.location == Location.JUNGLE:
+            proj_location = Location.NONE
 
-        # Buff setups
-        if sp in ["FEE", "LFW", "DFE"]: proj_caster_buffs.add("Charged")
-        if sp in ["LLF"]: proj_caster_buffs.add("Blessed")
-        if sp in ["EEW", "EFW", "WDW"]: proj_caster_buffs.add("Shielded")
-        if sp in ["WFL", "FEL", "DFE", "EFF"]: proj_caster_buffs.add("Lucky")
-        if sp in ["LEL", "FLL", "ELL", "EWL", "EFF"]: proj_caster_buffs.add("Quickened")
-        if sp == "DLL" and proj_weather == Weather.DARKNESS: proj_caster_buffs.add("Quickened")
-        if sp in ["LWE", "LWD"]: proj_caster_buffs.add("Invisible")
+        # Buff setups (strictly gated on actual spell conditions)
+        if sp in ["FEE", "LFW", "DFE"]:
+            proj_caster_buffs.add("Charged")
+        if sp == "LLF" and "Cursed" in caster.debuffs:
+            proj_caster_buffs.add("Blessed")
+        if sp in ["EEW", "EFW", "WDW"]:
+            proj_caster_buffs.add("Shielded")
+        if sp in ["WFL", "FEL", "DFE"] or (sp == "EFF" and "Vulnerable" in target.debuffs):
+            proj_caster_buffs.add("Lucky")
+        if (
+            sp in ["LEL", "FLL", "ELL"]
+            or (sp == "EWL" and env.seedling_active)
+            or (sp == "EFF" and "Vulnerable" in target.debuffs)
+            or (sp == "DLL" and env.weather == Weather.DARKNESS)
+        ):
+            proj_caster_buffs.add("Quickened")
+        if sp == "LWE" or (sp == "LWD" and "Polymorphed" in target.debuffs):
+            proj_caster_buffs.add("Invisible")
 
-        # Debuff setups
-        if sp in ["FFW", "FFL", "FWF"]: proj_target_debuffs.add("Burning")
-        if sp in ["FLW", "EEF", "WDF", "LDW"]: proj_target_debuffs.add("Stunned")
-        if sp == "LFE" and proj_weather == Weather.STORMING: proj_target_debuffs.add("Stunned")
-        if sp in ["FWW", "WLW"]: proj_target_debuffs.add("Cursed")
-        if sp in ["WEL"]: proj_target_debuffs.add("Entangled")
-        if sp in ["FDL", "DFW", "EWD", "WFE"]: proj_target_debuffs.add("Bleeding")
-        if sp in ["LLW", "LDF"]: proj_target_debuffs.add("Jinxed")
-        if sp in ["DDL", "DEE"]: proj_target_debuffs.add("Weakened")
-        if sp in ["DWW", "ELW", "LEL", "DFW"]: proj_target_debuffs.add("Slowed")
-        if sp == "DLL" and proj_weather == Weather.DARKNESS: proj_target_debuffs.add("Slowed")
-        if sp in ["FEF", "LWF", "DWD"]: proj_target_debuffs.add("Vulnerable")
-        if sp in ["WEW", "LWW"]: proj_target_debuffs.add("Asleep")
-        if sp in ["EDL", "EWW", "EFL"]: proj_target_debuffs.add("Poisoned")
-        if sp in ["WDL", "DWF", "DWL", "WDW"]: proj_target_debuffs.add("Frosty")
-        if sp in ["DEL"]: proj_target_debuffs.add("Infected")
+        # Debuff setups (strictly gated on actual spell conditions)
+        if sp in ["FFW", "FFL", "FWF"]:
+            proj_target_debuffs.add("Burning")
+        if (
+            sp in ["FLW", "LDW"]
+            or (sp == "EEF" and "Frosty" in target.debuffs)
+            or (sp == "WDF" and env.weather == Weather.RAINING)
+            or (sp == "LFE" and env.weather == Weather.STORMING)
+        ):
+            proj_target_debuffs.add("Stunned")
+        if sp in ["FWW", "WLW"]:
+            proj_target_debuffs.add("Cursed")
+        if sp == "WEL":
+            proj_target_debuffs.add("Entangled")
+        if sp in ["FDL", "DFW", "WFE"] or (sp == "EWD" and "Entangled" in target.debuffs):
+            proj_target_debuffs.add("Bleeding")
+        if sp in ["LLW", "LDF"]:
+            proj_target_debuffs.add("Jinxed")
+        if sp in ["DDL", "DEE"]:
+            proj_target_debuffs.add("Weakened")
+        if sp in ["DWW", "ELW", "LEL", "DFW"] or (sp == "DLL" and env.weather == Weather.DARKNESS):
+            proj_target_debuffs.add("Slowed")
+        if (
+            sp == "FEF"
+            or (sp == "LWF" and env.location == Location.ENCHANTED_FOREST)
+            or (sp == "DWD" and "Frosty" in target.debuffs)
+        ):
+            proj_target_debuffs.add("Vulnerable")
+        if sp in ["WEW", "LWW"]:
+            proj_target_debuffs.add("Asleep")
+        if sp in ["EDL", "EWW", "EFL"]:
+            proj_target_debuffs.add("Poisoned")
+        if sp in ["WDL", "DWF", "DWL", "WDW"]:
+            proj_target_debuffs.add("Frosty")
+        if sp == "DEL" and "Bleeding" in target.debuffs:
+            proj_target_debuffs.add("Infected")
+
+        # Consumptions / cleanses on target
+        if sp == "WWF":
+            proj_target_debuffs.discard("Burning")
+        elif sp == "EFF" and "Vulnerable" in target.debuffs:
+            proj_target_debuffs.discard("Vulnerable")
+        elif sp == "LWD" and "Polymorphed" in target.debuffs:
+            proj_target_debuffs.discard("Polymorphed")
+        elif sp == "DWD" and "Frosty" in target.debuffs:
+            proj_target_debuffs.discard("Frosty")
+        elif sp == "DLF" and "Slowed" in target.debuffs:
+            proj_target_debuffs.discard("Slowed")
+        elif sp == "DED":
+            proj_target_debuffs.clear()
 
         # Seedling
-        if sp == "EWE": proj_seedling_active = True
-        elif sp == "EWL": proj_seedling_active = False
-        if proj_seedling_active and proj_weather == Weather.RAINING: proj_seedling_rained = True
-        if proj_seedling_active and proj_weather == Weather.SUNNY: proj_seedling_sunny = True
+        if sp == "EWE":
+            proj_seedling_active = True
+        elif sp == "EWL":
+            proj_seedling_active = False
+            proj_seedling_rained = False
+            proj_seedling_sunny = False
+        if proj_seedling_active and proj_weather == Weather.RAINING:
+            proj_seedling_rained = True
+        if proj_seedling_active and proj_weather == Weather.SUNNY:
+            proj_seedling_sunny = True
 
         deltas: Dict[str, float] = {}
         total_advance = 0.0
