@@ -3342,3 +3342,170 @@ run_id,timestamp,total_games,recipe,class,category,knob,old_value,new_value,delt
 18,2026-10-21T21:26:08Z,5000,DLL,Cosmic,Conditional Strike,max_potential,48.3,49.3,1.0,2.1,"Win rate undertuned (46.4% < 46.5%) -> +1 buff score for b; Fixed-effect conditional spell under-triggered (N=1, Trig: 9.4% vs 30%) -> Protected base damage b (status/buff payoff tuned via status_buff_knobs)"
 18,2026-10-21T21:26:08Z,5000,DLD,Cosmic,Conditional Strike,b,45.3,44.4,-0.9,-2.0,"Win rate overtuned (54.8% > 53.5%) -> -1 nerf score for b; High pick rate (9720 casts per 10k > 8036) -> -1 nerf score; Condition triggers excessively (N=1, Trig: 76.0% vs 55%) -> Compress spread: b +1 score, n -1 score"
 18,2026-10-21T21:26:08Z,5000,DLD,Cosmic,Conditional Strike,max_potential,113.2,111.0,-2.2,-1.9,"Win rate overtuned (54.8% > 53.5%) -> -1 nerf score for b; High pick rate (9720 casts per 10k > 8036) -> -1 nerf score; Condition triggers excessively (N=1, Trig: 76.0% vs 55%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,FFD,Fire,Conditional Strike,n,4.0,4.08,0.08,2.0,"Conditional payoff under-triggered (N=1, Trig: 13.9% vs 30%, WR: 48.2%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,FFD,Fire,Conditional Strike,max_potential,121.0,122.9,1.9,1.6,"Conditional payoff under-triggered (N=1, Trig: 13.9% vs 30%, WR: 48.2%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,WWF,Water,Conditional Strike,b,12.0,11.8,-0.2,-1.7,"Conditional payoff under-triggered (N=1, Trig: 18.2% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WWF,Water,Conditional Strike,n,2.58,2.63,0.05,1.9,"Conditional payoff under-triggered (N=1, Trig: 18.2% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WWF,Water,Conditional Strike,max_potential,43.0,42.8,-0.2,-0.5,"Conditional payoff under-triggered (N=1, Trig: 18.2% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WWE,Water,Setup - Weather,b,30.8,31.7,0.9,2.9,Win rate undertuned (44.5% < 46.5%) -> +1 buff score for b; Low pick rate (2346 casts per 10k < 3218) -> +1 buff score
+19,2026-10-21T21:59:50Z,5000,WWE,Water,Setup - Weather,max_potential,30.8,31.7,0.9,2.9,Win rate undertuned (44.5% < 46.5%) -> +1 buff score for b; Low pick rate (2346 casts per 10k < 3218) -> +1 buff score
+19,2026-10-21T21:59:50Z,5000,WWD,Water,Buff / Sustain,n,1.34,1.31,-0.03,-2.2,"Win rate overtuned (55.0% > 53.5%) -> -1 nerf score for b; Condition triggers excessively (N=4, Trig: 32.0% vs 12%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,WWD,Water,Buff / Sustain,max_potential,83.5,82.5,-1.0,-1.2,"Win rate overtuned (55.0% > 53.5%) -> -1 nerf score for b; Condition triggers excessively (N=4, Trig: 32.0% vs 12%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,EEF,Earth,Conditional Strike,b,17.3,16.8,-0.5,-2.9,"Win rate overtuned (54.8% > 53.5%) -> -1 nerf score for b; Conditional payoff under-triggered (N=1, Trig: 27.4% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,EEF,Earth,Conditional Strike,n,1.88,1.92,0.04,2.1,"Win rate overtuned (54.8% > 53.5%) -> -1 nerf score for b; Conditional payoff under-triggered (N=1, Trig: 27.4% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,EEF,Earth,Conditional Strike,max_potential,49.8,49.1,-0.7,-1.4,"Win rate overtuned (54.8% > 53.5%) -> -1 nerf score for b; Conditional payoff under-triggered (N=1, Trig: 27.4% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,EEE,Earth,Conditional Strike,b,2.34,2.29,-0.05,-2.1,Win rate overtuned (54.4% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,EEE,Earth,Conditional Strike,max_potential,7.11,6.96,-0.15,-2.1,Win rate overtuned (54.4% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,EEL,Earth,Direct Damage,b,0.74,0.75,0.01,1.4,Low pick rate (2770 casts per 10k < 3218) -> +1 buff score
+19,2026-10-21T21:59:50Z,5000,EEL,Earth,Direct Damage,max_potential,0.74,0.75,0.01,1.4,Low pick rate (2770 casts per 10k < 3218) -> +1 buff score
+19,2026-10-21T21:59:50Z,5000,EED,Earth,Direct Damage,b,6.26,6.13,-0.13,-2.1,Win rate overtuned (54.8% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,EED,Earth,Direct Damage,max_potential,6.26,6.13,-0.13,-2.1,Win rate overtuned (54.8% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,LLF,Light,Conditional Strike,b,3.46,3.53,0.07,2.0,Buffed setup spell [LLF] (+1 score to b) for under-triggered Ultimate [LLD]
+19,2026-10-21T21:59:50Z,5000,LLF,Light,Conditional Strike,max_potential,3.46,3.53,0.07,2.0,Buffed setup spell [LLF] (+1 score to b) for under-triggered Ultimate [LLD]
+19,2026-10-21T21:59:50Z,5000,LLW,Light,Debuff / Control,b,26.6,27.1,0.5,1.9,Low pick rate (2874 casts per 10k < 3218) -> +1 buff score
+19,2026-10-21T21:59:50Z,5000,LLW,Light,Debuff / Control,max_potential,26.6,27.1,0.5,1.9,Low pick rate (2874 casts per 10k < 3218) -> +1 buff score
+19,2026-10-21T21:59:50Z,5000,LLE,Light,Setup - Weather,b,26.7,28.0,1.3,4.9,Win rate undertuned (45.5% < 46.5%) -> +1 buff score for b; Low pick rate (2666 casts per 10k < 3218) -> +1 buff score; Buffed setup spell [LLE] (+1 score to b) for under-triggered Ultimate [LLD]
+19,2026-10-21T21:59:50Z,5000,LLE,Light,Setup - Weather,max_potential,26.7,28.0,1.3,4.9,Win rate undertuned (45.5% < 46.5%) -> +1 buff score for b; Low pick rate (2666 casts per 10k < 3218) -> +1 buff score; Buffed setup spell [LLE] (+1 score to b) for under-triggered Ultimate [LLD]
+19,2026-10-21T21:59:50Z,5000,LLD,Light,Ultimate,n,4.79,4.89,0.1,2.1,"Ultimate payoff under-triggered (N=2, Trig: 8.7% vs 16%). Protected base floor (b +0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,LLD,Light,Ultimate,max_potential,270.4,275.1,4.7,1.7,"Ultimate payoff under-triggered (N=2, Trig: 8.7% vs 16%). Protected base floor (b +0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,DDF,Dark,Conditional Strike,n,4.0,4.08,0.08,2.0,"Conditional payoff under-triggered (N=1, Trig: 3.3% vs 30%, WR: 48.1%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,DDF,Dark,Conditional Strike,max_potential,103.5,105.2,1.7,1.6,"Conditional payoff under-triggered (N=1, Trig: 3.3% vs 30%, WR: 48.1%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,DDE,Dark,Setup - Weather,b,18.7,19.1,0.4,2.1,Win rate undertuned (44.9% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DDE,Dark,Setup - Weather,max_potential,18.7,19.1,0.4,2.1,Win rate undertuned (44.9% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DDD,Dark,Debuff / Control,b,7.53,7.3,-0.23,-3.1,Win rate overtuned (53.9% > 53.5%) -> -1 nerf score for b; High pick rate (7890 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,DDD,Dark,Debuff / Control,max_potential,7.53,7.3,-0.23,-3.1,Win rate overtuned (53.9% > 53.5%) -> -1 nerf score for b; High pick rate (7890 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,FWF,Ghostfire,Debuff / Control,b,30.4,29.8,-0.6,-2.0,Win rate overtuned (55.2% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,FWF,Ghostfire,Debuff / Control,max_potential,30.4,29.8,-0.6,-2.0,Win rate overtuned (55.2% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,FWD,Ghostfire,Ultimate,n,2.72,2.67,-0.05,-1.8,"Win rate overtuned (54.7% > 53.5%) -> -1 nerf score for b; Condition triggers excessively (N=3, Trig: 38.5% vs 20%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,FWD,Ghostfire,Ultimate,max_potential,206.5,203.7,-2.8,-1.4,"Win rate overtuned (54.7% > 53.5%) -> -1 nerf score for b; Condition triggers excessively (N=3, Trig: 38.5% vs 20%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,WFF,Ghostfire,Conditional Strike,b,19.0,18.4,-0.6,-3.2,"Win rate overtuned (53.9% > 53.5%) -> -1 nerf score for b; Conditional payoff under-triggered (N=1, Trig: 19.1% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WFF,Ghostfire,Conditional Strike,n,3.92,4.0,0.08,2.0,"Win rate overtuned (53.9% > 53.5%) -> -1 nerf score for b; Conditional payoff under-triggered (N=1, Trig: 19.1% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WFF,Ghostfire,Conditional Strike,max_potential,93.5,92.0,-1.5,-1.6,"Win rate overtuned (53.9% > 53.5%) -> -1 nerf score for b; Conditional payoff under-triggered (N=1, Trig: 19.1% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WFE,Ghostfire,Debuff / Control,b,21.6,21.2,-0.4,-1.9,Win rate overtuned (57.1% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,WFE,Ghostfire,Debuff / Control,max_potential,21.6,21.2,-0.4,-1.9,Win rate overtuned (57.1% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,WFD,Ghostfire,Conditional Strike,b,21.2,20.8,-0.4,-1.9,"Conditional payoff under-triggered (N=1, Trig: 15.0% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WFD,Ghostfire,Conditional Strike,n,4.0,4.08,0.08,2.0,"Conditional payoff under-triggered (N=1, Trig: 15.0% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WFD,Ghostfire,Conditional Strike,max_potential,106.0,105.7,-0.3,-0.3,"Conditional payoff under-triggered (N=1, Trig: 15.0% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,FEW,Beasts,Conditional Strike,b,23.4,23.9,0.5,2.1,"Win rate undertuned (41.0% < 46.5%) -> +1 buff score for b; Conditional payoff under-triggered (N=1, Trig: 3.4% vs 30%, WR: 41.0%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,FEW,Beasts,Conditional Strike,n,4.0,4.08,0.08,2.0,"Win rate undertuned (41.0% < 46.5%) -> +1 buff score for b; Conditional payoff under-triggered (N=1, Trig: 3.4% vs 30%, WR: 41.0%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,FEW,Beasts,Conditional Strike,max_potential,117.0,121.4,4.4,3.8,"Win rate undertuned (41.0% < 46.5%) -> +1 buff score for b; Conditional payoff under-triggered (N=1, Trig: 3.4% vs 30%, WR: 41.0%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,FEE,Beasts,Buff / Sustain,b,21.9,22.3,0.4,1.8,Win rate undertuned (41.6% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,FEE,Beasts,Buff / Sustain,max_potential,21.9,22.3,0.4,1.8,Win rate undertuned (41.6% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,EFF,Beasts,Debuff / Control,b,28.4,29.0,0.6,2.1,"Win rate undertuned (45.4% < 46.5%) -> +1 buff score for b; Fixed-effect conditional spell under-triggered (N=1, Trig: 4.7% vs 30%) -> Protected base damage b (status/buff payoff tuned via status_buff_knobs)"
+19,2026-10-21T21:59:50Z,5000,EFF,Beasts,Debuff / Control,max_potential,28.4,29.0,0.6,2.1,"Win rate undertuned (45.4% < 46.5%) -> +1 buff score for b; Fixed-effect conditional spell under-triggered (N=1, Trig: 4.7% vs 30%) -> Protected base damage b (status/buff payoff tuned via status_buff_knobs)"
+19,2026-10-21T21:59:50Z,5000,EFE,Beasts,Buff / Sustain,b,34.5,33.8,-0.7,-2.0,Win rate overtuned (57.2% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,EFE,Beasts,Buff / Sustain,max_potential,34.5,33.8,-0.7,-2.0,Win rate overtuned (57.2% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,EFL,Beasts,Buff / Sustain,b,15.5,15.0,-0.5,-3.2,Win rate overtuned (62.3% > 53.5%) -> -1 nerf score for b; High pick rate (11800 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,EFL,Beasts,Buff / Sustain,max_potential,15.5,15.0,-0.5,-3.2,Win rate overtuned (62.3% > 53.5%) -> -1 nerf score for b; High pick rate (11800 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,FLF,Lightning,Conditional Strike,b,22.3,21.9,-0.4,-1.8,"Conditional payoff under-triggered (N=1, Trig: 1.6% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,FLF,Lightning,Conditional Strike,n,4.0,4.08,0.08,2.0,"Conditional payoff under-triggered (N=1, Trig: 1.6% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,FLF,Lightning,Conditional Strike,max_potential,111.5,111.3,-0.2,-0.2,"Conditional payoff under-triggered (N=1, Trig: 1.6% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,FLW,Lightning,Debuff / Control,b,17.8,17.4,-0.4,-2.2,Win rate overtuned (57.0% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,FLW,Lightning,Debuff / Control,max_potential,17.8,17.4,-0.4,-2.2,Win rate overtuned (57.0% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,FLE,Lightning,Setup - Weather,b,24.3,24.8,0.5,2.1,Win rate undertuned (44.4% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,FLE,Lightning,Setup - Weather,max_potential,24.3,24.8,0.5,2.1,Win rate undertuned (44.4% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,LFF,Lightning,Conditional Strike,b,23.7,23.2,-0.5,-2.1,"Conditional payoff under-triggered (N=1, Trig: 5.0% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LFF,Lightning,Conditional Strike,n,4.0,4.08,0.08,2.0,"Conditional payoff under-triggered (N=1, Trig: 5.0% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LFF,Lightning,Conditional Strike,max_potential,118.5,117.9,-0.6,-0.5,"Conditional payoff under-triggered (N=1, Trig: 5.0% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LFW,Lightning,Buff / Sustain,b,13.8,14.1,0.3,2.2,Win rate undertuned (46.4% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,LFW,Lightning,Buff / Sustain,max_potential,13.8,14.1,0.3,2.2,Win rate undertuned (46.4% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,LFL,Lightning,Debuff / Control,b,29.5,28.9,-0.6,-2.0,"Conditional payoff under-triggered (N=1, Trig: 8.1% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LFL,Lightning,Debuff / Control,n,2.85,2.91,0.06,2.1,"Conditional payoff under-triggered (N=1, Trig: 8.1% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LFL,Lightning,Debuff / Control,max_potential,113.6,113.0,-0.6,-0.5,"Conditional payoff under-triggered (N=1, Trig: 8.1% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LFD,Lightning,Conditional Strike,b,24.7,24.2,-0.5,-2.0,"Conditional payoff under-triggered (N=1, Trig: 8.5% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LFD,Lightning,Conditional Strike,n,5.99,6.11,0.12,2.0,"Conditional payoff under-triggered (N=1, Trig: 8.5% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LFD,Lightning,Conditional Strike,max_potential,172.7,172.1,-0.6,-0.3,"Conditional payoff under-triggered (N=1, Trig: 8.5% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,FDF,Blood,Conditional Strike,b,21.6,21.2,-0.4,-1.9,"Conditional payoff under-triggered (N=1, Trig: 0.7% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,FDF,Blood,Conditional Strike,n,4.0,4.08,0.08,2.0,"Conditional payoff under-triggered (N=1, Trig: 0.7% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,FDF,Blood,Conditional Strike,max_potential,108.0,107.7,-0.3,-0.3,"Conditional payoff under-triggered (N=1, Trig: 0.7% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,FDW,Blood,Direct Damage,b,84.4,86.1,1.7,2.0,Win rate undertuned (44.9% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,FDW,Blood,Direct Damage,max_potential,84.4,86.1,1.7,2.0,Win rate undertuned (44.9% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,FDL,Blood,Debuff / Control,b,14.4,14.0,-0.4,-2.8,Win rate overtuned (63.9% > 53.5%) -> -1 nerf score for b; High pick rate (12404 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,FDL,Blood,Debuff / Control,max_potential,14.4,14.0,-0.4,-2.8,Win rate overtuned (63.9% > 53.5%) -> -1 nerf score for b; High pick rate (12404 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,DFW,Blood,Debuff / Control,b,109.0,112.3,3.3,3.0,Win rate overtuned (58.6% > 53.5%) -> -1 nerf score for b; High pick rate (11254 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,DFW,Blood,Debuff / Control,max_potential,109.0,112.3,3.3,3.0,Win rate overtuned (58.6% > 53.5%) -> -1 nerf score for b; High pick rate (11254 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,DFE,Blood,Buff / Sustain,b,26.4,25.9,-0.5,-1.9,Win rate undertuned (40.3% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DFE,Blood,Buff / Sustain,max_potential,26.4,25.9,-0.5,-1.9,Win rate undertuned (40.3% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DFD,Blood,Conditional Strike,b,40.1,40.9,0.8,2.0,"Condition triggers excessively (N=1, Trig: 72.8% vs 55%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,DFD,Blood,Conditional Strike,n,1.01,0.99,-0.02,-2.0,"Condition triggers excessively (N=1, Trig: 72.8% vs 55%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,DFD,Blood,Conditional Strike,max_potential,80.6,81.4,0.8,1.0,"Condition triggers excessively (N=1, Trig: 72.8% vs 55%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,WEF,Plants,Conditional Strike,b,25.1,25.9,0.8,3.2,"Win rate undertuned (45.8% < 46.5%) -> +1 buff score for b; Low pick rate (3016 casts per 10k < 3218) -> +1 buff score; Conditional payoff under-triggered (N=1, Trig: 17.2% vs 30%, WR: 45.8%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,WEF,Plants,Conditional Strike,n,3.61,3.68,0.07,1.9,"Win rate undertuned (45.8% < 46.5%) -> +1 buff score for b; Low pick rate (3016 casts per 10k < 3218) -> +1 buff score; Conditional payoff under-triggered (N=1, Trig: 17.2% vs 30%, WR: 45.8%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,WEF,Plants,Conditional Strike,max_potential,115.7,121.2,5.5,4.8,"Win rate undertuned (45.8% < 46.5%) -> +1 buff score for b; Low pick rate (3016 casts per 10k < 3218) -> +1 buff score; Conditional payoff under-triggered (N=1, Trig: 17.2% vs 30%, WR: 45.8%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,WEW,Plants,Debuff / Control,b,11.7,11.3,-0.4,-3.4,Win rate overtuned (56.4% > 53.5%) -> -1 nerf score for b; High pick rate (17794 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,WEW,Plants,Debuff / Control,max_potential,11.7,11.3,-0.4,-3.4,Win rate overtuned (56.4% > 53.5%) -> -1 nerf score for b; High pick rate (17794 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,WED,Plants,Conditional Strike,b,41.3,42.1,0.8,1.9,"Condition triggers excessively (N=3, Trig: 22.2% vs 20%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,WED,Plants,Conditional Strike,n,2.3,2.25,-0.05,-2.2,"Condition triggers excessively (N=3, Trig: 22.2% vs 20%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,WED,Plants,Conditional Strike,max_potential,136.3,136.8,0.5,0.4,"Condition triggers excessively (N=3, Trig: 22.2% vs 20%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,EWF,Plants,Buff / Sustain,b,13.8,14.1,0.3,2.2,"Win rate undertuned (43.9% < 46.5%) -> +1 buff score for b; Conditional payoff under-triggered (N=1, Trig: 9.4% vs 30%, WR: 43.9%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,EWF,Plants,Buff / Sustain,n,3.14,3.2,0.06,1.9,"Win rate undertuned (43.9% < 46.5%) -> +1 buff score for b; Conditional payoff under-triggered (N=1, Trig: 9.4% vs 30%, WR: 43.9%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,EWF,Plants,Buff / Sustain,max_potential,57.1,59.2,2.1,3.7,"Win rate undertuned (43.9% < 46.5%) -> +1 buff score for b; Conditional payoff under-triggered (N=1, Trig: 9.4% vs 30%, WR: 43.9%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,EWW,Plants,Debuff / Control,b,24.8,24.3,-0.5,-2.0,Win rate overtuned (64.8% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,EWW,Plants,Debuff / Control,max_potential,24.8,24.3,-0.5,-2.0,Win rate overtuned (64.8% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,EWL,Plants,Debuff / Control,b,62.2,63.4,1.2,1.9,Win rate undertuned (44.5% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,EWL,Plants,Debuff / Control,max_potential,62.2,63.4,1.2,1.9,Win rate undertuned (44.5% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,WLF,Fey,Conditional Strike,b,23.2,22.7,-0.5,-2.2,"Conditional payoff under-triggered (N=1, Trig: 9.0% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WLF,Fey,Conditional Strike,n,4.0,4.08,0.08,2.0,"Conditional payoff under-triggered (N=1, Trig: 9.0% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WLF,Fey,Conditional Strike,max_potential,116.0,115.3,-0.7,-0.6,"Conditional payoff under-triggered (N=1, Trig: 9.0% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,WLW,Fey,Debuff / Control,b,39.5,38.7,-0.8,-2.0,Win rate overtuned (57.4% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,WLW,Fey,Debuff / Control,max_potential,39.5,38.7,-0.8,-2.0,Win rate overtuned (57.4% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,WLE,Fey,Setup - Location,b,30.1,30.7,0.6,2.0,Low pick rate (2278 casts per 10k < 3218) -> +1 buff score
+19,2026-10-21T21:59:50Z,5000,WLE,Fey,Setup - Location,max_potential,30.1,30.7,0.6,2.0,Low pick rate (2278 casts per 10k < 3218) -> +1 buff score
+19,2026-10-21T21:59:50Z,5000,WLD,Fey,Ultimate,b,60.6,62.4,1.8,3.0,"Low pick rate (2506 casts per 10k < 3218) -> +1 buff score; Condition triggers excessively (N=3, Trig: 24.2% vs 20%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,WLD,Fey,Ultimate,max_potential,222.4,229.0,6.6,3.0,"Low pick rate (2506 casts per 10k < 3218) -> +1 buff score; Condition triggers excessively (N=3, Trig: 24.2% vs 20%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,LWF,Fey,Debuff / Control,b,54.7,53.6,-1.1,-2.0,"Win rate overtuned (57.4% > 53.5%) -> -1 nerf score for b; Fixed-effect conditional spell under-triggered (N=1, Trig: 10.5% vs 30%) -> Protected base damage b (status/buff payoff tuned via status_buff_knobs)"
+19,2026-10-21T21:59:50Z,5000,LWF,Fey,Debuff / Control,max_potential,54.7,53.6,-1.1,-2.0,"Win rate overtuned (57.4% > 53.5%) -> -1 nerf score for b; Fixed-effect conditional spell under-triggered (N=1, Trig: 10.5% vs 30%) -> Protected base damage b (status/buff payoff tuned via status_buff_knobs)"
+19,2026-10-21T21:59:50Z,5000,LWW,Fey,Debuff / Control,b,17.8,17.4,-0.4,-2.2,Win rate overtuned (54.1% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,LWW,Fey,Debuff / Control,max_potential,17.8,17.4,-0.4,-2.2,Win rate overtuned (54.1% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,LWL,Fey,Debuff / Control,b,22.2,21.8,-0.4,-1.8,High pick rate (11148 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,LWL,Fey,Debuff / Control,max_potential,22.2,21.8,-0.4,-1.8,High pick rate (11148 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,WDE,Ice,Setup - Weather,b,31.1,32.0,0.9,2.9,Win rate undertuned (44.7% < 46.5%) -> +1 buff score for b; Low pick rate (2614 casts per 10k < 3218) -> +1 buff score
+19,2026-10-21T21:59:50Z,5000,WDE,Ice,Setup - Weather,max_potential,31.1,32.0,0.9,2.9,Win rate undertuned (44.7% < 46.5%) -> +1 buff score for b; Low pick rate (2614 casts per 10k < 3218) -> +1 buff score
+19,2026-10-21T21:59:50Z,5000,WDD,Ice,Ultimate,b,38.3,39.1,0.8,2.1,"Win rate undertuned (45.2% < 46.5%) -> +1 buff score for b; Conditional payoff in equilibrium (N=2, Trig: 28.3%)"
+19,2026-10-21T21:59:50Z,5000,WDD,Ice,Ultimate,max_potential,188.8,192.8,4.0,2.1,"Win rate undertuned (45.2% < 46.5%) -> +1 buff score for b; Conditional payoff in equilibrium (N=2, Trig: 28.3%)"
+19,2026-10-21T21:59:50Z,5000,DWF,Ice,Debuff / Control,b,43.4,44.3,0.9,2.1,Win rate undertuned (45.9% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DWF,Ice,Debuff / Control,max_potential,43.4,44.3,0.9,2.1,Win rate undertuned (45.9% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DWE,Ice,Setup - Location,b,18.3,18.7,0.4,2.2,Win rate undertuned (41.1% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DWE,Ice,Setup - Location,max_potential,18.3,18.7,0.4,2.2,Win rate undertuned (41.1% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DWL,Ice,Debuff / Control,b,59.6,60.8,1.2,2.0,Win rate undertuned (44.2% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DWL,Ice,Debuff / Control,max_potential,59.6,60.8,1.2,2.0,Win rate undertuned (44.2% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DWD,Ice,Conditional Strike,n,2.84,2.9,0.06,2.1,"Conditional payoff under-triggered (N=1, Trig: 27.2% vs 30%, WR: 47.5%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,DWD,Ice,Conditional Strike,max_potential,103.7,105.3,1.6,1.5,"Conditional payoff under-triggered (N=1, Trig: 27.2% vs 30%, WR: 47.5%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,ELE,Wind,Setup - Weather,b,30.9,31.5,0.6,1.9,Win rate undertuned (44.9% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,ELE,Wind,Setup - Weather,max_potential,30.9,31.5,0.6,1.9,Win rate undertuned (44.9% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,ELL,Wind,Buff / Sustain,b,20.8,20.2,-0.6,-2.9,Win rate overtuned (56.4% > 53.5%) -> -1 nerf score for b; High pick rate (15804 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,ELL,Wind,Buff / Sustain,max_potential,20.8,20.2,-0.6,-2.9,Win rate overtuned (56.4% > 53.5%) -> -1 nerf score for b; High pick rate (15804 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,ELD,Wind,Conditional Strike,n,3.71,3.78,0.07,1.9,"Conditional payoff under-triggered (N=1, Trig: 6.6% vs 30%, WR: 47.1%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,ELD,Wind,Conditional Strike,max_potential,93.7,95.1,1.4,1.5,"Conditional payoff under-triggered (N=1, Trig: 6.6% vs 30%, WR: 47.1%) -> Protected base b (+0), buffed payoff: n +1 score"
+19,2026-10-21T21:59:50Z,5000,LEF,Wind,Conditional Strike,b,26.2,25.7,-0.5,-1.9,"Conditional payoff under-triggered (N=1, Trig: 9.4% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LEF,Wind,Conditional Strike,n,4.0,4.08,0.08,2.0,"Conditional payoff under-triggered (N=1, Trig: 9.4% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LEF,Wind,Conditional Strike,max_potential,131.0,130.6,-0.4,-0.3,"Conditional payoff under-triggered (N=1, Trig: 9.4% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LEW,Wind,Debuff / Control,b,49.1,48.1,-1.0,-2.0,Win rate overtuned (55.1% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,LEW,Wind,Debuff / Control,max_potential,49.1,48.1,-1.0,-2.0,Win rate overtuned (55.1% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,LEL,Wind,Buff / Sustain,b,41.0,41.8,0.8,2.0,Win rate undertuned (46.0% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,LEL,Wind,Buff / Sustain,max_potential,41.0,41.8,0.8,2.0,Win rate undertuned (46.0% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,EDF,Poison,Conditional Strike,b,24.1,23.6,-0.5,-2.1,"Conditional payoff under-triggered (N=1, Trig: 8.8% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,EDF,Poison,Conditional Strike,n,4.0,4.08,0.08,2.0,"Conditional payoff under-triggered (N=1, Trig: 8.8% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,EDF,Poison,Conditional Strike,max_potential,120.5,119.9,-0.6,-0.5,"Conditional payoff under-triggered (N=1, Trig: 8.8% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,EDW,Poison,Debuff / Control,b,19.3,18.9,-0.4,-2.1,Win rate overtuned (59.4% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,EDW,Poison,Debuff / Control,max_potential,19.3,18.9,-0.4,-2.1,Win rate overtuned (59.4% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,EDL,Poison,Debuff / Control,b,14.4,14.0,-0.4,-2.8,Win rate overtuned (62.3% > 53.5%) -> -1 nerf score for b; High pick rate (9202 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,EDL,Poison,Debuff / Control,max_potential,14.4,14.0,-0.4,-2.8,Win rate overtuned (62.3% > 53.5%) -> -1 nerf score for b; High pick rate (9202 casts per 10k > 7778) -> -1 nerf score
+19,2026-10-21T21:59:50Z,5000,DEW,Poison,Debuff / Control,b,22.6,22.1,-0.5,-2.2,Win rate overtuned (54.4% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,DEW,Poison,Debuff / Control,max_potential,22.6,22.1,-0.5,-2.2,Win rate overtuned (54.4% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,DEL,Poison,Conditional Strike,b,1.67,1.62,-0.05,-3.0,"Win rate overtuned (63.5% > 53.5%) -> -1 nerf score for b; High pick rate (8660 casts per 10k > 7778) -> -1 nerf score; Conditional payoff in equilibrium (N=1, Trig: 38.9%)"
+19,2026-10-21T21:59:50Z,5000,DEL,Poison,Conditional Strike,max_potential,1.67,1.62,-0.05,-3.0,"Win rate overtuned (63.5% > 53.5%) -> -1 nerf score for b; High pick rate (8660 casts per 10k > 7778) -> -1 nerf score; Conditional payoff in equilibrium (N=1, Trig: 38.9%)"
+19,2026-10-21T21:59:50Z,5000,DED,Poison,Debuff / Control,b,39.8,40.6,0.8,2.0,Win rate undertuned (42.7% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,DED,Poison,Debuff / Control,max_potential,39.8,40.6,0.8,2.0,Win rate undertuned (42.7% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,LDW,Cosmic,Debuff / Control,b,23.7,23.2,-0.5,-2.1,Win rate overtuned (59.9% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,LDW,Cosmic,Debuff / Control,max_potential,23.7,23.2,-0.5,-2.1,Win rate overtuned (59.9% > 53.5%) -> -1 nerf score for b
+19,2026-10-21T21:59:50Z,5000,LDE,Cosmic,Setup - Location,b,33.3,34.0,0.7,2.1,Win rate undertuned (45.1% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,LDE,Cosmic,Setup - Location,max_potential,33.3,34.0,0.7,2.1,Win rate undertuned (45.1% < 46.5%) -> +1 buff score for b
+19,2026-10-21T21:59:50Z,5000,LDL,Cosmic,Conditional Strike,b,28.1,27.5,-0.6,-2.1,"Conditional payoff under-triggered (N=1, Trig: 5.5% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LDL,Cosmic,Conditional Strike,n,4.0,4.08,0.08,2.0,"Conditional payoff under-triggered (N=1, Trig: 5.5% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LDL,Cosmic,Conditional Strike,max_potential,140.5,139.7,-0.8,-0.6,"Conditional payoff under-triggered (N=1, Trig: 5.5% vs 30%) -> Widen spread: b -1 score, n +1 score"
+19,2026-10-21T21:59:50Z,5000,LDD,Cosmic,Ultimate,b,63.6,64.9,1.3,2.0,"Condition triggers excessively (N=4, Trig: 26.5% vs 12%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,LDD,Cosmic,Ultimate,n,2.62,2.57,-0.05,-1.9,"Condition triggers excessively (N=4, Trig: 26.5% vs 12%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,LDD,Cosmic,Ultimate,max_potential,230.2,231.7,1.5,0.7,"Condition triggers excessively (N=4, Trig: 26.5% vs 12%) -> Compress spread: b +1 score, n -1 score"
+19,2026-10-21T21:59:50Z,5000,DLF,Cosmic,Conditional Strike,b,30.7,30.1,-0.6,-2.0,"Win rate overtuned (54.0% > 53.5%) -> -1 nerf score for b; Fixed-effect conditional spell under-triggered (N=1, Trig: 15.3% vs 30%) -> Protected base damage b (status/buff payoff tuned via status_buff_knobs)"
+19,2026-10-21T21:59:50Z,5000,DLF,Cosmic,Conditional Strike,max_potential,30.7,30.1,-0.6,-2.0,"Win rate overtuned (54.0% > 53.5%) -> -1 nerf score for b; Fixed-effect conditional spell under-triggered (N=1, Trig: 15.3% vs 30%) -> Protected base damage b (status/buff payoff tuned via status_buff_knobs)"
