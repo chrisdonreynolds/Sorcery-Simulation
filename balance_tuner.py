@@ -100,19 +100,47 @@ BUFFS = [
     "Charged", "Shielded", "Lucky", "Quickened", "Invisible", "Blessed"
 ]
 
-# Hard-coded floor for b for all ultimate spells
-ULTIMATE_B_FLOOR: float = 20.0
+# Hard-coded bounds for Ultimate spells to preserve combo payoff identity
+ULTIMATE_B_FLOOR: float = 25.0
+ULTIMATE_B_CEILING: float = 70.0
+ULTIMATE_N_FLOOR: float = 2.50
+ULTIMATE_N_CEILING: float = 6.00
+
+# Bounds for Weather & Location setup spells (secondary class multiplier = 1 + b/400)
+SETUP_B_FLOOR: float = 12.0
+SETUP_B_CEILING: float = 45.0
+
+# Bounds for standard single-condition strikes and standard damage/heal spells
+CONDITIONAL_B_FLOOR: float = 12.0
+CONDITIONAL_N_FLOOR: float = 1.20
+CONDITIONAL_N_CEILING: float = 5.00
+STANDARD_DAMAGE_HEAL_B_FLOOR: float = 8.0
+STANDARD_DAMAGE_HEAL_B_CEILING: float = 115.0
+
+# Spells whose b knob is not referenced in SpellResolver._resolve_impl (tuned via status/buff magnitudes)
+NO_B_SCALING_SPELLS: Set[str] = {
+    "EWE", "LWE", "WEW", "LWL", "FEE", "FEL", "EFW", "FLL", "WDW", "LLF", "WLL"
+}
 
 # Bounds for special spells to preserve specific design intent
 SPECIAL_BOUNDS: Dict[str, Tuple[float, float, float, float]] = {
     # recipe: (min_b, max_b, min_n, max_n)
-    "WWW": (0.0, 200.0, 0.0, 0.0),     # Cleanse & Extra Rune (b: potency penalty)
-    "EEE": (2.0, 10.0, 1.5, 3.5),      # % max health damage
-    "EEL": (0.2, 1.5, 0.0, 0.0),       # Health scaling factor
-    "EED": (2.0, 10.0, 0.0, 0.0),      # 4-12 instances scaling with luck
-    "FED": (2.0, 10.0, 1.5, 3.5),      # Multi-hit formula
-    "LED": (0.2, 1.5, 0.0, 0.0),       # Speed scaling factor
-    "DLD": (20.0, 60.0, 1.5, 3.5),     # Execute missing health scaling
+    "WWW": (2.0, 35.0, 0.0, 0.0),      # Cleanse & Extra Rune (b: potency penalty)
+    "EEE": (2.0, 8.0, 1.5, 3.0),       # % max health damage
+    "EEL": (0.3, 1.2, 0.0, 0.0),       # Health scaling factor
+    "EED": (3.0, 10.0, 0.0, 0.0),      # 4-12 instances scaling with luck
+    "FED": (3.0, 10.0, 1.5, 2.5),      # Multi-hit formula
+    "LED": (0.3, 1.2, 0.0, 0.0),       # Speed scaling factor
+    "DLD": (25.0, 55.0, 1.2, 2.5),     # Execute missing health scaling
+    "DFD": (25.0, 55.0, 1.2, 2.5),     # Caster missing health scaling
+    "DEF": (20.0, 50.0, 1.5, 3.5),     # Target missing potency scaling
+    "WWD": (20.0, 45.0, 1.2, 2.5),     # Multi-debuff stat penalty
+    "DEL": (2.0, 8.0, 0.0, 0.0),       # Bleeding -> Infected conditional strike
+    "FDW": (40.0, 80.0, 0.0, 0.0),     # Symmetric damage to caster and target
+    "DFW": (25.0, 65.0, 0.0, 0.0),     # Self-damage to caster + Bleeding & Slowed on target
+    "DFE": (12.0, 40.0, 0.0, 0.0),     # Self-damage to caster + Charged & Lucky
+    "DDD": (3.0, 18.0, 0.0, 0.0),      # All-stat reduction + damage
+    "LLL": (3.0, 18.0, 0.0, 0.0),      # All-stat boost + heal
 }
 
 
@@ -251,11 +279,11 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "LLF":
         return "Cursed" in c_deb
     elif recipe == "LLD":
-        return w == Weather.SUNNY or "Blessed" in c_buf
+        return (w == Weather.SUNNY) and ("Blessed" in c_buf)
     elif recipe == "DDF":
         return "Asleep" in t_deb
     elif recipe == "FWD":
-        return ("Cursed" in t_deb) or (w == Weather.BLOOD_RAIN) or (loc == Location.GRAVEYARD)
+        return ("Cursed" in t_deb) and (w == Weather.BLOOD_RAIN) and (loc == Location.GRAVEYARD)
     elif recipe == "WFF":
         return "Bleeding" in t_deb
     elif recipe == "WFD":
@@ -267,11 +295,11 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "EFF":
         return "Vulnerable" in t_deb
     elif recipe == "EFD":
-        return ("Entangled" in t_deb) or (loc == Location.JUNGLE)
+        return ("Entangled" in t_deb) and (loc == Location.JUNGLE)
     elif recipe == "FLF":
         return "Stunned" in t_deb
     elif recipe == "FLD":
-        return ("Stunned" in t_deb) or ("Charged" in c_buf) or (w == Weather.STORMING)
+        return ("Stunned" in t_deb) and ("Charged" in c_buf) and (w == Weather.STORMING)
     elif recipe == "LFF":
         return "Vulnerable" in t_deb
     elif recipe == "LFE":
@@ -283,7 +311,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "FDF":
         return "Invisible" in c_buf
     elif recipe == "FDD":
-        return ("Jinxed" in t_deb) or (w == Weather.DARKNESS)
+        return ("Jinxed" in t_deb) and (w == Weather.DARKNESS)
     elif recipe == "DFF":
         return "Bleeding" in c_deb or w == Weather.BLOOD_RAIN
     elif recipe == "DFD":
@@ -291,7 +319,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "WEF":
         return loc == Location.JUNGLE
     elif recipe == "WED":
-        return bool(env.seedling_active or env.seedling_rained_on or env.seedling_sunny_on)
+        return bool(env.seedling_active and env.seedling_rained_on and env.seedling_sunny_on)
     elif recipe == "EWF":
         return w == Weather.SUNNY
     elif recipe == "EWD":
@@ -299,7 +327,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "WLF":
         return "Cursed" in t_deb
     elif recipe == "WLD":
-        return ("Asleep" in t_deb) or (w == Weather.DARKNESS) or (loc == Location.ENCHANTED_FOREST)
+        return ("Asleep" in t_deb) and (w == Weather.DARKNESS) and (loc == Location.ENCHANTED_FOREST)
     elif recipe == "LWF":
         return loc == Location.ENCHANTED_FOREST
     elif recipe == "LWD":
@@ -307,7 +335,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "WDF":
         return w == Weather.RAINING
     elif recipe == "WDD":
-        return (w == Weather.BLIZZARD) or (loc == Location.TUNDRA)
+        return (w == Weather.BLIZZARD) and (loc == Location.TUNDRA)
     elif recipe == "DWD":
         return "Frosty" in t_deb
     elif recipe == "ELF":
@@ -319,7 +347,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "EDF":
         return "Weakened" in t_deb
     elif recipe == "EDD":
-        return ("Bleeding" in t_deb) or (loc == Location.SWAMP)
+        return ("Bleeding" in t_deb) and (loc == Location.SWAMP)
     elif recipe == "DEF":
         return (target.base_potency - target.get_effective_stat("potency")) / max(1.0, target.base_potency) >= 0.20
     elif recipe == "DEL":
@@ -327,7 +355,7 @@ def is_spell_condition_active(recipe: str, caster: Wizard, target: Wizard, env: 
     elif recipe == "LDL":
         return "Jinxed" in t_deb
     elif recipe == "LDD":
-        return any(st in t_deb for st in ["Jinxed", "Weakened", "Slowed", "Vulnerable"])
+        return all(st in t_deb for st in ["Jinxed", "Weakened", "Slowed", "Vulnerable"])
     elif recipe == "DLF":
         return "Slowed" in t_deb
     elif recipe == "DLL":
@@ -756,24 +784,25 @@ def get_spell_condition_complexity(recipe: str, spell_data: Optional[Dict[str, A
 def get_condition_complexity_targets(num_conditions: int) -> Tuple[float, float, float, int]:
     """
     Returns (target_min, target_optimal, target_max, min_casts)
-    calibrated to the compounding difficulty of satisfying N independent conditions.
+    calibrated to the compounding difficulty of satisfying N independent conditions
+    under random rune drafting and 8% evaluation exploration.
     """
     if num_conditions == 1:
         # Single condition (e.g. Frosty, Burning, Bleeding, Raining, Health threshold)
-        # Healthy synergy window: 30% to 55%
-        return 0.30, 0.40, 0.55, 25
+        # Healthy synergy window in unseeded duels: 12% to 45%
+        return 0.12, 0.24, 0.45, 25
     elif num_conditions == 2:
         # Dual condition (e.g. Status + Location, Weather + Buff)
-        # Healthy synergy window: 16% to 36%
-        return 0.16, 0.24, 0.36, 15
+        # Healthy full-combo window: 6% to 25%
+        return 0.06, 0.14, 0.25, 15
     elif num_conditions == 3:
         # Triple condition (e.g. Status + Weather + Location)
-        # Healthy synergy window: 8% to 20%
-        return 0.08, 0.12, 0.20, 10
+        # Healthy full-combo window: 2.5% to 14%
+        return 0.025, 0.07, 0.14, 10
     else:
         # 4+ conditions (e.g. LDD with 4 debuffs)
-        # Healthy synergy window: 3% to 12%
-        return 0.03, 0.06, 0.12, 8
+        # Healthy full-combo window: 1.0% to 8%
+        return 0.01, 0.035, 0.08, 8
 
 
 class SpellBalancingEngine:
@@ -911,7 +940,7 @@ class SpellBalancingEngine:
             else:
                 print(f"  * Status '{st_name}' balanced (WR: {agg_wr*100:.1f}%, Casts: {tot_casts}) -> Magnitude remains {curr_mag*100:.1f}%")
 
-            new_mag = max(0.60 * default_mag, min(1.40 * default_mag, new_mag))
+            new_mag = max(0.35 * default_mag, min(1.40 * default_mag, new_mag))
             new_mag = max(0.0, min(0.75, new_mag))
 
             if "escalation_rate" in s_cfg:
@@ -919,7 +948,7 @@ class SpellBalancingEngine:
                 default_esc = float(DEFAULT_STATUS_CONFIGS.get(st_name, s_cfg).get("escalation_rate", curr_esc))
                 scaling_esc = scaling if (agg_wr > 0.535 or (agg_wr < 0.465 and tot_casts >= 10)) else 1.0
                 new_esc = curr_esc * scaling_esc
-                new_esc = max(0.60 * default_esc, min(1.40 * default_esc, new_esc))
+                new_esc = max(0.35 * default_esc, min(1.40 * default_esc, new_esc))
                 new_esc = max(0.0, min(0.75, new_esc))
                 tuned_statuses[st_name] = {
                     "magnitude": round(new_mag, 4),
@@ -1319,16 +1348,13 @@ class SpellBalancingEngine:
                         if reason and reason not in all_reasons:
                             all_reasons.append(reason)
 
-            # Mirror spell WLL casts the target's last spell using that spell's own knobs
-            if r == "WLL":
+            # Spells whose b knob is not referenced in SpellResolver._resolve_impl (or mirror spell WLL)
+            # are tuned via status_buff_knobs.json rather than phantom b adjustments
+            if r in NO_B_SCALING_SPELLS:
                 continue
 
             desc_text = orig_data.get("description", "")
             uses_n_multiplier = ("(n*b)" in desc_text) or ("**n" in desc_text) or (r in ("EEE", "DFD", "DEF", "DLD", "EWF", "WWD"))
-
-            # Spells with b == 0.0 that have no b scaling (EWE, LWE) are tuned via status/buff magnitudes
-            if b_orig == 0.0 and r in ("EWE", "LWE"):
-                continue
 
             # Clamp scores between -3 and +3
             b_score = max(-3, min(3, raw_b_score))
@@ -1354,23 +1380,32 @@ class SpellBalancingEngine:
             else:
                 b_new = round(b_new, 1)
 
-            # Requirement 5: Sanity floor and ceiling value clamping (0 to 200 for b) + SPECIAL_BOUNDS enforcement
+            # Category-aware bounds and SPECIAL_BOUNDS enforcement to prevent floor/ceiling pathologies
             b_new = max(0.0, min(200.0, b_new))
-            if category == "Ultimate":
-                b_new = max(ULTIMATE_B_FLOOR, b_new)
             if r in SPECIAL_BOUNDS:
                 min_b, max_b, _, _ = SPECIAL_BOUNDS[r]
                 b_new = max(min_b, min(max_b, b_new))
-            b_new = round(b_new, 2) if b_orig < 10.0 else round(b_new, 1)
+            elif category == "Ultimate":
+                b_new = max(ULTIMATE_B_FLOOR, min(ULTIMATE_B_CEILING, b_new))
+            elif category.startswith("Setup"):
+                b_new = max(SETUP_B_FLOOR, min(SETUP_B_CEILING, b_new))
+            elif uses_n_multiplier and n_orig > 0:
+                b_new = max(CONDITIONAL_B_FLOOR, min(STANDARD_DAMAGE_HEAL_B_CEILING, b_new))
+            else:
+                b_new = max(STANDARD_DAMAGE_HEAL_B_FLOOR, min(STANDARD_DAMAGE_HEAL_B_CEILING, b_new))
+            b_new = round(b_new, 2) if b_new < 10.0 else round(b_new, 1)
 
             if n_orig > 0 and uses_n_multiplier:
                 n_new = n_orig * (1.0 + n_pct)
-                # Requirement 5: Sanity floor and ceiling value clamping (0 to 20 for n) + SPECIAL_BOUNDS enforcement
                 n_new = max(0.0, min(20.0, n_new))
                 if r in SPECIAL_BOUNDS:
                     _, _, min_n, max_n = SPECIAL_BOUNDS[r]
                     if max_n > 0:
                         n_new = max(min_n, min(max_n, n_new))
+                elif category == "Ultimate":
+                    n_new = max(ULTIMATE_N_FLOOR, min(ULTIMATE_N_CEILING, n_new))
+                else:
+                    n_new = max(CONDITIONAL_N_FLOOR, min(CONDITIONAL_N_CEILING, n_new))
                 n_new = round(n_new, 2)
             else:
                 n_new = n_orig
